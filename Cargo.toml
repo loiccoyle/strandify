@@ -1,0 +1,16 @@
+[package]
+name = "knitart"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[[bin]]
+name = "knit"
+path = "src/main.rs"
+
+[dependencies]
+image = "0.24.3"
+clap = {version="3.2.17", features=["derive"]}
+clap-verbosity-flag = "1.0.1"
+log = "0.4.17"
+env_logger = "0.9.0"
