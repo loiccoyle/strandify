@@ -1,4 +1,5 @@
 use image::{GrayImage, Luma};
+use log::debug;
 use std::cmp;
 use std::iter::zip;
 use std::path::PathBuf;
@@ -31,7 +32,7 @@ impl Knitter {
         }
     }
 
-    pub fn knit(&self) -> Vec<&Peg> {
+    pub fn knit(&mut self) -> Vec<&Peg> {
         // Algorithm:
         //     peg_1 = pegs[0]
         //     output = [peg_1]
@@ -47,36 +48,46 @@ impl Knitter {
         //         peg_1 = next_peg
         let mut peg_order = vec![&self.pegs[0]];
 
-        let mut min: f64;
+        let mut min_sum: f64;
         let mut min_peg: Option<&Peg>;
+        let mut min_line: Option<(Vec<u32>, Vec<u32>)>;
         let mut last_peg: &Peg;
 
-        for _ in 0..self.iterations {
-            min = f64::MAX;
+        for i in 0..self.iterations {
+            min_sum = f64::MAX;
             min_peg = None;
+            min_line = None;
+            last_peg = peg_order.last().unwrap();
+            debug!("iteration: {:?}", i);
 
             for peg in &self.pegs {
-                last_peg = peg_order.last().unwrap();
                 if peg == last_peg {
                     // No need to check the current peg
                     continue;
                 }
 
                 let (line_x, line_y) = last_peg.line_to(peg);
-                let line_pixels: Vec<u8> = zip(line_x, line_y)
-                    .map(|(x, y)| self.image[(x, y)].0[0])
+                let line_pixels: Vec<&Luma<u8>> = zip(&line_x, &line_y)
+                    .map(|(x, y)| self.image.get_pixel(*x, *y))
                     .collect();
                 // TODO: check if this overflows
                 let pixel_sum: f64 = line_pixels
                     .iter()
-                    .fold(0.0, |acc, &pixel| acc + pixel as f64);
-                if pixel_sum < min {
-                    min = pixel_sum;
+                    .fold(0.0, |acc, &pixel| acc + (pixel.0[0] as f64));
+                if pixel_sum < min_sum {
+                    min_sum = pixel_sum;
+                    min_line = Some((line_x, line_y));
                     min_peg = Some(&peg);
                 }
             }
             peg_order.push(min_peg.unwrap());
             // TODO: Apply line on image buffer
+            // https://docs.rs/image/latest/image/struct.ImageBuffer.html
+            let (min_line_x, min_line_y) = min_line.unwrap();
+            zip(min_line_x, min_line_y).for_each(|(x, y)| {
+                let mut pixel = self.image.get_pixel_mut(x, y);
+                pixel.0[0] = (f64::from(pixel.0[0]) * 0.8).round() as u8;
+            });
         }
         peg_order
     }
