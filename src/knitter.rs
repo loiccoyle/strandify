@@ -4,14 +4,17 @@ use std::cmp;
 use std::iter::zip;
 use std::path::PathBuf;
 
-const DARKEN_FACTOR: f64 = 0.8;
+use indicatif::{ProgressIterator, ProgressStyle};
+
+const LIGHTEN_FACTOR: f64 = 1.2;
+const DARKEN_FACTOR: f64 = 0.9;
 
 #[derive(Debug)]
 pub struct Knitter {
-    image: GrayImage,
-    pegs: Vec<Peg>,
-    yarn: Yarn,
-    iterations: u16,
+    pub image: GrayImage,
+    pub pegs: Vec<Peg>,
+    pub yarn: Yarn,
+    pub iterations: u16,
 }
 
 impl Knitter {
@@ -34,7 +37,7 @@ impl Knitter {
         }
     }
 
-    pub fn knit(&mut self) -> Vec<&Peg> {
+    pub fn peg_order(&self) -> Vec<&Peg> {
         // Algorithm:
         //     peg_1 = pegs[0]
         //     output = [peg_1]
@@ -49,18 +52,26 @@ impl Knitter {
         //         output.append(next_peg)
         //         peg_1 = next_peg
         let mut peg_order = vec![&self.pegs[0]];
+        let mut work_img = self.image.clone();
 
-        let mut min_sum: f64;
+        let mut min_avg: f64;
         let mut min_peg: Option<&Peg>;
         let mut min_line: Option<(Vec<u32>, Vec<u32>)>;
         let mut last_peg: &Peg;
 
-        for i in 0..self.iterations {
-            min_sum = f64::MAX;
+        let mut line_x;
+        let mut line_y;
+        let mut line_avg: f64;
+
+        for _ in (0..self.iterations)
+            .progress()
+            .with_message("Computing peg order")
+            .with_style(ProgressStyle::with_template("{msg}: {wide_bar} {pos}/{len}").unwrap())
+        {
+            min_avg = f64::MAX;
             min_peg = None;
             min_line = None;
             last_peg = peg_order.last().unwrap();
-            debug!("iteration: {:?}", i);
 
             for peg in &self.pegs {
                 if peg == last_peg {
@@ -68,16 +79,15 @@ impl Knitter {
                     continue;
                 }
 
-                let (line_x, line_y) = last_peg.line_to(peg);
-                let line_pixels: Vec<&Luma<u8>> = zip(&line_x, &line_y)
-                    .map(|(x, y)| self.image.get_pixel(*x, *y))
-                    .collect();
-                // TODO: check if this overflows
-                let pixel_sum: f64 = line_pixels
+                (line_x, line_y) = last_peg.line_to(peg);
+                line_avg = line_x
                     .iter()
-                    .fold(0.0, |acc, &pixel| acc + (pixel.0[0] as f64));
-                if pixel_sum < min_sum {
-                    min_sum = pixel_sum;
+                    .zip(&line_y)
+                    .map(|(x, y)| work_img.get_pixel(*x, *y))
+                    .fold(0.0, |acc, &pixel| acc + (pixel.0[0] as f64))
+                    / line_x.len() as f64;
+                if line_avg < min_avg {
+                    min_avg = line_avg;
                     min_line = Some((line_x, line_y));
                     min_peg = Some(&peg);
                 }
@@ -86,12 +96,29 @@ impl Knitter {
             // https://docs.rs/image/latest/image/struct.ImageBuffer.html
             let (min_line_x, min_line_y) = min_line.unwrap();
             zip(min_line_x, min_line_y).for_each(|(x, y)| {
-                let mut pixel = self.image.get_pixel_mut(x, y);
+                let mut pixel = work_img.get_pixel_mut(x, y);
                 // TODO: check darken factor
-                pixel.0[0] = (f64::from(pixel.0[0]) * DARKEN_FACTOR).round() as u8;
+                pixel.0[0] = (f64::from(pixel.0[0]) * LIGHTEN_FACTOR).round() as u8;
             });
         }
         peg_order
+    }
+
+    pub fn knit(&self, peg_order: Vec<&Peg>) -> image::GrayImage {
+        // Create white img
+        let mut img = image::GrayImage::new(self.image.width(), self.image.height());
+        for (_, _, pixel) in img.enumerate_pixels_mut() {
+            pixel.0[0] = 255;
+        }
+
+        for (peg_a, peg_b) in peg_order.iter().zip(peg_order.iter().skip(1)) {
+            let (line_x, line_y) = peg_a.line_to(peg_b);
+            zip(line_x, line_y).for_each(|(x, y)| {
+                let mut pixel = img.get_pixel_mut(x, y);
+                pixel.0[0] = (pixel.0[0] as f64 * DARKEN_FACTOR) as u8;
+            })
+        }
+        img
     }
 }
 
