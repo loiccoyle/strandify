@@ -5,6 +5,7 @@ use std::path::PathBuf;
 
 mod cli;
 mod knitter;
+mod utils;
 
 fn main() {
     let args = cli::Arguments::parse();
