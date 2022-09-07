@@ -4,16 +4,18 @@ use std::cmp;
 use std::iter::zip;
 use std::path::PathBuf;
 
+const DARKEN_FACTOR: f64 = 0.8;
+
 #[derive(Debug)]
 pub struct Knitter {
     image: GrayImage,
     pegs: Vec<Peg>,
     yarn: Yarn,
-    iterations: i16,
+    iterations: u16,
 }
 
 impl Knitter {
-    pub fn new(image: GrayImage, pegs: Vec<Peg>, yarn: Yarn, iterations: i16) -> Self {
+    pub fn new(image: GrayImage, pegs: Vec<Peg>, yarn: Yarn, iterations: u16) -> Self {
         Self {
             image,
             pegs,
@@ -22,7 +24,7 @@ impl Knitter {
         }
     }
 
-    pub fn from_file(image_path: PathBuf, pegs: Vec<Peg>, yarn: Yarn, iterations: i16) -> Self {
+    pub fn from_file(image_path: PathBuf, pegs: Vec<Peg>, yarn: Yarn, iterations: u16) -> Self {
         let image = image::open(image_path).unwrap().into_luma8();
         Self {
             image,
@@ -81,12 +83,12 @@ impl Knitter {
                 }
             }
             peg_order.push(min_peg.unwrap());
-            // TODO: Apply line on image buffer
             // https://docs.rs/image/latest/image/struct.ImageBuffer.html
             let (min_line_x, min_line_y) = min_line.unwrap();
             zip(min_line_x, min_line_y).for_each(|(x, y)| {
                 let mut pixel = self.image.get_pixel_mut(x, y);
-                pixel.0[0] = (f64::from(pixel.0[0]) * 0.8).round() as u8;
+                // TODO: check darken factor
+                pixel.0[0] = (f64::from(pixel.0[0]) * DARKEN_FACTOR).round() as u8;
             });
         }
         peg_order
