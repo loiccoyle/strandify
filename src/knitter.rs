@@ -1,8 +1,8 @@
-use image::{GrayImage, Luma};
+use image::GrayImage;
 use log::debug;
-use std::cmp;
 use std::iter::zip;
 use std::path::PathBuf;
+use std::{cmp, collections::HashMap};
 
 use indicatif::{ProgressIterator, ProgressStyle};
 
@@ -15,25 +15,51 @@ pub struct Knitter {
     pub pegs: Vec<Peg>,
     pub yarn: Yarn,
     pub iterations: u16,
+    pub line_cache: HashMap<(u16, u16), (Vec<u32>, Vec<u32>)>,
 }
 
 impl Knitter {
     pub fn new(image: GrayImage, pegs: Vec<Peg>, yarn: Yarn, iterations: u16) -> Self {
+        let line_cache = HashMap::new();
         Self {
             image,
             pegs,
             yarn,
             iterations,
+            line_cache,
         }
     }
 
     pub fn from_file(image_path: PathBuf, pegs: Vec<Peg>, yarn: Yarn, iterations: u16) -> Self {
         let image = image::open(image_path).unwrap().into_luma8();
+        let line_cache = HashMap::new();
         Self {
             image,
             pegs,
             yarn,
             iterations,
+            line_cache,
+        }
+    }
+
+    pub fn populate_line_cache(&mut self) {
+        for peg_a in self
+            .pegs
+            .iter()
+            .progress()
+            .with_message("Populating hash map")
+            .with_style(
+                ProgressStyle::with_template("{msg}: {elapsed_precise} {wide_bar} {pos}/{len}")
+                    .unwrap(),
+            )
+        {
+            for peg_b in self.pegs.iter() {
+                if peg_a == peg_b {
+                    continue;
+                }
+                self.line_cache
+                    .insert(self.hash_key(peg_a, peg_b), peg_a.line_to(peg_b));
+            }
         }
     }
 
@@ -51,22 +77,27 @@ impl Knitter {
         //         next_peg = search_pegs[line_values.argmax()]
         //         output.append(next_peg)
         //         peg_1 = next_peg
+
         let mut peg_order = vec![&self.pegs[0]];
         let mut work_img = self.image.clone();
 
         let mut min_avg: f64;
         let mut min_peg: Option<&Peg>;
         let mut min_line: Option<(Vec<u32>, Vec<u32>)>;
+        let mut min_line_x;
+        let mut min_line_y;
         let mut last_peg: &Peg;
 
-        let mut line_x;
-        let mut line_y;
+        let mut line_coords;
         let mut line_avg: f64;
 
         for _ in (0..self.iterations)
             .progress()
             .with_message("Computing peg order")
-            .with_style(ProgressStyle::with_template("{msg}: {wide_bar} {pos}/{len}").unwrap())
+            .with_style(
+                ProgressStyle::with_template("{msg}: {wide_bar} {elapsed_precise} {pos}/{len}")
+                    .unwrap(),
+            )
         {
             min_avg = f64::MAX;
             min_peg = None;
@@ -79,22 +110,20 @@ impl Knitter {
                     continue;
                 }
 
-                (line_x, line_y) = last_peg.line_to(peg);
-                line_avg = line_x
-                    .iter()
-                    .zip(&line_y)
+                line_coords = self.line_cache.get(&self.hash_key(last_peg, peg)).unwrap();
+                line_avg = zip(&line_coords.0, &line_coords.1)
                     .map(|(x, y)| work_img.get_pixel(*x, *y))
                     .fold(0.0, |acc, &pixel| acc + (pixel.0[0] as f64))
-                    / line_x.len() as f64;
+                    / line_coords.0.len() as f64;
                 if line_avg < min_avg {
                     min_avg = line_avg;
-                    min_line = Some((line_x, line_y));
+                    min_line = Some(line_coords.clone());
                     min_peg = Some(&peg);
                 }
             }
             peg_order.push(min_peg.unwrap());
             // https://docs.rs/image/latest/image/struct.ImageBuffer.html
-            let (min_line_x, min_line_y) = min_line.unwrap();
+            (min_line_x, min_line_y) = min_line.unwrap();
             zip(min_line_x, min_line_y).for_each(|(x, y)| {
                 let mut pixel = work_img.get_pixel_mut(x, y);
                 // TODO: check darken factor
@@ -104,7 +133,15 @@ impl Knitter {
         peg_order
     }
 
-    pub fn knit(&self, peg_order: Vec<&Peg>) -> image::GrayImage {
+    fn hash_key(&self, peg_a: &Peg, peg_b: &Peg) -> (u16, u16) {
+        if peg_a.id < peg_b.id {
+            return (peg_a.id, peg_b.id);
+        } else {
+            return (peg_b.id, peg_a.id);
+        }
+    }
+
+    pub fn knit(&self, peg_order: &Vec<&Peg>) -> image::GrayImage {
         // Create white img
         let mut img = image::GrayImage::new(self.image.width(), self.image.height());
         for (_, _, pixel) in img.enumerate_pixels_mut() {
