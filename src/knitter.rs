@@ -5,26 +5,30 @@ use std::path::PathBuf;
 use std::{cmp, collections::HashMap};
 
 use indicatif::ProgressIterator;
+use itertools::Itertools;
 
 use crate::utils;
 
-const LIGHTEN_FACTOR: f64 = 1.05;
-const DARKEN_FACTOR: f64 = 0.95;
+const LIGHTEN_FACTOR: f64 = 1.01;
+const DARKEN_FACTOR: f64 = 0.98;
+const ALPHA: f64 = 0.0; // loss distance regularizer
+                        // 1. / LIGHTEN_FACTOR;
 
 #[derive(Debug)]
 pub struct Knitter {
     pub image: GrayImage,
     pub pegs: Vec<Peg>,
     pub yarn: Yarn,
-    pub iterations: u16,
-    pub line_cache: HashMap<(u16, u16), Line>,
+    pub iterations: u32,
+    /// Holds the pixel coords of all the lines
+    line_cache: HashMap<(u16, u16), Line>,
 }
 
 impl Knitter {
-    pub fn new(image: GrayImage, pegs: Vec<Peg>, yarn: Yarn, iterations: u16) -> Self {
+    pub fn new(img: GrayImage, pegs: Vec<Peg>, yarn: Yarn, iterations: u32) -> Self {
         let line_cache = HashMap::new();
         let mut out = Self {
-            image,
+            image: img,
             pegs,
             yarn,
             iterations,
@@ -34,39 +38,22 @@ impl Knitter {
         return out;
     }
 
-    pub fn from_file(image_path: PathBuf, pegs: Vec<Peg>, yarn: Yarn, iterations: u16) -> Self {
-        let image = image::open(image_path).unwrap().into_luma8();
-        let line_cache = HashMap::new();
-        let mut out = Self {
-            image,
-            pegs,
-            yarn,
-            iterations,
-            line_cache,
-        };
-        out.populate_line_cache();
-        return out;
+    pub fn from_file(image_path: PathBuf, pegs: Vec<Peg>, yarn: Yarn, iterations: u32) -> Self {
+        let img = image::open(image_path).unwrap().into_luma8();
+        Self::new(img, pegs, yarn, iterations)
     }
 
+    /// Populate the [line_cache] with the pixel coords of all the line between the peg pairs
     pub fn populate_line_cache(&mut self) {
-        for peg_a in self
-            .pegs
-            .iter()
-            .progress()
-            .with_message("Populating hash map")
-            .with_style(utils::progress_style())
-        {
-            for peg_b in self.pegs.iter() {
-                if peg_a.id == peg_b.id {
-                    continue;
-                }
-                self.line_cache
-                    .insert(self.hash_key(peg_a, peg_b), peg_a.line_to(peg_b));
-            }
+        for (peg_a, peg_b) in self.pegs.iter().tuple_combinations() {
+            self.line_cache
+                .insert(self.hash_key(peg_a, peg_b), peg_a.line_to(peg_b));
         }
+        debug!("# line cache entries: {:?}", self.line_cache.len());
     }
 
-    pub fn peg_order(&self) -> Vec<&Peg> {
+    /// Compute the peg order
+    pub fn peg_order(&self, exclude_neighbours: u16) -> Vec<&Peg> {
         // Algorithm:
         //     peg_1 = pegs[0]
         //     output = [peg_1]
@@ -81,6 +68,16 @@ impl Knitter {
         //         output.append(next_peg)
         //         peg_1 = next_peg
 
+        // let yarn_delta = self.yarn.delta() as u16;
+        let wrap_neighbour = self.pegs.len() as u16 - exclude_neighbours;
+        let max_dist = self
+            .line_cache
+            .values()
+            .map(|line| line.dist)
+            .max()
+            .unwrap();
+        debug!("max_dist: {:?}", max_dist);
+
         let mut peg_order = vec![&self.pegs[0]];
         let mut work_img = self.image.clone();
 
@@ -89,8 +86,9 @@ impl Knitter {
         let mut min_line: Option<&Line>;
         let mut last_peg: &Peg;
 
-        let mut line_coords;
+        let mut line: &Line;
         let mut loss: f64;
+        let mut abs_diff;
 
         for _ in (0..self.iterations)
             .progress()
@@ -103,20 +101,22 @@ impl Knitter {
             last_peg = peg_order.last().unwrap();
 
             for peg in &self.pegs {
-                if peg.id == last_peg.id {
-                    // No need to check the current peg
+                abs_diff = utils::abs_diff(peg.id, last_peg.id);
+                if abs_diff <= exclude_neighbours || abs_diff >= wrap_neighbour {
                     continue;
                 }
 
-                line_coords = self.line_cache.get(&self.hash_key(last_peg, peg)).unwrap();
-                loss = line_coords
+                line = self.line_cache.get(&self.hash_key(last_peg, peg)).unwrap();
+                loss = line
                     .zip()
                     .map(|(x, y)| work_img.get_pixel(*x, *y))
                     .fold(0.0, |acc, &pixel| acc + (pixel.0[0] as f64))
-                    / line_coords.len() as f64;
+                    / (255. * line.len() as f64);
+                // - ALPHA * f64::from(line.dist / max_dist);
+                debug!("loss {:?}", loss);
                 if loss < min_loss {
                     min_loss = loss;
-                    min_line = Some(line_coords.clone());
+                    min_line = Some(line.clone());
                     min_peg = Some(&peg);
                 }
             }
@@ -125,14 +125,16 @@ impl Knitter {
             min_line.unwrap().zip().for_each(|(x, y)| {
                 let mut pixel = work_img.get_pixel_mut(*x, *y);
                 // TODO: check lighten factor
-                pixel.0[0] = (pixel.0[0] as f64 * LIGHTEN_FACTOR).ceil() as u8;
-                // pixel.0[0] = cmp::max(pixel.0[0] as u16 + 1, 255) as u8;
+                pixel.0[0] = (cmp::max(pixel.0[0], 1) as f64 * LIGHTEN_FACTOR).ceil() as u8;
+                // pixel.0[0] = cmp::min(pixel.0[0] as u16 + yarn_delta, 255) as u8;
+                // pixel.0[0] = 255;
             });
         }
         work_img.save("work_img.png").unwrap();
         peg_order
     }
 
+    /// Get HashMap key for peg pair irrespective of order
     fn hash_key(&self, peg_a: &Peg, peg_b: &Peg) -> (u16, u16) {
         if peg_a.id < peg_b.id {
             return (peg_a.id, peg_b.id);
@@ -141,6 +143,11 @@ impl Knitter {
         }
     }
 
+    /// Generate the knitart based on the provided peg order
+    ///
+    /// # Arguments
+    ///
+    /// * `peg_order`- The order with which to connect the pegs.
     pub fn knit(&self, peg_order: &Vec<&Peg>) -> image::GrayImage {
         // Create white img
         let mut img = image::GrayImage::new(self.image.width(), self.image.height());
@@ -148,10 +155,13 @@ impl Knitter {
             pixel.0[0] = 255;
         }
 
+        let yarn_delta = self.yarn.delta() as i16;
+
         for (peg_a, peg_b) in peg_order.iter().zip(peg_order.iter().skip(1)) {
             peg_a.line_to(peg_b).zip().for_each(|(x, y)| {
                 let mut pixel = img.get_pixel_mut(*x, *y);
                 pixel.0[0] = (pixel.0[0] as f64 * DARKEN_FACTOR).floor() as u8;
+                // pixel.0[0] = cmp::max(pixel.0[0] as i16 - yarn_delta, 0) as u8;
             })
         }
         img
@@ -162,9 +172,22 @@ impl Knitter {
 pub struct Line {
     pub x: Vec<u32>,
     pub y: Vec<u32>,
+    pub dist: u32,
 }
 
 impl Line {
+    pub fn new(x: Vec<u32>, y: Vec<u32>) -> Self {
+        let delta_x = utils::abs_diff(*x.first().unwrap(), *x.last().unwrap());
+        let delta_y = utils::abs_diff(*y.first().unwrap(), *y.last().unwrap());
+        Self {
+            x,
+            y,
+            dist: ((delta_x * delta_x + delta_y * delta_y) as f64)
+                .sqrt()
+                .round() as u32,
+        }
+    }
+
     pub fn len(&self) -> usize {
         self.x.len()
     }
@@ -199,10 +222,7 @@ impl Peg {
                 .map(line_fn)
                 .map(|y| y.round() as u32)
                 .collect();
-            return Line {
-                x: x_coords.collect(),
-                y: y_coords,
-            };
+            return Line::new(x_coords.collect(), y_coords);
         } else {
             line_fn = self.line_y_fn_to(other_peg);
             let y_coords = cmp::min(self.y, other_peg.y)..(cmp::max(self.y, other_peg.y) + 1);
@@ -211,10 +231,7 @@ impl Peg {
                 .map(line_fn)
                 .map(|x| x.round() as u32)
                 .collect();
-            return Line {
-                x: x_coords,
-                y: y_coords.collect(),
-            };
+            return Line::new(x_coords, y_coords.collect());
         }
     }
 
@@ -246,6 +263,10 @@ pub struct Yarn {
 impl Yarn {
     pub fn new(width: u8, opacity: f32) -> Self {
         Self { width, opacity }
+    }
+
+    pub fn delta(&self) -> u8 {
+        (self.opacity * 255.).round() as u8
     }
 }
 
