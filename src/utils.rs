@@ -1,5 +1,7 @@
 use std::f64::consts::PI;
 
+use indicatif::ProgressStyle;
+
 pub fn circle_coords(
     radius: f64,
     (center_x, center_y): (u32, u32),
@@ -15,4 +17,8 @@ pub fn circle_coords(
         points_y.push((radius * (i_angle).sin() + center_y as f64).round() as u32);
     }
     (points_x, points_y)
+}
+
+pub fn progress_style() -> ProgressStyle {
+    ProgressStyle::with_template("{msg}: {wide_bar} {elapsed_precise} {pos}/{len}").unwrap()
 }

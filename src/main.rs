@@ -28,8 +28,7 @@ fn main() {
         peg_vec.push(knitter::Peg::new(peg_x, peg_y, id as u16))
     }
 
-    let mut knitart = knitter::Knitter::new(img, peg_vec, knitter::Yarn::new(1, 1.0), 5096);
-    knitart.populate_line_cache();
+    let knitart = knitter::Knitter::new(img, peg_vec, knitter::Yarn::new(1, 1.0), 10000);
     let order = knitart.peg_order();
     let knit_img = knitart.knit(&order);
     knit_img.save("knitart.png").unwrap();
