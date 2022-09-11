@@ -1,5 +1,5 @@
 use image::GrayImage;
-use log::debug;
+use log::{debug, info};
 use std::path::PathBuf;
 use std::{cmp, collections::HashMap};
 
@@ -69,12 +69,24 @@ impl Knitter {
     }
 
     /// Populate the [line_cache] with the pixel coords of all the line between the peg pairs
-    pub fn populate_line_cache(&mut self) {
+    fn populate_line_cache(&mut self) {
         for (peg_a, peg_b) in self.pegs.iter().tuple_combinations() {
             self.line_cache
                 .insert(self.hash_key(peg_a, peg_b), peg_a.line_to(peg_b));
         }
         debug!("# line cache entries: {:?}", self.line_cache.len());
+    }
+
+    /// Get starting peg by taking the peg located on the darkest pixel
+    fn get_start_peg(&self) -> &Peg {
+        //TODO: probably best to check the region around the pixel...
+        let peg_pixels: Vec<u8> = self
+            .pegs
+            .iter()
+            .map(|peg| self.image.get_pixel(peg.x, peg.y)[0])
+            .collect();
+        let min_index = peg_pixels.iter().position_min().unwrap();
+        &self.pegs[min_index]
     }
 
     /// Compute the peg order
@@ -103,17 +115,14 @@ impl Knitter {
             .unwrap();
         debug!("max_dist: {max_dist:?}");
 
-        let mut peg_order = vec![&self.pegs[0]];
+        let start_peg = self.get_start_peg();
+        info!("starting peg {start_peg:?}");
+        let mut peg_order = vec![start_peg];
         let mut work_img = self.image.clone();
 
         let mut min_loss: f64;
-        let mut min_peg: Option<&Peg>;
         let mut min_line: Option<&Line>;
-        let mut last_peg: &Peg;
-
-        let mut line: &Line;
-        let mut loss: f64;
-        let mut abs_diff;
+        let mut min_peg: Option<&Peg>;
 
         for _ in (0..self.config.iterations)
             .progress()
@@ -123,16 +132,16 @@ impl Knitter {
             min_loss = f64::MAX;
             min_peg = None;
             min_line = None;
-            last_peg = peg_order.last().unwrap();
+            let last_peg = peg_order.last().unwrap();
 
             for peg in &self.pegs {
-                abs_diff = utils::abs_diff(peg.id, last_peg.id);
+                let abs_diff = utils::abs_diff(peg.id, last_peg.id);
                 if abs_diff <= self.config.exclude_neighbours || abs_diff >= wrap_neighbour {
                     continue;
                 }
 
-                line = self.line_cache.get(&self.hash_key(last_peg, peg)).unwrap();
-                loss = line
+                let line = self.line_cache.get(&self.hash_key(last_peg, peg)).unwrap();
+                let loss = line
                     .zip()
                     .map(|(x, y)| work_img.get_pixel(*x, *y))
                     .fold(0.0, |acc, &pixel| acc + (pixel.0[0] as f64))
@@ -155,7 +164,7 @@ impl Knitter {
                 // pixel.0[0] = cmp::min(pixel.0[0] as u16 + yarn_delta, 255) as u8;
             });
         }
-        work_img.save("work_img.png").unwrap();
+        // work_img.save("work_img.png").unwrap();
         peg_order
     }
 

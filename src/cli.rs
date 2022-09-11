@@ -38,7 +38,7 @@ pub struct Arguments {
     pub pegs: u32,
     /// Radius scale [0, 1]
     #[clap(short='p', long, value_parser, default_value_t = 0.95)]
-    pub peg_radius: f64,
+    pub peg_radius_scale: f64,
     /// Add angular jitter to the pegs, in rad default: [2*pi/PEGS*5]
     #[clap(short='j', value_parser, long)]
     pub peg_jitter: Option<f64>,

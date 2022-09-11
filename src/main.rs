@@ -21,7 +21,7 @@ fn main() {
 
     let width = img.width();
     let height = img.height();
-    let radius = (min(width, height) as f64 * args.peg_radius / 2.).round();
+    let radius = (min(width, height) as f64 * args.peg_radius_scale / 2.).round();
     let center = (width / 2, height / 2);
 
     let (peg_coords_x, peg_coords_y) = utils::circle_coords(

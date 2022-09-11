@@ -16,8 +16,14 @@ impl Peg {
     }
     /// Get the pixel coords connecting 2 pegs.
     pub fn line_to(&self, other_peg: &Peg) -> Line {
-        let delta_x: i64 = (i64::from(self.x) - i64::from(other_peg.x)).abs();
-        let delta_y: i64 = (i64::from(self.y) - i64::from(other_peg.y)).abs();
+        let delta_x = utils::abs_diff(self.x, other_peg.x);
+        let delta_y = utils::abs_diff(self.y, other_peg.y);
+
+        // vertical line
+        if delta_x == 0 && delta_y != 0 {
+            let y_coords = cmp::min(self.y, other_peg.y)..(cmp::max(self.y, other_peg.y) + 1);
+            return Line::new(vec![self.x; y_coords.len()], y_coords.collect());
+        }
 
         let line_fn;
         if delta_x >= delta_y {
@@ -45,7 +51,6 @@ impl Peg {
         let slope: f64 = (f64::from(other_peg.y) - f64::from(self.y))
             / (f64::from(other_peg.x) - f64::from(self.x));
         let intercept: f64 = f64::from(self.y) - slope * f64::from(self.x);
-        // TODO: how to handle the case where the line is vertical
         (slope, intercept)
     }
 
@@ -141,12 +146,21 @@ mod test {
         assert_eq!(line.y, vec![0, 1]);
         assert_eq!(line.dist, f32::from(2.0).sqrt() as u32);
 
+        // horizontal line
         let peg_a = Peg::new(0, 1, 0);
         let peg_b = Peg::new(3, 1, 1);
         let line = peg_a.line_to(&peg_b);
         assert_eq!(line.x, vec![0, 1, 2, 3]);
         assert_eq!(line.y, vec![1, 1, 1, 1]);
         assert_eq!(line.dist, 3);
+
+        // vertical line
+        let peg_a = Peg::new(0, 0, 0);
+        let peg_b = Peg::new(0, 1, 1);
+        let line = peg_a.line_to(&peg_b);
+        assert_eq!(line.x, vec![0, 0]);
+        assert_eq!(line.y, vec![0, 1]);
+        assert_eq!(line.dist, 1);
     }
 
     #[test]
