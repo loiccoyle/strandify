@@ -1,9 +1,12 @@
 use std::cmp;
+use std::fs::File;
+use std::io::Write;
 use std::iter::zip;
+use std::path::PathBuf;
 
 use crate::utils;
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct Peg {
     pub x: u32,
     pub y: u32,
@@ -14,6 +17,7 @@ impl Peg {
     pub fn new(x: u32, y: u32, id: u16) -> Self {
         Self { x, y, id }
     }
+
     /// Get the pixel coords connecting 2 pegs.
     pub fn line_to(&self, other_peg: &Peg) -> Line {
         let delta_x = utils::abs_diff(self.x, other_peg.x);
@@ -108,6 +112,31 @@ impl Yarn {
 
     pub fn delta(&self) -> u8 {
         (self.opacity * 255.).round() as u8
+    }
+}
+
+#[derive(Debug)]
+pub struct Blueprint {
+    pub peg_order: Vec<Peg>,
+}
+
+impl Blueprint {
+    pub fn new(peg_order: Vec<Peg>) -> Self {
+        Self { peg_order }
+    }
+
+    pub fn from_refs(peg_order: Vec<&Peg>) -> Self {
+        Self {
+            peg_order: peg_order.into_iter().map(|a| a.clone()).collect(),
+        }
+    }
+
+    pub fn to_file(&self, file_path: PathBuf) {
+        let mut file = File::create(file_path).unwrap();
+
+        self.peg_order
+            .iter()
+            .for_each(|peg| write!(file, "{}\n", peg.id).unwrap());
     }
 }
 

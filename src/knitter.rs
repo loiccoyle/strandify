@@ -6,7 +6,7 @@ use std::{cmp, collections::HashMap};
 use indicatif::ProgressIterator;
 use itertools::Itertools;
 
-use crate::peg::{Line, Peg, Yarn};
+use crate::peg::{Blueprint, Line, Peg, Yarn};
 use crate::utils;
 
 #[derive(Debug)]
@@ -90,7 +90,7 @@ impl Knitter {
     }
 
     /// Compute the peg order
-    pub fn peg_order(&self) -> Vec<&Peg> {
+    pub fn peg_order(&self) -> Blueprint {
         // Algorithm:
         //     peg_1 = pegs[0]
         //     output = [peg_1]
@@ -164,8 +164,7 @@ impl Knitter {
                 // pixel.0[0] = cmp::min(pixel.0[0] as u16 + yarn_delta, 255) as u8;
             });
         }
-        // work_img.save("work_img.png").unwrap();
-        peg_order
+        Blueprint::from_refs(peg_order)
     }
 
     /// Get HashMap key for peg pair irrespective of order
