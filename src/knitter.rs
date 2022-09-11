@@ -181,7 +181,7 @@ impl Knitter {
     /// # Arguments
     ///
     /// * `peg_order`- The order with which to connect the pegs.
-    pub fn knit(&self, peg_order: &Vec<&Peg>) -> image::GrayImage {
+    pub fn knit(&self, blueprint: &Blueprint) -> image::GrayImage {
         // Create white img
         let mut img = image::GrayImage::new(self.image.width(), self.image.height());
         for (_, _, pixel) in img.enumerate_pixels_mut() {
@@ -191,12 +191,13 @@ impl Knitter {
         let yarn_delta = self.yarn.delta() as i16;
 
         // Iterate with pairs of consecutive pegs
-        for (peg_a, peg_b) in peg_order
+        for (peg_a, peg_b) in blueprint
+            .peg_order
             .iter()
             .progress()
             .with_message("Knitting")
             .with_style(utils::progress_style())
-            .zip(peg_order.iter().skip(1))
+            .zip(blueprint.peg_order.iter().skip(1))
         {
             peg_a.line_to(peg_b).zip().for_each(|(x, y)| {
                 let mut pixel = img.get_pixel_mut(*x, *y);
