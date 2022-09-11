@@ -24,19 +24,34 @@ fn check_file_exists(image: &str) -> Result<(), String> {
 #[clap(author = "Loic Coyle")]
 /// KnitArt
 pub struct Arguments {
-    /// Image file for which to generate knit art.
+    /// Input image file
     #[clap(validator=check_file_exists)]
     pub image: String,
+    /// Output image file
+    #[clap(default_value = "knitart.png")]
+    pub output: String,
     /// Number of iterations
-    #[clap(short, long, default_value_t = 20000)]
+    #[clap(short, long, value_parser, default_value_t = 20000)]
     pub iterations: u32,
     /// Number of pegs
-    #[clap(short, long, default_value_t = 200)]
+    #[clap(short, long, value_parser, default_value_t = 200)]
     pub pegs: u32,
-    /// Radius
-    #[clap(short, long, default_value_t = 0.95)]
-    pub radius: f64,
-    #[clap(flatten)]
+    /// Radius scale [0, 1]
+    #[clap(short='p', long, value_parser, default_value_t = 0.95)]
+    pub peg_radius: f64,
+    /// Add angular jitter to the pegs, in rad default: [2*pi/PEGS*5]
+    #[clap(short='j', value_parser, long)]
+    pub peg_jitter: Option<f64>,
+    /// Don't connect neighbouring pegs default: [PEGS/20]
+    #[clap(short='n', value_parser, long)]
+    pub peg_exclude_neighbours: Option<u16>,
+    /// Yarn opacity [0, 1]
+    #[clap(short, long, value_parser, default_value_t = 0.02)]
+    pub opacity: f32,
+    /// Encourages peg exploration at the expense of contrast, should be greater than 1
+    #[clap(short, long, value_parser, default_value_t = 1.05)]
+    pub lighten_factor: f64,
     /// Verbosity level.
+    #[clap(flatten)]
     pub verbose: Verbosity,
 }

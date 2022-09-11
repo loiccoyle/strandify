@@ -1,46 +1,71 @@
 use image::GrayImage;
 use log::debug;
-use std::iter::zip;
 use std::path::PathBuf;
 use std::{cmp, collections::HashMap};
 
 use indicatif::ProgressIterator;
 use itertools::Itertools;
 
+use crate::peg::{Line, Peg, Yarn};
 use crate::utils;
 
-const LIGHTEN_FACTOR: f64 = 1.01;
-const DARKEN_FACTOR: f64 = 0.98;
-const ALPHA: f64 = 0.0; // loss distance regularizer
-                        // 1. / LIGHTEN_FACTOR;
+#[derive(Debug)]
+pub struct KnitterConfig {
+    pub iterations: u32,
+    pub lighten_factor: f64,
+    pub exclude_neighbours: u16,
+}
+
+impl KnitterConfig {
+    pub fn new(iterations: u32, lighten_factor: f64, exclude_neighbours: u16) -> Self {
+        Self {
+            iterations,
+            lighten_factor,
+            exclude_neighbours,
+        }
+    }
+
+    pub fn new_with_defaults(n_pegs: usize) -> Self {
+        Self {
+            iterations: 10000,
+            lighten_factor: 1.05,
+            exclude_neighbours: (n_pegs / 20) as u16,
+        }
+    }
+}
 
 #[derive(Debug)]
 pub struct Knitter {
     pub image: GrayImage,
     pub pegs: Vec<Peg>,
     pub yarn: Yarn,
-    pub iterations: u32,
+    pub config: KnitterConfig,
     /// Holds the pixel coords of all the lines
     line_cache: HashMap<(u16, u16), Line>,
 }
 
 impl Knitter {
-    pub fn new(img: GrayImage, pegs: Vec<Peg>, yarn: Yarn, iterations: u32) -> Self {
+    pub fn new(img: GrayImage, pegs: Vec<Peg>, yarn: Yarn, config: KnitterConfig) -> Self {
         let line_cache = HashMap::new();
         let mut out = Self {
             image: img,
             pegs,
             yarn,
-            iterations,
+            config,
             line_cache,
         };
         out.populate_line_cache();
         return out;
     }
 
-    pub fn from_file(image_path: PathBuf, pegs: Vec<Peg>, yarn: Yarn, iterations: u32) -> Self {
+    pub fn from_file(
+        image_path: PathBuf,
+        pegs: Vec<Peg>,
+        yarn: Yarn,
+        config: KnitterConfig,
+    ) -> Self {
         let img = image::open(image_path).unwrap().into_luma8();
-        Self::new(img, pegs, yarn, iterations)
+        Self::new(img, pegs, yarn, config)
     }
 
     /// Populate the [line_cache] with the pixel coords of all the line between the peg pairs
@@ -53,7 +78,7 @@ impl Knitter {
     }
 
     /// Compute the peg order
-    pub fn peg_order(&self, exclude_neighbours: u16) -> Vec<&Peg> {
+    pub fn peg_order(&self) -> Vec<&Peg> {
         // Algorithm:
         //     peg_1 = pegs[0]
         //     output = [peg_1]
@@ -69,14 +94,14 @@ impl Knitter {
         //         peg_1 = next_peg
 
         // let yarn_delta = self.yarn.delta() as u16;
-        let wrap_neighbour = self.pegs.len() as u16 - exclude_neighbours;
+        let wrap_neighbour = self.pegs.len() as u16 - self.config.exclude_neighbours;
         let max_dist = self
             .line_cache
             .values()
             .map(|line| line.dist)
             .max()
             .unwrap();
-        debug!("max_dist: {:?}", max_dist);
+        debug!("max_dist: {max_dist:?}");
 
         let mut peg_order = vec![&self.pegs[0]];
         let mut work_img = self.image.clone();
@@ -90,7 +115,7 @@ impl Knitter {
         let mut loss: f64;
         let mut abs_diff;
 
-        for _ in (0..self.iterations)
+        for _ in (0..self.config.iterations)
             .progress()
             .with_message("Computing peg order")
             .with_style(utils::progress_style())
@@ -102,7 +127,7 @@ impl Knitter {
 
             for peg in &self.pegs {
                 abs_diff = utils::abs_diff(peg.id, last_peg.id);
-                if abs_diff <= exclude_neighbours || abs_diff >= wrap_neighbour {
+                if abs_diff <= self.config.exclude_neighbours || abs_diff >= wrap_neighbour {
                     continue;
                 }
 
@@ -113,7 +138,7 @@ impl Knitter {
                     .fold(0.0, |acc, &pixel| acc + (pixel.0[0] as f64))
                     / (255. * line.len() as f64);
                 // - ALPHA * f64::from(line.dist / max_dist);
-                debug!("loss {:?}", loss);
+                // debug!("loss {:?}", loss);
                 if loss < min_loss {
                     min_loss = loss;
                     min_line = Some(line.clone());
@@ -121,13 +146,13 @@ impl Knitter {
                 }
             }
             peg_order.push(min_peg.unwrap());
+            // Update the work img to reflect the added line
             // https://docs.rs/image/latest/image/struct.ImageBuffer.html
             min_line.unwrap().zip().for_each(|(x, y)| {
                 let mut pixel = work_img.get_pixel_mut(*x, *y);
-                // TODO: check lighten factor
-                pixel.0[0] = (cmp::max(pixel.0[0], 1) as f64 * LIGHTEN_FACTOR).ceil() as u8;
+                pixel.0[0] =
+                    (cmp::max(pixel.0[0], 1) as f64 * self.config.lighten_factor).ceil() as u8;
                 // pixel.0[0] = cmp::min(pixel.0[0] as u16 + yarn_delta, 255) as u8;
-                // pixel.0[0] = 255;
             });
         }
         work_img.save("work_img.png").unwrap();
@@ -157,156 +182,20 @@ impl Knitter {
 
         let yarn_delta = self.yarn.delta() as i16;
 
-        for (peg_a, peg_b) in peg_order.iter().zip(peg_order.iter().skip(1)) {
+        // Iterate with pairs of consecutive pegs
+        for (peg_a, peg_b) in peg_order
+            .iter()
+            .progress()
+            .with_message("Knitting")
+            .with_style(utils::progress_style())
+            .zip(peg_order.iter().skip(1))
+        {
             peg_a.line_to(peg_b).zip().for_each(|(x, y)| {
                 let mut pixel = img.get_pixel_mut(*x, *y);
-                pixel.0[0] = (pixel.0[0] as f64 * DARKEN_FACTOR).floor() as u8;
-                // pixel.0[0] = cmp::max(pixel.0[0] as i16 - yarn_delta, 0) as u8;
+                // pixel.0[0] = (pixel.0[0] as f64 * DARKEN_FACTOR).floor() as u8;
+                pixel.0[0] = cmp::max(pixel.0[0] as i16 - yarn_delta, 0) as u8;
             })
         }
         img
-    }
-}
-
-#[derive(Debug)]
-pub struct Line {
-    pub x: Vec<u32>,
-    pub y: Vec<u32>,
-    pub dist: u32,
-}
-
-impl Line {
-    pub fn new(x: Vec<u32>, y: Vec<u32>) -> Self {
-        let delta_x = utils::abs_diff(*x.first().unwrap(), *x.last().unwrap());
-        let delta_y = utils::abs_diff(*y.first().unwrap(), *y.last().unwrap());
-        Self {
-            x,
-            y,
-            dist: ((delta_x * delta_x + delta_y * delta_y) as f64)
-                .sqrt()
-                .round() as u32,
-        }
-    }
-
-    pub fn len(&self) -> usize {
-        self.x.len()
-    }
-
-    pub fn zip(&self) -> std::iter::Zip<std::slice::Iter<u32>, std::slice::Iter<u32>> {
-        zip(&self.x, &self.y)
-    }
-}
-
-#[derive(Debug)]
-pub struct Peg {
-    x: u32,
-    y: u32,
-    id: u16,
-}
-
-impl Peg {
-    pub fn new(x: u32, y: u32, id: u16) -> Self {
-        Self { x, y, id }
-    }
-    /// Get the pixel coords connecting 2 pegs.
-    pub fn line_to(&self, other_peg: &Peg) -> Line {
-        let delta_x: i64 = (i64::from(self.x) - i64::from(other_peg.x)).abs();
-        let delta_y: i64 = (i64::from(self.y) - i64::from(other_peg.y)).abs();
-
-        let line_fn;
-        if delta_x >= delta_y {
-            line_fn = self.line_x_fn_to(other_peg);
-            let x_coords = cmp::min(self.x, other_peg.x)..(cmp::max(self.x, other_peg.x) + 1);
-            let y_coords: Vec<u32> = x_coords
-                .clone()
-                .map(line_fn)
-                .map(|y| y.round() as u32)
-                .collect();
-            return Line::new(x_coords.collect(), y_coords);
-        } else {
-            line_fn = self.line_y_fn_to(other_peg);
-            let y_coords = cmp::min(self.y, other_peg.y)..(cmp::max(self.y, other_peg.y) + 1);
-            let x_coords: Vec<u32> = y_coords
-                .clone()
-                .map(line_fn)
-                .map(|x| x.round() as u32)
-                .collect();
-            return Line::new(x_coords, y_coords.collect());
-        }
-    }
-
-    fn get_line_coefs(&self, other_peg: &Peg) -> (f64, f64) {
-        let slope: f64 = (f64::from(other_peg.y) - f64::from(self.y))
-            / (f64::from(other_peg.x) - f64::from(self.x));
-        let intercept: f64 = f64::from(self.y) - slope * f64::from(self.x);
-        // TODO: how to handle the case where the line is vertical
-        (slope, intercept)
-    }
-
-    fn line_x_fn_to(&self, other_peg: &Peg) -> Box<dyn FnMut(u32) -> f64> {
-        let (slope, intercept) = self.get_line_coefs(other_peg);
-        Box::new(move |x| slope * f64::from(x) + intercept)
-    }
-
-    fn line_y_fn_to(&self, other_peg: &Peg) -> Box<dyn FnMut(u32) -> f64> {
-        let (slope, intercept) = self.get_line_coefs(other_peg);
-        Box::new(move |y| f64::from(y) / slope - intercept / slope)
-    }
-}
-
-#[derive(Debug)]
-pub struct Yarn {
-    width: u8,
-    opacity: f32,
-}
-
-impl Yarn {
-    pub fn new(width: u8, opacity: f32) -> Self {
-        Self { width, opacity }
-    }
-
-    pub fn delta(&self) -> u8 {
-        (self.opacity * 255.).round() as u8
-    }
-}
-
-#[cfg(test)]
-mod test {
-    use super::*;
-
-    #[test]
-    fn test_get_line_coefs() {
-        let peg_a = Peg::new(0, 0, 0);
-        let peg_b = Peg::new(1, 1, 1);
-        let (slope, intercept) = peg_a.get_line_coefs(&peg_b);
-        assert_eq!(slope, 1.);
-        assert_eq!(intercept, 0.);
-
-        let peg_a = Peg::new(1, 1, 0);
-        let peg_b = Peg::new(0, 1, 1);
-        let (slope, intercept) = peg_a.get_line_coefs(&peg_b);
-        assert_eq!(slope, 0.);
-        assert_eq!(intercept, 1.);
-    }
-
-    #[test]
-    fn test_line_to() {
-        let peg_a = Peg::new(0, 0, 0);
-        let peg_b = Peg::new(1, 1, 1);
-        let line = peg_a.line_to(&peg_b);
-        assert_eq!(line.x, vec![0, 1]);
-        assert_eq!(line.y, vec![0, 1]);
-
-        let peg_a = Peg::new(1, 1, 0);
-        let peg_b = Peg::new(0, 0, 1);
-        let line = peg_a.line_to(&peg_b);
-        assert_eq!(line.x, vec![0, 1]);
-        assert_eq!(line.y, vec![0, 1]);
-
-        let peg_a = Peg::new(0, 1, 0);
-        let peg_b = Peg::new(3, 1, 1);
-        let line = peg_a.line_to(&peg_b);
-        assert_eq!(line.x, vec![0, 1, 2, 3]);
-        assert_eq!(line.y, vec![1, 1, 1, 1]);
     }
 }

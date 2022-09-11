@@ -1,6 +1,6 @@
 use clap::Parser;
 use env_logger;
-use log::debug;
+use log::{debug, info};
 use std::cmp::min;
 use std::f64::consts::PI;
 use std::iter::zip;
@@ -8,6 +8,7 @@ use std::path::PathBuf;
 
 mod cli;
 mod knitter;
+mod peg;
 mod utils;
 
 fn main() {
@@ -20,27 +21,38 @@ fn main() {
 
     let width = img.width();
     let height = img.height();
-    let radius = (min(width, height) as f64 * args.radius / 2.).round();
+    let radius = (min(width, height) as f64 * args.peg_radius / 2.).round();
     let center = (width / 2, height / 2);
 
-    let n_pegs = args.pegs;
-    // let n_iterations = 100000;
-    let opacity = 0.01; //0.07 * 10000. / n_iterations as f32;
+    let (peg_coords_x, peg_coords_y) = utils::circle_coords(
+        radius,
+        center,
+        args.pegs,
+        match args.peg_jitter {
+            Some(_) => args.peg_jitter,
+            None => Some(2. * PI / (args.pegs as f64 * 5.)),
+        },
+    );
 
-    let (peg_coords_x, peg_coords_y) =
-        utils::circle_coords(radius, center, n_pegs, Some(2. * PI / (n_pegs as f64 * 5.)));
-    let mut peg_vec: Vec<knitter::Peg> = vec![];
+    let mut pegs: Vec<peg::Peg> = vec![];
     for (id, (peg_x, peg_y)) in zip(peg_coords_x, peg_coords_y).enumerate() {
-        peg_vec.push(knitter::Peg::new(peg_x, peg_y, id as u16));
+        pegs.push(peg::Peg::new(peg_x, peg_y, id as u16));
     }
 
-    let knitart = knitter::Knitter::new(
-        img,
-        peg_vec,
-        knitter::Yarn::new(1, opacity),
+    let config = knitter::KnitterConfig::new(
         args.iterations,
+        args.lighten_factor,
+        match args.peg_exclude_neighbours {
+            Some(n_neighbours) => n_neighbours,
+            None => (pegs.len() / 20) as u16,
+        },
     );
-    let order = knitart.peg_order((n_pegs / 20) as u16);
+    let yarn = peg::Yarn::new(1, args.opacity);
+    info!("config: {config:?}");
+    info!("yarn: {yarn:?}");
+
+    let knitart = knitter::Knitter::new(img, pegs, yarn, config);
+    let order = knitart.peg_order();
     let knit_img = knitart.knit(&order);
-    knit_img.save("knitart.png").unwrap();
+    knit_img.save(args.output).unwrap();
 }
