@@ -87,8 +87,9 @@ pub struct Line {
 
 impl Line {
     pub fn new(x: Vec<u32>, y: Vec<u32>) -> Self {
-        let delta_x = utils::abs_diff(*x.first().unwrap(), *x.last().unwrap());
-        let delta_y = utils::abs_diff(*y.first().unwrap(), *y.last().unwrap());
+        assert_eq!(x.len(), y.len(), "`x` and `y` should have the same length");
+        let delta_x = x.iter().max().unwrap() - x.iter().min().unwrap();
+        let delta_y = y.iter().max().unwrap() - y.iter().min().unwrap();
         Self {
             x,
             y,
