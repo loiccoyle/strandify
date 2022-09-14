@@ -47,11 +47,13 @@ pub fn pixels_around((center_x, center_y): (u32, u32), radius: u32) -> (Vec<u32>
     let mut x_coords: Vec<u32> = vec![];
     let mut y_coords: Vec<u32> = vec![];
     let radius = radius as i64;
+    let center_x = center_x as i64;
+    let center_y = center_y as i64;
     for x in -radius..radius + 1 {
         for y in -radius..radius + 1 {
             if x * x + y * y <= radius * radius {
-                x_coords.push((center_x as i64 + x) as u32);
-                y_coords.push((center_y as i64 + y) as u32);
+                x_coords.push((center_x + x) as u32);
+                y_coords.push((center_y + y) as u32);
             }
         }
     }
