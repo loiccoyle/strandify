@@ -37,6 +37,27 @@ pub fn circle_coords(
     (points_x, points_y)
 }
 
+/// Get the pixels around a peg within radius
+///
+/// # Arguments
+///
+/// *`(center_x, center_y)`- center around which to fetch surrounding pixels
+/// *`radius`- pixel radius around peg
+pub fn pixels_around((center_x, center_y): (u32, u32), radius: u32) -> (Vec<u32>, Vec<u32>) {
+    let mut x_coords: Vec<u32> = vec![];
+    let mut y_coords: Vec<u32> = vec![];
+    let radius = radius as i64;
+    for x in -radius..radius + 1 {
+        for y in -radius..radius + 1 {
+            if x * x + y * y <= radius * radius {
+                x_coords.push((center_x as i64 + x) as u32);
+                y_coords.push((center_y as i64 + y) as u32);
+            }
+        }
+    }
+    (x_coords, y_coords)
+}
+
 pub fn progress_style() -> ProgressStyle {
     ProgressStyle::with_template("{msg}: {wide_bar} {elapsed_precise} {pos}/{len}").unwrap()
 }

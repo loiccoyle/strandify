@@ -74,18 +74,7 @@ impl Peg {
     ///
     /// *`radius`- pixel radius around peg
     pub fn around(&self, radius: u32) -> (Vec<u32>, Vec<u32>) {
-        let mut x_coords: Vec<u32> = vec![];
-        let mut y_coords: Vec<u32> = vec![];
-        let radius = radius as i64;
-        for x in -radius..radius + 1 {
-            for y in -radius..radius + 1 {
-                if x * x + y * y <= radius * radius {
-                    x_coords.push((self.x as i64 + x) as u32);
-                    y_coords.push((self.y as i64 + y) as u32);
-                }
-            }
-        }
-        (x_coords, y_coords)
+        utils::pixels_around((self.x, self.y), radius)
     }
 }
 
