@@ -25,47 +25,52 @@ impl Peg {
         let dist = self.dist_to(other);
 
         // vertical line
-        if delta_x == 0 && delta_y != 0 {
-            let y_coords = cmp::min(self.y, other.y)..(cmp::max(self.y, other.y) + 1);
-            return Line::new(vec![self.x; y_coords.len()], y_coords.collect(), dist);
-        }
+        let x_coords: Vec<u32>;
+        let y_coords: Vec<u32>;
 
-        let line_fn;
-        if delta_x >= delta_y {
-            line_fn = self.line_x_fn_to(other);
-            let x_coords = cmp::min(self.x, other.x)..(cmp::max(self.x, other.x) + 1);
-            let y_coords: Vec<u32> = x_coords
-                .clone()
-                .map(line_fn)
-                .map(|y| y.round() as u32)
-                .collect();
-            return Line::new(x_coords.collect(), y_coords, dist);
+        if delta_x == 0 && delta_y != 0 {
+            y_coords = (cmp::min(self.y, other.y)..(cmp::max(self.y, other.y) + 1)).collect();
+            x_coords = vec![self.x; y_coords.len()]
+            // return Line::new(x_coords, y_coords, dist);
         } else {
-            line_fn = self.line_y_fn_to(other);
-            let y_coords = cmp::min(self.y, other.y)..(cmp::max(self.y, other.y) + 1);
-            let x_coords: Vec<u32> = y_coords
-                .clone()
-                .map(line_fn)
-                .map(|x| x.round() as u32)
-                .collect();
-            return Line::new(x_coords, y_coords.collect(), dist);
+            if delta_x >= delta_y {
+                let line_fn = self.line_x_fn_to(other);
+                x_coords = (cmp::min(self.x, other.x)..(cmp::max(self.x, other.x) + 1)).collect();
+                y_coords = x_coords
+                    .clone()
+                    .into_iter()
+                    .map(line_fn)
+                    .map(|y| y.round() as u32)
+                    .collect();
+            } else {
+                let line_fn = self.line_y_fn_to(other);
+                y_coords = (cmp::min(self.y, other.y)..(cmp::max(self.y, other.y) + 1)).collect();
+                x_coords = y_coords
+                    .clone()
+                    .into_iter()
+                    .map(line_fn)
+                    .map(|x| x.round() as u32)
+                    .collect();
+            }
         }
+        let line = Line::new(x_coords, y_coords, dist);
+        line
     }
 
-    fn get_line_coefs(&self, other_peg: &Peg) -> (f64, f64) {
-        let slope: f64 = (f64::from(other_peg.y) - f64::from(self.y))
-            / (f64::from(other_peg.x) - f64::from(self.x));
+    fn get_line_coefs(&self, other: &Peg) -> (f64, f64) {
+        let slope: f64 =
+            (f64::from(other.y) - f64::from(self.y)) / (f64::from(other.x) - f64::from(self.x));
         let intercept: f64 = f64::from(self.y) - slope * f64::from(self.x);
         (slope, intercept)
     }
 
-    fn line_x_fn_to(&self, other_peg: &Peg) -> Box<dyn FnMut(u32) -> f64> {
-        let (slope, intercept) = self.get_line_coefs(other_peg);
+    fn line_x_fn_to(&self, other: &Peg) -> Box<dyn FnMut(u32) -> f64> {
+        let (slope, intercept) = self.get_line_coefs(other);
         Box::new(move |x| slope * f64::from(x) + intercept)
     }
 
-    fn line_y_fn_to(&self, other_peg: &Peg) -> Box<dyn FnMut(u32) -> f64> {
-        let (slope, intercept) = self.get_line_coefs(other_peg);
+    fn line_y_fn_to(&self, other: &Peg) -> Box<dyn FnMut(u32) -> f64> {
+        let (slope, intercept) = self.get_line_coefs(other);
         Box::new(move |y| f64::from(y) / slope - intercept / slope)
     }
 
