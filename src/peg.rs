@@ -67,6 +67,26 @@ impl Peg {
         let (slope, intercept) = self.get_line_coefs(other_peg);
         Box::new(move |y| f64::from(y) / slope - intercept / slope)
     }
+
+    /// Get the pixels around a peg within radius
+    ///
+    /// # Arguments
+    ///
+    /// *`radius`- pixel radius around peg
+    pub fn around(&self, radius: u32) -> (Vec<u32>, Vec<u32>) {
+        let mut x_coords: Vec<u32> = vec![];
+        let mut y_coords: Vec<u32> = vec![];
+        let radius = radius as i64;
+        for x in -radius..radius + 1 {
+            for y in -radius..radius + 1 {
+                if x * x + y * y <= radius * radius {
+                    x_coords.push((self.x as i64 + x) as u32);
+                    y_coords.push((self.y as i64 + y) as u32);
+                }
+            }
+        }
+        (x_coords, y_coords)
+    }
 }
 
 #[derive(Debug)]
@@ -145,7 +165,7 @@ mod test {
     use super::*;
 
     #[test]
-    fn test_get_line_coefs() {
+    fn test_peg_get_line_coefs() {
         let peg_a = Peg::new(0, 0, 0);
         let peg_b = Peg::new(1, 1, 1);
         let (slope, intercept) = peg_a.get_line_coefs(&peg_b);
@@ -160,7 +180,7 @@ mod test {
     }
 
     #[test]
-    fn test_line_to() {
+    fn test_peg_line_to() {
         let peg_a = Peg::new(0, 0, 0);
         let peg_b = Peg::new(1, 1, 1);
         let line = peg_a.line_to(&peg_b);
@@ -190,6 +210,14 @@ mod test {
         assert_eq!(line.x, vec![0, 0]);
         assert_eq!(line.y, vec![0, 1]);
         assert_eq!(line.dist, 1);
+    }
+
+    #[test]
+    fn test_peg_around() {
+        let peg = Peg::new(10, 10, 0);
+        let (x_coords, y_coords) = peg.around(1);
+        assert_eq!(x_coords, vec![9, 10, 10, 10, 11]);
+        assert_eq!(y_coords, vec![10, 9, 10, 11, 10]);
     }
 
     #[test]

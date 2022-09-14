@@ -1,4 +1,4 @@
-use image::GrayImage;
+use image::{GenericImageView, GrayImage};
 use log::{debug, info};
 use std::path::PathBuf;
 use std::{cmp, collections::HashMap};
@@ -14,14 +14,21 @@ pub struct KnitterConfig {
     pub iterations: u32,
     pub lighten_factor: f64,
     pub exclude_neighbours: u16,
+    pub start_peg_radius: u32,
 }
 
 impl KnitterConfig {
-    pub fn new(iterations: u32, lighten_factor: f64, exclude_neighbours: u16) -> Self {
+    pub fn new(
+        iterations: u32,
+        lighten_factor: f64,
+        exclude_neighbours: u16,
+        start_peg_radius: u32,
+    ) -> Self {
         Self {
             iterations,
             lighten_factor,
             exclude_neighbours,
+            start_peg_radius,
         }
     }
 
@@ -30,6 +37,7 @@ impl KnitterConfig {
             iterations: 10000,
             lighten_factor: 1.05,
             exclude_neighbours: (n_pegs / 20) as u16,
+            start_peg_radius: 5,
         }
     }
 }
@@ -78,12 +86,23 @@ impl Knitter {
     }
 
     /// Get starting peg by taking the peg located on the darkest pixel
-    fn get_start_peg(&self) -> &Peg {
-        //TODO: probably best to check the region around the pixel...
-        let peg_pixels: Vec<u8> = self
+    fn get_start_peg(&self, radius: u32) -> &Peg {
+        let peg_pixels: Vec<u32> = self
             .pegs
             .iter()
-            .map(|peg| self.image.get_pixel(peg.x, peg.y)[0])
+            .map(|peg| {
+                // get the average pixel value around peg
+                let (x_coords, y_coords) = peg.around(radius);
+                let pixels: Vec<u8> = x_coords
+                    .into_iter()
+                    .zip(y_coords)
+                    .map(|(x, y)| match self.image.get_pixel_checked(x, y) {
+                        Some(pixel) => pixel[0],
+                        None => 0,
+                    })
+                    .collect();
+                pixels.iter().fold(0, |acc, pixel| acc + *pixel as u32) / pixels.len() as u32
+            })
             .collect();
         let min_index = peg_pixels.iter().position_min().unwrap();
         &self.pegs[min_index]
@@ -115,7 +134,7 @@ impl Knitter {
             .unwrap();
         debug!("max_dist: {max_dist:?}");
 
-        let start_peg = self.get_start_peg();
+        let start_peg = self.get_start_peg(self.config.start_peg_radius);
         info!("starting peg {start_peg:?}");
         let mut peg_order = vec![start_peg];
         let mut work_img = self.image.clone();

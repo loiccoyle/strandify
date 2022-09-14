@@ -46,6 +46,7 @@ fn main() {
             Some(n_neighbours) => n_neighbours,
             None => (pegs.len() / 20) as u16,
         },
+        5,
     );
     let yarn = peg::Yarn::new(1, args.opacity);
     info!("config: {config:?}");
