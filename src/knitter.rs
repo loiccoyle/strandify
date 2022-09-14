@@ -174,7 +174,7 @@ impl Knitter {
                 // debug!("loss {:?}", loss);
                 if loss < min_loss {
                     min_loss = loss;
-                    min_line = Some(line.clone());
+                    min_line = Some(line);
                     min_peg = Some(&peg);
                 }
             }
