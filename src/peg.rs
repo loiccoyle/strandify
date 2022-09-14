@@ -19,35 +19,36 @@ impl Peg {
     }
 
     /// Get the pixel coords connecting 2 pegs.
-    pub fn line_to(&self, other_peg: &Peg) -> Line {
-        let delta_x = utils::abs_diff(self.x, other_peg.x);
-        let delta_y = utils::abs_diff(self.y, other_peg.y);
+    pub fn line_to(&self, other: &Peg) -> Line {
+        let delta_x = utils::abs_diff(self.x, other.x);
+        let delta_y = utils::abs_diff(self.y, other.y);
+        let dist = self.dist_to(other);
 
         // vertical line
         if delta_x == 0 && delta_y != 0 {
-            let y_coords = cmp::min(self.y, other_peg.y)..(cmp::max(self.y, other_peg.y) + 1);
-            return Line::new(vec![self.x; y_coords.len()], y_coords.collect());
+            let y_coords = cmp::min(self.y, other.y)..(cmp::max(self.y, other.y) + 1);
+            return Line::new(vec![self.x; y_coords.len()], y_coords.collect(), dist);
         }
 
         let line_fn;
         if delta_x >= delta_y {
-            line_fn = self.line_x_fn_to(other_peg);
-            let x_coords = cmp::min(self.x, other_peg.x)..(cmp::max(self.x, other_peg.x) + 1);
+            line_fn = self.line_x_fn_to(other);
+            let x_coords = cmp::min(self.x, other.x)..(cmp::max(self.x, other.x) + 1);
             let y_coords: Vec<u32> = x_coords
                 .clone()
                 .map(line_fn)
                 .map(|y| y.round() as u32)
                 .collect();
-            return Line::new(x_coords.collect(), y_coords);
+            return Line::new(x_coords.collect(), y_coords, dist);
         } else {
-            line_fn = self.line_y_fn_to(other_peg);
-            let y_coords = cmp::min(self.y, other_peg.y)..(cmp::max(self.y, other_peg.y) + 1);
+            line_fn = self.line_y_fn_to(other);
+            let y_coords = cmp::min(self.y, other.y)..(cmp::max(self.y, other.y) + 1);
             let x_coords: Vec<u32> = y_coords
                 .clone()
                 .map(line_fn)
                 .map(|x| x.round() as u32)
                 .collect();
-            return Line::new(x_coords, y_coords.collect());
+            return Line::new(x_coords, y_coords.collect(), dist);
         }
     }
 
@@ -76,6 +77,13 @@ impl Peg {
     pub fn around(&self, radius: u32) -> (Vec<u32>, Vec<u32>) {
         utils::pixels_around((self.x, self.y), radius)
     }
+
+    /// Compute the distance between 2 pegs
+    pub fn dist_to(&self, other: &Peg) -> u32 {
+        let delta_x = utils::abs_diff(self.x, other.x);
+        let delta_y = utils::abs_diff(self.y, other.y);
+        ((delta_x * delta_x + delta_y * delta_y) as f64).sqrt() as u32
+    }
 }
 
 #[derive(Debug)]
@@ -86,17 +94,9 @@ pub struct Line {
 }
 
 impl Line {
-    pub fn new(x: Vec<u32>, y: Vec<u32>) -> Self {
+    pub fn new(x: Vec<u32>, y: Vec<u32>, dist: u32) -> Self {
         assert_eq!(x.len(), y.len(), "`x` and `y` should have the same length");
-        let delta_x = x.iter().max().unwrap() - x.iter().min().unwrap();
-        let delta_y = y.iter().max().unwrap() - y.iter().min().unwrap();
-        Self {
-            x,
-            y,
-            dist: ((delta_x * delta_x + delta_y * delta_y) as f64)
-                .sqrt()
-                .round() as u32,
-        }
+        Self { x, y, dist }
     }
 
     pub fn len(&self) -> usize {
