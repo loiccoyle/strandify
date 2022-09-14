@@ -92,7 +92,7 @@ impl Knitter {
 
     /// Get starting peg by taking the peg located on the darkest pixel
     fn get_start_peg(&self, radius: u32) -> &Peg {
-        let peg_pixels: Vec<u32> = self
+        let peg_avgs: Vec<u32> = self
             .pegs
             .iter()
             .map(|peg| {
@@ -109,7 +109,8 @@ impl Knitter {
                 pixels.iter().fold(0, |acc, pixel| acc + *pixel as u32) / pixels.len() as u32
             })
             .collect();
-        let min_index = peg_pixels.iter().position_min().unwrap();
+        debug!("peg_avgs: {peg_avgs:?}");
+        let min_index = peg_avgs.iter().position_min().unwrap();
         &self.pegs[min_index]
     }
 
