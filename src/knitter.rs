@@ -3,7 +3,7 @@ use log::{debug, info};
 use std::path::PathBuf;
 use std::{cmp, collections::HashMap};
 
-use indicatif::ProgressIterator;
+use indicatif::{ProgressBar, ProgressIterator};
 use itertools::Itertools;
 
 use crate::peg::{Blueprint, Line, Peg, Yarn};
@@ -78,9 +78,14 @@ impl Knitter {
 
     /// Populate the [line_cache] with the pixel coords of all the line between the peg pairs
     fn populate_line_cache(&mut self) {
+        info!("Populating line cache");
+        let pbar = ProgressBar::new_spinner().with_message("Populating line cache");
         for (peg_a, peg_b) in self.pegs.iter().tuple_combinations() {
-            self.line_cache
-                .insert(self.hash_key(peg_a, peg_b), peg_a.line_to(peg_b));
+            pbar.inc(1);
+            self.line_cache.insert(
+                self.hash_key(peg_a, peg_b),
+                peg_a.line_to(peg_b),
+            );
         }
         debug!("# line cache entries: {:?}", self.line_cache.len());
     }
