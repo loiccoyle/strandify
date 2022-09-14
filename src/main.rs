@@ -52,7 +52,7 @@ fn main() {
     info!("yarn: {yarn:?}");
 
     let knitart = knitter::Knitter::new(img, pegs, yarn, config);
-    let order = knitart.peg_order();
-    let knit_img = knitart.knit(&order);
+    let blueprint = knitart.peg_order();
+    let knit_img = knitart.knit(&blueprint);
     knit_img.save(args.output).unwrap();
 }
