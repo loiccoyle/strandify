@@ -212,7 +212,7 @@ impl Knitter {
             pixel.0[0] = 255;
         }
 
-        let yarn_delta = self.yarn.delta() as i16;
+        let yarn_delta = cmp::max(self.yarn.delta() as i16, 1);
 
         // Iterate with pairs of consecutive pegs
         for (peg_a, peg_b) in blueprint
