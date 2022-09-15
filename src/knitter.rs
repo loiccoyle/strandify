@@ -13,22 +13,22 @@ use crate::utils;
 pub struct KnitterConfig {
     pub iterations: u32,
     pub lighten_factor: f64,
-    pub exclude_neighbours: u16,
     pub start_peg_radius: u32,
+    pub skip_peg_within: u32,
 }
 
 impl KnitterConfig {
     pub fn new(
         iterations: u32,
         lighten_factor: f64,
-        exclude_neighbours: u16,
         start_peg_radius: u32,
+        skip_peg_within: u32,
     ) -> Self {
         Self {
             iterations,
             lighten_factor,
-            exclude_neighbours,
             start_peg_radius,
+            skip_peg_within,
         }
     }
 
@@ -36,8 +36,8 @@ impl KnitterConfig {
         Self {
             iterations: 10000,
             lighten_factor: 1.05,
-            exclude_neighbours: (n_pegs / 20) as u16,
             start_peg_radius: 5,
+            skip_peg_within: 100,
         }
     }
 }
@@ -129,7 +129,6 @@ impl Knitter {
         //         peg_1 = next_peg
 
         // let yarn_delta = self.yarn.delta() as u16;
-        let wrap_neighbour = self.pegs.len() as u16 - self.config.exclude_neighbours;
         let max_dist = self
             .line_cache
             .values()
@@ -158,12 +157,15 @@ impl Knitter {
             let last_peg = peg_order.last().unwrap();
 
             for peg in &self.pegs {
-                let abs_diff = utils::abs_diff(peg.id, last_peg.id);
-                if abs_diff <= self.config.exclude_neighbours || abs_diff >= wrap_neighbour {
+                if peg.id == last_peg.id {
+                    continue;
+                }
+                let line = self.line_cache.get(&self.hash_key(last_peg, peg)).unwrap();
+
+                if line.dist <= self.config.skip_peg_within {
                     continue;
                 }
 
-                let line = self.line_cache.get(&self.hash_key(last_peg, peg)).unwrap();
                 let loss = line
                     .zip()
                     .map(|(x, y)| work_img.get_pixel(*x, *y))
@@ -203,7 +205,7 @@ impl Knitter {
     ///
     /// # Arguments
     ///
-    /// * `peg_order`- The order with which to connect the pegs.
+    /// * `blueprint`- The order with which to connect the pegs.
     pub fn knit(&self, blueprint: &Blueprint) -> image::GrayImage {
         // Create white img
         let mut img = image::GrayImage::new(self.image.width(), self.image.height());

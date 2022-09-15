@@ -34,17 +34,17 @@ pub struct Arguments {
     #[clap(short, long, value_parser, default_value_t = 20000)]
     pub iterations: u32,
     /// Number of pegs
-    #[clap(short, long, value_parser, default_value_t = 200)]
-    pub pegs: u32,
+    #[clap(short = 'n', long, value_parser, default_value_t = 200)]
+    pub peg_number: u32,
     /// Radius scale [0, 1]
-    #[clap(short='p', long, value_parser, default_value_t = 0.95)]
+    #[clap(short = 'r', long, value_parser, default_value_t = 0.95)]
     pub peg_radius_scale: f64,
-    /// Add angular jitter to the pegs, in rad default: [2*pi/PEGS*5]
-    #[clap(short='j', value_parser, long)]
+    /// Add angular jitter to the pegs, in rad [default: 2*pi/PEG_NUMBER*5]
+    #[clap(short = 'j', value_parser, long)]
     pub peg_jitter: Option<f64>,
-    /// Don't connect neighbouring pegs default: [PEGS/20]
-    #[clap(short='n', value_parser, long)]
-    pub peg_exclude_neighbours: Option<u16>,
+    /// Don't connect pegs within pixel distance [default: radius/4]
+    #[clap(short = 's', value_parser, long)]
+    pub peg_skip_within: Option<u32>,
     /// Yarn opacity [0, 1]
     #[clap(short, long, value_parser, default_value_t = 0.02)]
     pub opacity: f32,

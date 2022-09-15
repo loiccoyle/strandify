@@ -22,27 +22,21 @@ fn main() {
     let height = img.height();
     let radius = (min(width, height) as f64 * args.peg_radius_scale / 2.).round();
     let center = (width / 2, height / 2);
-    let jitter = args.peg_jitter.unwrap_or(2. * PI / (args.pegs as f64 * 5.));
-
+    let jitter = args.peg_jitter.unwrap_or(2. * PI / (args.peg_number as f64 * 5.));
     info!("Peg jitter: {jitter:?}");
+    let skip_peg_within = args.peg_skip_within.unwrap_or(radius as u32 / 4);
+    info!("Skip peg within: {skip_peg_within:?}");
 
     let (peg_coords_x, peg_coords_y) =
-        utils::circle_coords(radius, center, args.pegs, Some(jitter));
+        utils::circle_coords(radius, center, args.peg_number, Some(jitter));
 
     let mut pegs: Vec<peg::Peg> = vec![];
     for (id, (peg_x, peg_y)) in zip(peg_coords_x, peg_coords_y).enumerate() {
         pegs.push(peg::Peg::new(peg_x, peg_y, id as u16));
     }
 
-    let config = knitter::KnitterConfig::new(
-        args.iterations,
-        args.lighten_factor,
-        match args.peg_exclude_neighbours {
-            Some(n_neighbours) => n_neighbours,
-            None => (pegs.len() / 20) as u16,
-        },
-        5,
-    );
+    let config =
+        knitter::KnitterConfig::new(args.iterations, args.lighten_factor, 5, skip_peg_within);
     let yarn = peg::Yarn::new(1, args.opacity);
     info!("config: {config:?}");
     info!("yarn: {yarn:?}");
