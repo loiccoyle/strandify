@@ -32,7 +32,7 @@ impl KnitterConfig {
         }
     }
 
-    pub fn new_with_defaults(n_pegs: usize) -> Self {
+    pub fn new_with_defaults() -> Self {
         Self {
             iterations: 10000,
             lighten_factor: 1.05,
