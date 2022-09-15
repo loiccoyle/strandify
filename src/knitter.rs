@@ -1,4 +1,4 @@
-use image::{GenericImageView, GrayImage};
+use image::GrayImage;
 use log::{debug, info};
 use std::path::PathBuf;
 use std::{cmp, collections::HashMap};
@@ -63,7 +63,7 @@ impl Knitter {
             line_cache,
         };
         out.populate_line_cache();
-        return out;
+        out
     }
 
     pub fn from_file(
@@ -81,11 +81,9 @@ impl Knitter {
         info!("Populating line cache");
         let pbar = ProgressBar::new_spinner().with_message("Populating line cache");
         for (peg_a, peg_b) in self.pegs.iter().tuple_combinations() {
+            self.line_cache
+                .insert(self.hash_key(peg_a, peg_b), peg_a.line_to(peg_b));
             pbar.inc(1);
-            self.line_cache.insert(
-                self.hash_key(peg_a, peg_b),
-                peg_a.line_to(peg_b),
-            );
         }
         debug!("# line cache entries: {:?}", self.line_cache.len());
     }
@@ -176,7 +174,7 @@ impl Knitter {
                 if loss < min_loss {
                     min_loss = loss;
                     min_line = Some(line);
-                    min_peg = Some(&peg);
+                    min_peg = Some(peg);
                 }
             }
             peg_order.push(min_peg.unwrap());
@@ -195,9 +193,9 @@ impl Knitter {
     /// Get HashMap key for peg pair irrespective of order
     fn hash_key(&self, peg_a: &Peg, peg_b: &Peg) -> (u16, u16) {
         if peg_a.id < peg_b.id {
-            return (peg_a.id, peg_b.id);
+            (peg_a.id, peg_b.id)
         } else {
-            return (peg_b.id, peg_a.id);
+            (peg_b.id, peg_a.id)
         }
     }
 
@@ -219,14 +217,16 @@ impl Knitter {
         for (peg_a, peg_b) in blueprint
             .peg_order
             .iter()
+            .zip(blueprint.peg_order.iter().skip(1))
             .progress()
             .with_message("Knitting")
             .with_style(utils::progress_style())
-            .zip(blueprint.peg_order.iter().skip(1))
         {
-            peg_a.line_to(peg_b).zip().for_each(|(x, y)| {
+            let line = self.line_cache.get(&self.hash_key(peg_a, peg_b)).unwrap();
+            // let line = peg_a.line_to(peg_b);
+            line.zip().for_each(|(x, y)| {
                 let mut pixel = img.get_pixel_mut(*x, *y);
-                // pixel.0[0] = (pixel.0[0] as f64 * DARKEN_FACTOR).floor() as u8;
+                // pixel.0[0] = (pixel.0[0] as f64 * 0.99).floor() as u8;
                 pixel.0[0] = cmp::max(pixel.0[0] as i16 - yarn_delta, 0) as u8;
             })
         }

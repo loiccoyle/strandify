@@ -1,5 +1,4 @@
 use clap::Parser;
-use env_logger;
 use log::{debug, info};
 use std::cmp::min;
 use std::f64::consts::PI;
@@ -23,13 +22,12 @@ fn main() {
     let height = img.height();
     let radius = (min(width, height) as f64 * args.peg_radius_scale / 2.).round();
     let center = (width / 2, height / 2);
-    let jitter = match args.peg_jitter {
-        Some(_) => args.peg_jitter,
-        None => Some(2. * PI / (args.pegs as f64 * 5.)),
-    };
+    let jitter = args.peg_jitter.unwrap_or(2. * PI / (args.pegs as f64 * 5.));
+
     info!("Peg jitter: {jitter:?}");
 
-    let (peg_coords_x, peg_coords_y) = utils::circle_coords(radius, center, args.pegs, jitter);
+    let (peg_coords_x, peg_coords_y) =
+        utils::circle_coords(radius, center, args.pegs, Some(jitter));
 
     let mut pegs: Vec<peg::Peg> = vec![];
     for (id, (peg_x, peg_y)) in zip(peg_coords_x, peg_coords_y).enumerate() {

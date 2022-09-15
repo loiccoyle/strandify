@@ -19,10 +19,7 @@ pub fn circle_coords(
 ) -> (Vec<u32>, Vec<u32>) {
     let mut rng = thread_rng();
     let angle = 2. * PI / n_division as f64;
-    let angle_jitter = match jitter {
-        Some(angle_jitter) => angle_jitter,
-        None => 0.,
-    };
+    let angle_jitter = jitter.unwrap_or(0.);
     let mut points_x = vec![];
     let mut points_y = vec![];
     let mut i_angle: f64;

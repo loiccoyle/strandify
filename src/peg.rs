@@ -1,4 +1,5 @@
 use std::cmp;
+use std::collections::HashSet;
 use std::fs::File;
 use std::io::Write;
 use std::iter::zip;
@@ -32,29 +33,26 @@ impl Peg {
             y_coords = (cmp::min(self.y, other.y)..(cmp::max(self.y, other.y) + 1)).collect();
             x_coords = vec![self.x; y_coords.len()]
             // return Line::new(x_coords, y_coords, dist);
+        } else if delta_x >= delta_y {
+            let line_fn = self.line_x_fn_to(other);
+            x_coords = (cmp::min(self.x, other.x)..(cmp::max(self.x, other.x) + 1)).collect();
+            y_coords = x_coords
+                .clone()
+                .into_iter()
+                .map(line_fn)
+                .map(|y| y.round() as u32)
+                .collect();
         } else {
-            if delta_x >= delta_y {
-                let line_fn = self.line_x_fn_to(other);
-                x_coords = (cmp::min(self.x, other.x)..(cmp::max(self.x, other.x) + 1)).collect();
-                y_coords = x_coords
-                    .clone()
-                    .into_iter()
-                    .map(line_fn)
-                    .map(|y| y.round() as u32)
-                    .collect();
-            } else {
-                let line_fn = self.line_y_fn_to(other);
-                y_coords = (cmp::min(self.y, other.y)..(cmp::max(self.y, other.y) + 1)).collect();
-                x_coords = y_coords
-                    .clone()
-                    .into_iter()
-                    .map(line_fn)
-                    .map(|x| x.round() as u32)
-                    .collect();
-            }
+            let line_fn = self.line_y_fn_to(other);
+            y_coords = (cmp::min(self.y, other.y)..(cmp::max(self.y, other.y) + 1)).collect();
+            x_coords = y_coords
+                .clone()
+                .into_iter()
+                .map(line_fn)
+                .map(|x| x.round() as u32)
+                .collect();
         }
-        let line = Line::new(x_coords, y_coords, dist);
-        line
+        Line::new(x_coords, y_coords, dist)
     }
 
     fn get_line_coefs(&self, other: &Peg) -> (f64, f64) {
@@ -104,6 +102,27 @@ impl Line {
         Self { x, y, dist }
     }
 
+    /// Construct a new Line with a width
+    pub fn with_width(&self, width: u32) -> Self {
+        let radius = width / 2;
+        let mut pixels: HashSet<(u32, u32)> = HashSet::new();
+        for (x, y) in self.zip() {
+            let (around_x, around_y) = utils::pixels_around((*x, *y), radius);
+            for pixel in around_x.into_iter().zip(around_y) {
+                pixels.insert(pixel);
+            }
+        }
+
+        let mut x_coords = vec![];
+        let mut y_coords = vec![];
+        for (x_pixel, y_pixel) in pixels {
+            x_coords.push(x_pixel);
+            y_coords.push(y_pixel);
+        }
+
+        Self::new(x_coords, y_coords, self.dist)
+    }
+
     pub fn len(&self) -> usize {
         self.x.len()
     }
@@ -142,7 +161,7 @@ impl Blueprint {
 
     pub fn from_refs(peg_order: Vec<&Peg>) -> Self {
         Self {
-            peg_order: peg_order.into_iter().map(|a| a.clone()).collect(),
+            peg_order: peg_order.into_iter().copied().collect(),
         }
     }
 
@@ -151,7 +170,7 @@ impl Blueprint {
 
         self.peg_order
             .iter()
-            .for_each(|peg| write!(file, "{}\n", peg.id).unwrap());
+            .for_each(|peg| writeln!(file, "{}", peg.id).unwrap());
     }
 }
 
@@ -213,6 +232,16 @@ mod test {
         let (x_coords, y_coords) = peg.around(1);
         assert_eq!(x_coords, vec![9, 10, 10, 10, 11]);
         assert_eq!(y_coords, vec![10, 9, 10, 11, 10]);
+    }
+
+    #[test]
+    fn line_with_width() {
+        let line = Line::new(vec![10, 10], vec![10, 11], 1);
+        let mut line_wide = line.with_width(2);
+        line_wide.x.sort();
+        line_wide.y.sort();
+        assert_eq!(line_wide.x, vec![9, 9, 10, 10, 10, 10, 11, 11]);
+        assert_eq!(line_wide.y, vec![9, 10, 10, 10, 11, 11, 11, 12]);
     }
 
     #[test]
