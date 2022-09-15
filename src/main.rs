@@ -22,9 +22,11 @@ fn main() {
     let height = img.height();
     let radius = (min(width, height) as f64 * args.peg_radius_scale / 2.).round();
     let center = (width / 2, height / 2);
-    let jitter = args.peg_jitter.unwrap_or(2. * PI / (args.peg_number as f64 * 5.));
-    info!("Peg jitter: {jitter:?}");
+    let jitter = args
+        .peg_jitter
+        .unwrap_or(2. * PI / (args.peg_number as f64 * 5.));
     let skip_peg_within = args.peg_skip_within.unwrap_or(radius as u32 / 4);
+    info!("Peg jitter: {jitter:?}");
     info!("Skip peg within: {skip_peg_within:?}");
 
     let (peg_coords_x, peg_coords_y) =
