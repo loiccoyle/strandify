@@ -18,8 +18,7 @@ fn main() {
     debug!("cli args: {:?}", args);
     let img = image::open(PathBuf::from(args.image)).unwrap().into_luma8();
 
-    let width = img.width();
-    let height = img.height();
+    let (width, height) = img.dimensions();
     let radius = (min(width, height) as f64 * args.peg_radius_scale / 2.).round();
     let center = (width / 2, height / 2);
     let jitter = args
