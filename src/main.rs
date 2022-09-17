@@ -22,15 +22,14 @@ fn main() {
     let min_dim = min(width, height) as f64;
     let dist = (min_dim * (1. - args.peg_margin)).round() as u32;
     let center = (width / 2, height / 2);
-    let jitter = args
-        .peg_jitter
-        .unwrap_or(2. * PI / (args.peg_number as f64 * 5.));
-    let skip_peg_within = args.peg_skip_within.unwrap_or(dist / 4);
-    info!("Peg jitter: {jitter:?}");
+    // let jitter = args
+    //     .peg_jitter
+    //     .unwrap_or(2. * PI / (args.peg_number as f64 * 5.));
+    let skip_peg_within = args.peg_skip_within.unwrap_or(dist / 8);
     info!("Skip peg within: {skip_peg_within:?}");
 
     let (peg_coords_x, peg_coords_y) =
-        utils::circle_coords(dist / 2, center, args.peg_number, Some(jitter));
+        utils::circle_coords(dist / 2, center, args.peg_number, args.peg_jitter);
     // utils::square_coords(dist, center, args.peg_number, Some(5));
 
     let mut pegs: Vec<peg::Peg> = vec![];
