@@ -407,20 +407,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "knitart"
-version = "0.1.0"
-dependencies = [
- "clap",
- "clap-verbosity-flag",
- "env_logger",
- "image",
- "indicatif",
- "itertools",
- "log",
- "rand",
-]
-
-[[package]]
 name = "lebe"
 version = "0.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -718,6 +704,20 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7f6002a767bff9e83f8eeecf883ecb8011875a21ae8da43bffb817a57e78cc09"
 dependencies = [
  "lock_api",
+]
+
+[[package]]
+name = "strart"
+version = "0.1.0"
+dependencies = [
+ "clap",
+ "clap-verbosity-flag",
+ "env_logger",
+ "image",
+ "indicatif",
+ "itertools",
+ "log",
+ "rand",
 ]
 
 [[package]]
