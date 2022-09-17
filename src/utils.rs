@@ -34,6 +34,59 @@ pub fn circle_coords(
     (points_x, points_y)
 }
 
+pub fn square_coords(
+    length: u32,
+    (center_x, center_y): (u32, u32),
+    n_pegs: u32,
+    jitter: Option<u32>,
+) -> (Vec<u32>, Vec<u32>) {
+    let mut rng = thread_rng();
+
+    let dist_between: f64 = 4. * length as f64 / n_pegs as f64;
+
+    let top_left_x = center_x - length / 2;
+    let top_left_y = center_y - length / 2;
+
+    let mut x_coords: Vec<u32> = vec![];
+    let mut y_coords: Vec<u32> = vec![];
+
+    for i in 0..n_pegs {
+        let dist = (i as f64 * dist_between) as u32;
+        let side = dist / length;
+        let rem = dist % length;
+        if side == 0 {
+            // top
+            x_coords.push(top_left_x + rem);
+            y_coords.push(top_left_y);
+        } else if side == 1 {
+            // right
+            x_coords.push(top_left_x + length);
+            y_coords.push(top_left_y + rem);
+        } else if side == 2 {
+            // bottom
+            x_coords.push(top_left_x + length - rem);
+            y_coords.push(top_left_y + length);
+        } else if side == 3 {
+            // lelft
+            x_coords.push(top_left_x);
+            y_coords.push(top_left_y + length - rem);
+        }
+    }
+
+    if jitter.is_some() {
+        let jitter = jitter.unwrap() as i64;
+        x_coords = x_coords
+            .iter()
+            .map(|x| (*x as i64 + rng.gen_range(-jitter..jitter)) as u32)
+            .collect();
+        y_coords = y_coords
+            .iter()
+            .map(|x| (*x as i64 + rng.gen_range(-jitter..jitter)) as u32)
+            .collect();
+    }
+    (x_coords, y_coords)
+}
+
 /// Get the pixels around a peg within radius
 ///
 /// # Arguments
