@@ -35,6 +35,14 @@ pub fn circle_coords(
     (points_x, points_y)
 }
 
+/// Compute the coords of evenly spaced points around a square
+///
+/// # Arguments
+///
+/// * `length` - the legnth of the side of the square
+/// * (`center_x`,` center_y`) - the coords of the center point
+/// * `n_pegs` - the number of pegs
+/// * `jitter` - add some optional random jitter to the points
 pub fn square_coords(
     length: u32,
     (center_x, center_y): (u32, u32),
