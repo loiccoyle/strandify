@@ -47,7 +47,7 @@ pub fn square_coords(
     length: u32,
     (center_x, center_y): (u32, u32),
     n_pegs: u32,
-    jitter: Option<u32>,
+    jitter: Option<f64>,
 ) -> (Vec<u32>, Vec<u32>) {
     let mut rng = thread_rng();
 

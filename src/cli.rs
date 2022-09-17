@@ -45,6 +45,9 @@ pub struct Arguments {
     /// Number of iterations
     #[clap(short, long, value_parser, default_value_t = 4000)]
     pub iterations: u32,
+    /// Peg distribution shape
+    #[clap(short = 'S', long, value_parser=["circle", "square"], default_value = "circle")]
+    pub peg_shape: String,
     /// Number of pegs
     #[clap(short = 'n', long, value_parser, default_value_t = 288)]
     pub peg_number: u32,

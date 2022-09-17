@@ -1,7 +1,6 @@
 use clap::Parser;
 use log::{debug, info};
 use std::cmp::min;
-use std::f64::consts::PI;
 use std::iter::zip;
 use std::path::PathBuf;
 
@@ -10,7 +9,7 @@ mod knitter;
 mod peg;
 mod utils;
 
-fn main() {
+fn main() -> Result<(), String> {
     let args = cli::Arguments::parse();
     env_logger::Builder::new()
         .filter_level(args.verbose.log_level_filter())
@@ -22,15 +21,18 @@ fn main() {
     let min_dim = min(width, height) as f64;
     let dist = (min_dim * (1. - args.peg_margin)).round() as u32;
     let center = (width / 2, height / 2);
-    // let jitter = args
-    //     .peg_jitter
-    //     .unwrap_or(2. * PI / (args.peg_number as f64 * 5.));
     let skip_peg_within = args.peg_skip_within.unwrap_or(dist / 8);
     info!("Skip peg within: {skip_peg_within:?}");
 
-    let (peg_coords_x, peg_coords_y) =
-        utils::circle_coords(dist / 2, center, args.peg_number, args.peg_jitter);
-    // utils::square_coords(dist, center, args.peg_number, Some(5));
+    let (peg_coords_x, peg_coords_y) = if args.peg_shape == "circle" {
+        info!("Using circle distribution");
+        utils::circle_coords(dist / 2, center, args.peg_number, args.peg_jitter)
+    } else if args.peg_shape == "square" {
+        info!("Using square distribution");
+        utils::square_coords(dist, center, args.peg_number, args.peg_jitter)
+    } else {
+        return Err("Unrecognized PEG_SHAPE".to_string());
+    };
 
     let mut pegs: Vec<peg::Peg> = vec![];
     for (id, (peg_x, peg_y)) in zip(peg_coords_x, peg_coords_y).enumerate() {
@@ -47,4 +49,6 @@ fn main() {
     let blueprint = knitart.peg_order();
     let knit_img = knitart.knit(&blueprint);
     knit_img.save(args.output).unwrap();
+
+    Ok(())
 }
