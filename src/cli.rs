@@ -40,7 +40,6 @@ pub struct Arguments {
     #[clap(validator=check_file_exists)]
     pub image: String,
     /// Output image file
-    #[clap(default_value = "knitart.png")]
     pub output: String,
     /// Number of iterations
     #[clap(short, long, value_parser, default_value_t = 4000)]
