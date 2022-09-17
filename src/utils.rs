@@ -12,11 +12,12 @@ use indicatif::ProgressStyle;
 /// * `n_division` - the number of divisions
 /// * `jitter` - add some optional random angular jitter to the points in rad
 pub fn circle_coords(
-    radius: f64,
+    radius: u32,
     (center_x, center_y): (u32, u32),
     n_division: u32,
     jitter: Option<f64>,
 ) -> (Vec<u32>, Vec<u32>) {
+    let radius = radius as f64;
     let mut rng = thread_rng();
     let angle = 2. * PI / n_division as f64;
     let angle_jitter = jitter.unwrap_or(0.);

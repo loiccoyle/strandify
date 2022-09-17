@@ -20,6 +20,18 @@ fn check_file_exists(image: &str) -> Result<(), String> {
     }
 }
 
+fn number_between_0_and_1(value: &str) -> Result<f64, String> {
+    let value: f64 = value
+        .parse()
+        .map_err(|_| format!("{:?} is not a number", value))?;
+
+    if 0. <= value && value <= 1. {
+        Ok(value)
+    } else {
+        Err(format!("Value '{:?}' should be between 0 and 1", value))
+    }
+}
+
 #[derive(Parser, Debug)]
 #[clap(author = "Loic Coyle")]
 /// KnitArt
@@ -36,9 +48,9 @@ pub struct Arguments {
     /// Number of pegs
     #[clap(short = 'n', long, value_parser, default_value_t = 200)]
     pub peg_number: u32,
-    /// Radius scale [0, 1]
-    #[clap(short = 'r', long, value_parser, default_value_t = 0.95)]
-    pub peg_radius_scale: f64,
+    /// Margin between pegs and image edge [0, 1]
+    #[clap(short = 'm', long, value_parser=number_between_0_and_1, default_value_t = 0.05)]
+    pub peg_margin: f64,
     /// Add angular jitter to the pegs, in rad [default: 2*pi/PEG_NUMBER*5]
     #[clap(short = 'j', value_parser, long)]
     pub peg_jitter: Option<f64>,
@@ -46,8 +58,8 @@ pub struct Arguments {
     #[clap(short = 's', value_parser, long)]
     pub peg_skip_within: Option<u32>,
     /// Yarn opacity [0, 1]
-    #[clap(short, long, value_parser, default_value_t = 0.02)]
-    pub opacity: f32,
+    #[clap(short, long, value_parser=number_between_0_and_1, default_value_t = 0.02)]
+    pub opacity: f64,
     /// Encourages peg exploration at the expense of contrast, should be greater than 1
     #[clap(short, long, value_parser, default_value_t = 1.05)]
     pub lighten_factor: f64,

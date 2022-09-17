@@ -136,11 +136,11 @@ impl Line {
 pub struct Yarn {
     //TODO: add width to line computations
     width: u8,
-    opacity: f32,
+    opacity: f64,
 }
 
 impl Yarn {
-    pub fn new(width: u8, opacity: f32) -> Self {
+    pub fn new(width: u8, opacity: f64) -> Self {
         Self { width, opacity }
     }
 
