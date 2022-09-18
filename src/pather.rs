@@ -10,14 +10,14 @@ use crate::peg::{Blueprint, Line, Peg, Yarn};
 use crate::utils;
 
 #[derive(Debug)]
-pub struct KnitterConfig {
+pub struct PatherConfig {
     pub iterations: u32,
     pub lighten_factor: f64,
     pub start_peg_radius: u32,
     pub skip_peg_within: u32,
 }
 
-impl KnitterConfig {
+impl PatherConfig {
     pub fn new(
         iterations: u32,
         lighten_factor: f64,
@@ -43,17 +43,17 @@ impl KnitterConfig {
 }
 
 #[derive(Debug)]
-pub struct Knitter {
+pub struct Pather {
     pub image: GrayImage,
     pub pegs: Vec<Peg>,
     pub yarn: Yarn,
-    pub config: KnitterConfig,
+    pub config: PatherConfig,
     /// Holds the pixel coords of all the lines
     line_cache: HashMap<(u16, u16), Line>,
 }
 
-impl Knitter {
-    pub fn new(img: GrayImage, pegs: Vec<Peg>, yarn: Yarn, config: KnitterConfig) -> Self {
+impl Pather {
+    pub fn new(img: GrayImage, pegs: Vec<Peg>, yarn: Yarn, config: PatherConfig) -> Self {
         let line_cache = HashMap::new();
         let mut out = Self {
             image: img,
@@ -70,7 +70,7 @@ impl Knitter {
         image_path: PathBuf,
         pegs: Vec<Peg>,
         yarn: Yarn,
-        config: KnitterConfig,
+        config: PatherConfig,
     ) -> Self {
         let img = image::open(image_path).unwrap().into_luma8();
         Self::new(img, pegs, yarn, config)

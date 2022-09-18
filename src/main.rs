@@ -5,7 +5,7 @@ use std::iter::zip;
 use std::path::PathBuf;
 
 mod cli;
-mod knitter;
+mod pather;
 mod peg;
 mod utils;
 
@@ -40,12 +40,12 @@ fn main() -> Result<(), String> {
     }
 
     let config =
-        knitter::KnitterConfig::new(args.iterations, args.lighten_factor, 5, skip_peg_within);
+        pather::PatherConfig::new(args.iterations, args.lighten_factor, 5, skip_peg_within);
     let yarn = peg::Yarn::new(1, args.opacity);
     info!("config: {config:?}");
     info!("yarn: {yarn:?}");
 
-    let knitart = knitter::Knitter::new(img, pegs, yarn, config);
+    let knitart = pather::Pather::new(img, pegs, yarn, config);
     let blueprint = knitart.peg_order();
     let knit_img = knitart.knit(&blueprint);
     knit_img.save(args.output).unwrap();
