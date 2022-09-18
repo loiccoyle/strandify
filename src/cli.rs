@@ -55,7 +55,7 @@ pub struct Arguments {
     pub peg_margin: f64,
     /// Add jitter to the peg position
     #[clap(short = 'j', value_parser, long)]
-    pub peg_jitter: Option<f64>,
+    pub peg_jitter: Option<u32>,
     /// Don't connect pegs within pixel distance
     #[clap(short = 's', value_parser, long)]
     pub peg_skip_within: Option<u32>,

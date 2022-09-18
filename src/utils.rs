@@ -10,25 +10,19 @@ use indicatif::ProgressStyle;
 /// * `radius` - the radius of the circle
 /// * (`center_x`,` center_y`) - the coords of the center point
 /// * `n_division` - the number of divisions
-/// * `jitter` - add some optional random angular jitter to the points in rad
 pub fn circle_coords(
     radius: u32,
     (center_x, center_y): (u32, u32),
     n_division: u32,
-    jitter: Option<f64>,
 ) -> (Vec<u32>, Vec<u32>) {
     let radius = radius as f64;
     let mut rng = thread_rng();
     let angle = 2. * PI / n_division as f64;
-    let angle_jitter = jitter.unwrap_or(0.);
     let mut points_x = vec![];
     let mut points_y = vec![];
     let mut i_angle: f64;
     for i in 0..n_division {
         i_angle = i as f64 * angle;
-        if jitter.is_some() {
-            i_angle += rng.gen_range(-angle_jitter..angle_jitter);
-        }
         points_x.push((radius * (i_angle).cos() + center_x as f64).round() as u32);
         points_y.push((radius * (i_angle).sin() + center_y as f64).round() as u32);
     }
@@ -42,15 +36,11 @@ pub fn circle_coords(
 /// * `length` - the legnth of the side of the square
 /// * (`center_x`,` center_y`) - the coords of the center point
 /// * `n_pegs` - the number of pegs
-/// * `jitter` - add some optional random jitter to the points
 pub fn square_coords(
     length: u32,
     (center_x, center_y): (u32, u32),
     n_pegs: u32,
-    jitter: Option<f64>,
 ) -> (Vec<u32>, Vec<u32>) {
-    let mut rng = thread_rng();
-
     let dist_between: f64 = 4. * length as f64 / n_pegs as f64;
 
     let top_left_x = center_x - length / 2;
@@ -81,19 +71,22 @@ pub fn square_coords(
             y_coords.push(top_left_y + length - rem);
         }
     }
-
-    if jitter.is_some() {
-        let jitter = jitter.unwrap() as i64;
-        x_coords = x_coords
-            .iter()
-            .map(|x| (*x as i64 + rng.gen_range(-jitter..jitter)) as u32)
-            .collect();
-        y_coords = y_coords
-            .iter()
-            .map(|x| (*x as i64 + rng.gen_range(-jitter..jitter)) as u32)
-            .collect();
-    }
     (x_coords, y_coords)
+}
+
+pub fn add_jitter((x_coords, y_coords): (Vec<u32>, Vec<u32>), jitter: i64) -> (Vec<u32>, Vec<u32>) {
+    let mut rng = thread_rng();
+
+    let x_coords_jit: Vec<u32> = x_coords
+        .into_iter()
+        .map(|x| (x as i64 + rng.gen_range(-jitter..jitter)) as u32)
+        .collect();
+    let y_coords_jit: Vec<u32> = y_coords
+        .into_iter()
+        .map(|x| (x as i64 + rng.gen_range(-jitter..jitter)) as u32)
+        .collect();
+
+    (x_coords_jit, y_coords_jit)
 }
 
 /// Get the pixels around a peg within radius

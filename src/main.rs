@@ -25,15 +25,23 @@ fn main() -> Result<(), String> {
     let skip_peg_within = args.peg_skip_within.unwrap_or(dist / 8);
     info!("Skip peg within: {skip_peg_within:?}");
 
-    let (peg_coords_x, peg_coords_y) = if args.peg_shape == "circle" {
+    let (mut peg_coords_x, mut peg_coords_y) = if args.peg_shape == "circle" {
         info!("Using circle distribution");
-        utils::circle_coords(dist / 2, center, args.peg_number, args.peg_jitter)
+        utils::circle_coords(dist / 2, center, args.peg_number)
     } else if args.peg_shape == "square" {
         info!("Using square distribution");
-        utils::square_coords(dist, center, args.peg_number, args.peg_jitter)
+        utils::square_coords(dist, center, args.peg_number)
     } else {
         return Err("Unrecognized PEG_SHAPE".to_string());
     };
+
+    if args.peg_jitter.is_some() {
+        info!("Adding jitter");
+        (peg_coords_x, peg_coords_y) = utils::add_jitter(
+            (peg_coords_x, peg_coords_y),
+            args.peg_jitter.unwrap() as i64,
+        )
+    }
 
     let mut pegs: Vec<peg::Peg> = vec![];
     for (id, (peg_x, peg_y)) in zip(peg_coords_x, peg_coords_y).enumerate() {
