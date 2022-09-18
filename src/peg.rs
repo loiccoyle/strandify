@@ -104,6 +104,10 @@ impl Line {
 
     /// Construct a new Line with a width
     pub fn with_width(&self, width: u32) -> Self {
+        if width == 1 {
+            return self.copy();
+        }
+
         let radius = width / 2;
         let mut pixels: HashSet<(u32, u32)> = HashSet::new();
         for (x, y) in self.zip() {
@@ -130,38 +134,45 @@ impl Line {
     pub fn zip(&self) -> std::iter::Zip<std::slice::Iter<u32>, std::slice::Iter<u32>> {
         zip(&self.x, &self.y)
     }
+
+    pub fn copy(&self) -> Self {
+        Self::new(self.x.clone(), self.y.clone(), self.dist)
+    }
 }
 
 #[derive(Debug)]
 pub struct Yarn {
-    //TODO: add width to line computations
-    width: u8,
-    opacity: f64,
+    pub width: u32,
+    pub opacity: f64,
 }
 
 impl Yarn {
-    pub fn new(width: u8, opacity: f64) -> Self {
+    pub fn new(width: u32, opacity: f64) -> Self {
         Self { width, opacity }
-    }
-
-    pub fn delta(&self) -> u8 {
-        (self.opacity * 255.).round() as u8
     }
 }
 
 #[derive(Debug)]
 pub struct Blueprint {
     pub peg_order: Vec<Peg>,
+    pub width: u32,
+    pub height: u32,
 }
 
 impl Blueprint {
-    pub fn new(peg_order: Vec<Peg>) -> Self {
-        Self { peg_order }
+    pub fn new(peg_order: Vec<Peg>, width: u32, height: u32) -> Self {
+        Self {
+            peg_order,
+            width,
+            height,
+        }
     }
 
-    pub fn from_refs(peg_order: Vec<&Peg>) -> Self {
+    pub fn from_refs(peg_order: Vec<&Peg>, width: u32, height: u32) -> Self {
         Self {
             peg_order: peg_order.into_iter().copied().collect(),
+            width,
+            height,
         }
     }
 
@@ -171,6 +182,12 @@ impl Blueprint {
         self.peg_order
             .iter()
             .for_each(|peg| writeln!(file, "{}", peg.id).unwrap());
+    }
+
+    pub fn zip(
+        &self,
+    ) -> std::iter::Zip<std::slice::Iter<Peg>, std::iter::Skip<std::slice::Iter<Peg>>> {
+        self.peg_order.iter().zip(self.peg_order.iter().skip(1))
     }
 }
 
@@ -242,11 +259,5 @@ mod test {
         line_wide.y.sort();
         assert_eq!(line_wide.x, vec![9, 9, 10, 10, 10, 10, 11, 11]);
         assert_eq!(line_wide.y, vec![9, 10, 10, 10, 11, 11, 11, 12]);
-    }
-
-    #[test]
-    fn yarn_delta() {
-        let yarn = Yarn::new(1, 0.5);
-        assert_eq!(yarn.delta(), 128);
     }
 }

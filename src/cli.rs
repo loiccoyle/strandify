@@ -60,10 +60,13 @@ pub struct Arguments {
     #[clap(short = 's', value_parser, long)]
     pub peg_skip_within: Option<u32>,
     /// Yarn opacity [0, 1]
-    #[clap(short, long, value_parser=number_between_0_and_1, default_value_t = 0.2)]
-    pub opacity: f64,
-    /// Encourages peg exploration at the expense of contrast, should be greater than 1
-    #[clap(short, long, value_parser, default_value_t = 3.)]
+    #[clap(short = 'o', long, value_parser=number_between_0_and_1, default_value_t = 0.2)]
+    pub yarn_opacity: f64,
+    /// Yarn width
+    #[clap(short = 'w', long, value_parser, default_value_t = 1)]
+    pub yarn_width: u32,
+    /// Encourages peg exploration at the expense of contrast [0, 1]
+    #[clap(short, long, value_parser=number_between_0_and_1, default_value_t = 0.5)]
     pub lighten_factor: f64,
     /// Verbosity level.
     #[clap(flatten)]

@@ -1,11 +1,11 @@
 [package]
-name = "strart"
+name = "stringart"
 version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [[bin]]
-name = "strart"
+name = "stringart"
 path = "src/main.rs"
 
 [dependencies]
@@ -17,3 +17,4 @@ env_logger = "0.9.0"
 indicatif = "0.17.0"
 rand = "0.8.5"
 itertools = "0.10.3"
+svg = "0.10.0"

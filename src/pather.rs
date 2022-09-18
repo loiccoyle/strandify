@@ -2,6 +2,9 @@ use image::GrayImage;
 use log::{debug, info};
 use std::path::PathBuf;
 use std::{cmp, collections::HashMap};
+use svg::node::element::path::Data;
+use svg::node::element::{Path, Rectangle};
+use svg::{Document, Node};
 
 use indicatif::{ProgressBar, ProgressIterator};
 use itertools::Itertools;
@@ -81,8 +84,10 @@ impl Pather {
         info!("Populating line cache");
         let pbar = ProgressBar::new_spinner().with_message("Populating line cache");
         for (peg_a, peg_b) in self.pegs.iter().tuple_combinations() {
-            self.line_cache
-                .insert(self.hash_key(peg_a, peg_b), peg_a.line_to(peg_b));
+            self.line_cache.insert(
+                self.hash_key(peg_a, peg_b),
+                peg_a.line_to(peg_b).with_width(self.yarn.width),
+            );
             pbar.inc(1);
         }
         debug!("# line cache entries: {:?}", self.line_cache.len());
@@ -129,6 +134,9 @@ impl Pather {
         //         peg_1 = next_peg
 
         // let yarn_delta = self.yarn.delta() as u16;
+        let opacity = 1. - self.config.lighten_factor;
+        let layer_delta = 255. * self.config.lighten_factor;
+
         let max_dist = self
             .line_cache
             .values()
@@ -138,7 +146,7 @@ impl Pather {
         debug!("max_dist: {max_dist:?}");
 
         let start_peg = self.get_start_peg(self.config.start_peg_radius);
-        info!("starting peg {start_peg:?}");
+        info!("starting peg: {start_peg:?}");
         let mut peg_order = vec![start_peg];
         let mut work_img = self.image.clone();
 
@@ -154,10 +162,13 @@ impl Pather {
             min_loss = f64::MAX;
             min_peg = None;
             min_line = None;
-            let last_peg = peg_order.last().unwrap();
+
+            let last_peg = peg_order.get(peg_order.len() - 1).unwrap();
+            let last_last_peg = peg_order.get(peg_order.len() - 2).unwrap_or(last_peg);
 
             for peg in &self.pegs {
-                if peg.id == last_peg.id {
+                // don't connect to same peg or the previous one
+                if peg.id == last_peg.id || peg.id == last_last_peg.id {
                     continue;
                 }
                 let line = self.line_cache.get(&self.hash_key(last_peg, peg)).unwrap();
@@ -179,17 +190,17 @@ impl Pather {
                     min_peg = Some(peg);
                 }
             }
+            // debug!("loss {min_loss:?}");
             peg_order.push(min_peg.unwrap());
             // Update the work img to reflect the added line
             // https://docs.rs/image/latest/image/struct.ImageBuffer.html
             min_line.unwrap().zip().for_each(|(x, y)| {
                 let mut pixel = work_img.get_pixel_mut(*x, *y);
-                pixel.0[0] =
-                    (cmp::max(pixel.0[0], 1) as f64 * self.config.lighten_factor).ceil() as u8;
+                pixel.0[0] = (opacity * pixel.0[0] as f64 + layer_delta).min(255.) as u8;
                 // pixel.0[0] = cmp::min(pixel.0[0] as u16 + yarn_delta, 255) as u8;
             });
         }
-        Blueprint::from_refs(peg_order)
+        Blueprint::from_refs(peg_order, self.image.width(), self.image.height())
     }
 
     /// Get HashMap key for peg pair irrespective of order
@@ -201,27 +212,25 @@ impl Pather {
         }
     }
 
-    /// Generate the knitart based on the provided peg order
+    /// Render the blueprint as a raster image.
     ///
     /// # Arguments
     ///
     /// * `blueprint`- The order with which to connect the pegs.
-    pub fn knit(&self, blueprint: &Blueprint) -> image::GrayImage {
+    pub fn render(&self, blueprint: &Blueprint) -> GrayImage {
         // Create white img
         let mut img = image::GrayImage::new(self.image.width(), self.image.height());
         for (_, _, pixel) in img.enumerate_pixels_mut() {
             pixel.0[0] = 255;
         }
 
-        let yarn_delta = cmp::max(self.yarn.delta() as i16, 1);
+        let opacity = 1. - self.yarn.opacity;
 
         // Iterate with pairs of consecutive pegs
         for (peg_a, peg_b) in blueprint
-            .peg_order
-            .iter()
-            .zip(blueprint.peg_order.iter().skip(1))
+            .zip()
             .progress()
-            .with_message("Knitting")
+            .with_message("Rendering image")
             .with_style(utils::progress_style())
         {
             let line = self.line_cache.get(&self.hash_key(peg_a, peg_b)).unwrap();
@@ -229,9 +238,48 @@ impl Pather {
             line.zip().for_each(|(x, y)| {
                 let mut pixel = img.get_pixel_mut(*x, *y);
                 // pixel.0[0] = (pixel.0[0] as f64 * 0.99).floor() as u8;
-                pixel.0[0] = cmp::max(pixel.0[0] as i16 - yarn_delta, 0) as u8;
+                pixel.0[0] = (pixel.0[0] as f64 * opacity).round() as u8;
             })
         }
         img
+    }
+
+    /// Render the blueprint as a svg.
+    ///
+    /// # Arguments
+    ///
+    /// * `blueprint`- The order with which to connect the pegs.
+    pub fn render_svg(&self, blueprint: &Blueprint) -> Document {
+        let mut document = Document::new()
+            .set("viewbox", (0, 0, self.image.width(), self.image.height()))
+            .set("width", self.image.width())
+            .set("height", self.image.height());
+
+        let background = Rectangle::new()
+            .set("x", 0)
+            .set("y", 0)
+            .set("width", "100%")
+            .set("height", "100%")
+            .set("fill", "white");
+        document.append(background);
+
+        for (peg_a, peg_b) in blueprint
+            .zip()
+            .progress()
+            .with_message("Rendering svg")
+            .with_style(utils::progress_style())
+        {
+            let data = Data::new()
+                .move_to((peg_a.x, peg_a.y))
+                .line_to((peg_b.x, peg_b.y));
+            let path = Path::new()
+                .set("fill", "none")
+                .set("stroke", "black")
+                .set("stroke-width", self.yarn.width)
+                .set("opacity", self.yarn.opacity)
+                .set("d", data);
+            document.append(path);
+        }
+        document
     }
 }

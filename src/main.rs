@@ -16,6 +16,7 @@ fn main() -> Result<(), String> {
         .init();
     debug!("cli args: {:?}", args);
     let img = image::open(PathBuf::from(args.image)).unwrap().into_luma8();
+    let output_file = PathBuf::from(args.output);
 
     let (width, height) = img.dimensions();
     let min_dim = min(width, height) as f64;
@@ -41,14 +42,20 @@ fn main() -> Result<(), String> {
 
     let config =
         pather::PatherConfig::new(args.iterations, args.lighten_factor, 5, skip_peg_within);
-    let yarn = peg::Yarn::new(1, args.opacity);
+    let yarn = peg::Yarn::new(args.yarn_width, args.yarn_opacity);
     info!("config: {config:?}");
     info!("yarn: {yarn:?}");
 
-    let knitart = pather::Pather::new(img, pegs, yarn, config);
-    let blueprint = knitart.peg_order();
-    let knit_img = knitart.knit(&blueprint);
-    knit_img.save(args.output).unwrap();
+    let string_art = pather::Pather::new(img, pegs, yarn, config);
+    let blueprint = string_art.peg_order();
+
+    if output_file.extension().unwrap() == "svg" {
+        let svg_img = string_art.render_svg(&blueprint);
+        svg::save(output_file, &svg_img).unwrap();
+    } else {
+        let img = string_art.render(&blueprint);
+        img.save(output_file).unwrap();
+    }
 
     Ok(())
 }
