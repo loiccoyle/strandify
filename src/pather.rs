@@ -1,7 +1,7 @@
 use image::GrayImage;
 use log::{debug, info};
+use std::collections::HashMap;
 use std::path::PathBuf;
-use std::{cmp, collections::HashMap};
 use svg::node::element::path::Data;
 use svg::node::element::{Path, Rectangle};
 use svg::{Document, Node};
@@ -18,6 +18,7 @@ pub struct PatherConfig {
     pub lighten_factor: f64,
     pub start_peg_radius: u32,
     pub skip_peg_within: u32,
+    pub progress_bar: bool,
 }
 
 impl PatherConfig {
@@ -26,12 +27,14 @@ impl PatherConfig {
         lighten_factor: f64,
         start_peg_radius: u32,
         skip_peg_within: u32,
+        progress_bar: bool,
     ) -> Self {
         Self {
             iterations,
             lighten_factor,
             start_peg_radius,
             skip_peg_within,
+            progress_bar,
         }
     }
 
@@ -41,6 +44,7 @@ impl PatherConfig {
             lighten_factor: 1.05,
             start_peg_radius: 5,
             skip_peg_within: 100,
+            progress_bar: false,
         }
     }
 }
@@ -82,13 +86,13 @@ impl Pather {
     /// Populate the [line_cache] with the pixel coords of all the line between the peg pairs
     fn populate_line_cache(&mut self) {
         info!("Populating line cache");
-        let pbar = ProgressBar::new_spinner().with_message("Populating line cache");
-        for (peg_a, peg_b) in self.pegs.iter().tuple_combinations() {
+
+        let pbar = self.spinner().with_message("Populating line cache");
+        for (peg_a, peg_b) in pbar.wrap_iter(self.pegs.iter().tuple_combinations()) {
             self.line_cache.insert(
                 self.hash_key(peg_a, peg_b),
                 peg_a.line_to(peg_b).with_width(self.yarn.width),
             );
-            pbar.inc(1);
         }
         debug!("# line cache entries: {:?}", self.line_cache.len());
     }
@@ -154,11 +158,9 @@ impl Pather {
         let mut min_line: Option<&Line>;
         let mut min_peg: Option<&Peg>;
 
-        for _ in (0..self.config.iterations)
-            .progress()
-            .with_message("Computing peg order")
-            .with_style(utils::progress_style())
-        {
+        let pbar = self.pbar().with_message("Computing peg order");
+
+        for _ in pbar.wrap_iter(0..self.config.iterations) {
             min_loss = f64::MAX;
             min_peg = None;
             min_line = None;
@@ -226,13 +228,10 @@ impl Pather {
 
         let opacity = 1. - self.yarn.opacity;
 
+        let pbar = self.pbar().with_message("Rendering img");
+
         // Iterate with pairs of consecutive pegs
-        for (peg_a, peg_b) in blueprint
-            .zip()
-            .progress()
-            .with_message("Rendering image")
-            .with_style(utils::progress_style())
-        {
+        for (peg_a, peg_b) in pbar.wrap_iter(blueprint.zip()) {
             let line = self.line_cache.get(&self.hash_key(peg_a, peg_b)).unwrap();
             // let line = peg_a.line_to(peg_b);
             line.zip().for_each(|(x, y)| {
@@ -281,5 +280,22 @@ impl Pather {
             document.append(path);
         }
         document
+    }
+
+    fn pbar(&self) -> ProgressBar {
+        if self.config.progress_bar {
+            ProgressBar::new(self.config.iterations as u64)
+        } else {
+            ProgressBar::hidden()
+        }
+        .with_style(utils::progress_style())
+    }
+
+    fn spinner(&self) -> ProgressBar {
+        if self.config.progress_bar {
+            ProgressBar::new_spinner()
+        } else {
+            ProgressBar::hidden()
+        }
     }
 }

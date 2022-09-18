@@ -14,6 +14,7 @@ fn main() -> Result<(), String> {
     env_logger::Builder::new()
         .filter_level(args.verbose.log_level_filter())
         .init();
+
     debug!("cli args: {:?}", args);
     let img = image::open(PathBuf::from(args.image)).unwrap().into_luma8();
     let output_file = PathBuf::from(args.output);
@@ -48,8 +49,13 @@ fn main() -> Result<(), String> {
         pegs.push(peg::Peg::new(peg_x, peg_y, id as u16));
     }
 
-    let config =
-        pather::PatherConfig::new(args.iterations, args.lighten_factor, 5, skip_peg_within);
+    let config = pather::PatherConfig::new(
+        args.iterations,
+        args.lighten_factor,
+        5,
+        skip_peg_within,
+        !args.verbose.is_silent(),
+    );
     let yarn = peg::Yarn::new(args.yarn_width, args.yarn_opacity);
     info!("config: {config:?}");
     info!("yarn: {yarn:?}");
