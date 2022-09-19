@@ -16,7 +16,6 @@ pub fn circle_coords(
     n_division: u32,
 ) -> (Vec<u32>, Vec<u32>) {
     let radius = radius as f64;
-    let mut rng = thread_rng();
     let angle = 2. * PI / n_division as f64;
     let mut points_x = vec![];
     let mut points_y = vec![];

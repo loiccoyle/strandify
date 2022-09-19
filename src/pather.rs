@@ -165,7 +165,7 @@ impl Pather {
             min_peg = None;
             min_line = None;
 
-            let last_peg = peg_order.get(peg_order.len() - 1).unwrap();
+            let last_peg = peg_order.last().unwrap();
             let last_last_peg = peg_order.get(peg_order.len() - 2).unwrap_or(last_peg);
 
             for peg in &self.pegs {

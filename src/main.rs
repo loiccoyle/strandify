@@ -24,7 +24,7 @@ fn main() -> Result<(), String> {
     let dist = (min_dim * (1. - args.peg_margin)).round() as u32;
     let center = (width / 2, height / 2);
     let skip_peg_within = args.peg_skip_within.unwrap_or(dist / 8);
-    info!("Skip peg within: {skip_peg_within:?}");
+    info!("Skip peg within: {skip_peg_within:?}px");
 
     let (mut peg_coords_x, mut peg_coords_y) = if args.peg_shape == "circle" {
         info!("Using circle distribution");
@@ -37,7 +37,7 @@ fn main() -> Result<(), String> {
     };
 
     if args.peg_jitter.is_some() {
-        info!("Adding jitter");
+        info!("Adding jitter to pegs");
         (peg_coords_x, peg_coords_y) = utils::add_jitter(
             (peg_coords_x, peg_coords_y),
             args.peg_jitter.unwrap() as i64,
@@ -57,8 +57,8 @@ fn main() -> Result<(), String> {
         !args.verbose.is_silent(),
     );
     let yarn = peg::Yarn::new(args.yarn_width, args.yarn_opacity);
-    info!("config: {config:?}");
-    info!("yarn: {yarn:?}");
+    debug!("config: {config:?}");
+    debug!("yarn: {yarn:?}");
 
     let string_art = pather::Pather::new(img, pegs, yarn, config);
     let blueprint = string_art.peg_order();

@@ -25,7 +25,7 @@ fn number_between_0_and_1(value: &str) -> Result<f64, String> {
         .parse()
         .map_err(|_| format!("{:?} is not a number", value))?;
 
-    if 0. <= value && value <= 1. {
+    if (0. ..=1.).contains(&value) {
         Ok(value)
     } else {
         Err(format!("Value '{:?}' should be between 0 and 1", value))
