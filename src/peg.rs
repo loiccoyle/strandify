@@ -1,13 +1,11 @@
-use std::cmp;
 use std::collections::HashSet;
-use std::fs::File;
-use std::io::Write;
 use std::iter::zip;
-use std::path::PathBuf;
+
+use serde::{Deserialize, Serialize};
 
 use crate::utils;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Deserialize, Serialize)]
 pub struct Peg {
     pub x: u32,
     pub y: u32,
@@ -30,12 +28,12 @@ impl Peg {
         let y_coords: Vec<u32>;
 
         if delta_x == 0 && delta_y != 0 {
-            y_coords = (cmp::min(self.y, other.y)..(cmp::max(self.y, other.y) + 1)).collect();
+            y_coords = (self.y.min(other.y)..=self.y.max(other.y)).collect();
             x_coords = vec![self.x; y_coords.len()]
             // return Line::new(x_coords, y_coords, dist);
         } else if delta_x >= delta_y {
             let line_fn = self.line_x_fn_to(other);
-            x_coords = (cmp::min(self.x, other.x)..(cmp::max(self.x, other.x) + 1)).collect();
+            x_coords = (self.x.min(other.x)..=self.x.max(other.x)).collect();
             y_coords = x_coords
                 .clone()
                 .into_iter()
@@ -44,7 +42,7 @@ impl Peg {
                 .collect();
         } else {
             let line_fn = self.line_y_fn_to(other);
-            y_coords = (cmp::min(self.y, other.y)..(cmp::max(self.y, other.y) + 1)).collect();
+            y_coords = (self.y.min(other.y)..=self.y.max(other.y)).collect();
             x_coords = y_coords
                 .clone()
                 .into_iter()
@@ -149,45 +147,6 @@ pub struct Yarn {
 impl Yarn {
     pub fn new(width: u32, opacity: f64) -> Self {
         Self { width, opacity }
-    }
-}
-
-#[derive(Debug)]
-pub struct Blueprint {
-    pub peg_order: Vec<Peg>,
-    pub width: u32,
-    pub height: u32,
-}
-
-impl Blueprint {
-    pub fn new(peg_order: Vec<Peg>, width: u32, height: u32) -> Self {
-        Self {
-            peg_order,
-            width,
-            height,
-        }
-    }
-
-    pub fn from_refs(peg_order: Vec<&Peg>, width: u32, height: u32) -> Self {
-        Self {
-            peg_order: peg_order.into_iter().copied().collect(),
-            width,
-            height,
-        }
-    }
-
-    pub fn to_file(&self, file_path: PathBuf) {
-        let mut file = File::create(file_path).unwrap();
-
-        self.peg_order
-            .iter()
-            .for_each(|peg| writeln!(file, "{}", peg.id).unwrap());
-    }
-
-    pub fn zip(
-        &self,
-    ) -> std::iter::Zip<std::slice::Iter<Peg>, std::iter::Skip<std::slice::Iter<Peg>>> {
-        self.peg_order.iter().zip(self.peg_order.iter().skip(1))
     }
 }
 

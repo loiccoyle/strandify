@@ -1,7 +1,9 @@
 use rand::{thread_rng, Rng};
 use std::f64::consts::PI;
 
-use indicatif::ProgressStyle;
+use crate::peg::Peg;
+
+use indicatif::{ProgressBar, ProgressStyle};
 
 /// Compute the coords of evenly spaced points around a circle
 ///
@@ -115,6 +117,23 @@ pub fn progress_style() -> ProgressStyle {
     ProgressStyle::with_template("{msg}: {wide_bar} {elapsed_precise} {pos}/{len}").unwrap()
 }
 
+pub fn pbar(len: u64, hidden: bool) -> ProgressBar {
+    if hidden {
+        ProgressBar::hidden()
+    } else {
+        ProgressBar::new(len)
+    }
+    .with_style(progress_style())
+}
+
+pub fn spinner(hidden: bool) -> ProgressBar {
+    if hidden {
+        ProgressBar::hidden()
+    } else {
+        ProgressBar::new_spinner()
+    }
+}
+
 pub fn abs_diff<T>(a: T, b: T) -> T
 where
     T: std::cmp::PartialOrd + std::ops::Sub<Output = T>,
@@ -123,5 +142,13 @@ where
         a - b
     } else {
         b - a
+    }
+}
+
+pub fn hash_key(peg_a: &Peg, peg_b: &Peg) -> (u16, u16) {
+    if peg_a.id < peg_b.id {
+        (peg_a.id, peg_b.id)
+    } else {
+        (peg_b.id, peg_a.id)
     }
 }

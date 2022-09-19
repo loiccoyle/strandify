@@ -1,15 +1,17 @@
 use clap::Parser;
 use log::{debug, info};
 use std::cmp::min;
+use std::error::Error;
 use std::iter::zip;
 use std::path::PathBuf;
 
+mod blueprint;
 mod cli;
 mod pather;
 mod peg;
 mod utils;
 
-fn main() -> Result<(), String> {
+fn main() -> Result<(), Box<dyn Error>> {
     let args = cli::Arguments::parse();
     env_logger::Builder::new()
         .filter_level(args.verbose.log_level_filter())
@@ -33,7 +35,7 @@ fn main() -> Result<(), String> {
         info!("Using square distribution");
         utils::square_coords(dist, center, args.peg_number)
     } else {
-        return Err("Unrecognized PEG_SHAPE".to_string());
+        return Err("Unrecognized PEG_SHAPE".into());
     };
 
     if args.peg_jitter.is_some() {
@@ -64,11 +66,11 @@ fn main() -> Result<(), String> {
     let blueprint = string_art.peg_order();
 
     if output_file.extension().unwrap() == "svg" {
-        let svg_img = string_art.render_svg(&blueprint);
-        svg::save(output_file, &svg_img).unwrap();
+        let svg_img = blueprint.render_svg(&string_art.yarn, string_art.config.progress_bar);
+        svg::save(output_file, &svg_img)?;
     } else {
-        let img = string_art.render(&blueprint);
-        img.save(output_file).unwrap();
+        let img = blueprint.render_img(&string_art.yarn, string_art.config.progress_bar);
+        img.save(output_file)?;
     }
 
     Ok(())

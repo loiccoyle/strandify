@@ -2,14 +2,11 @@ use image::GrayImage;
 use log::{debug, info};
 use std::collections::HashMap;
 use std::path::PathBuf;
-use svg::node::element::path::Data;
-use svg::node::element::{Path, Rectangle};
-use svg::{Document, Node};
 
-use indicatif::{ProgressBar, ProgressIterator};
 use itertools::Itertools;
 
-use crate::peg::{Blueprint, Line, Peg, Yarn};
+use crate::blueprint::Blueprint;
+use crate::peg::{Line, Peg, Yarn};
 use crate::utils;
 
 #[derive(Debug)]
@@ -87,10 +84,10 @@ impl Pather {
     fn populate_line_cache(&mut self) {
         info!("Populating line cache");
 
-        let pbar = self.spinner().with_message("Populating line cache");
+        let pbar = utils::spinner(!self.config.progress_bar).with_message("Populating line cache");
         for (peg_a, peg_b) in pbar.wrap_iter(self.pegs.iter().tuple_combinations()) {
             self.line_cache.insert(
-                self.hash_key(peg_a, peg_b),
+                utils::hash_key(peg_a, peg_b),
                 peg_a.line_to(peg_b).with_width(self.yarn.width),
             );
         }
@@ -158,7 +155,8 @@ impl Pather {
         let mut min_line: Option<&Line>;
         let mut min_peg: Option<&Peg>;
 
-        let pbar = self.pbar().with_message("Computing peg order");
+        let pbar = utils::pbar(self.config.iterations as u64, !self.config.progress_bar)
+            .with_message("Computing peg order");
 
         for _ in pbar.wrap_iter(0..self.config.iterations) {
             min_loss = f64::MAX;
@@ -173,7 +171,10 @@ impl Pather {
                 if peg.id == last_peg.id || peg.id == last_last_peg.id {
                     continue;
                 }
-                let line = self.line_cache.get(&self.hash_key(last_peg, peg)).unwrap();
+                let line = self
+                    .line_cache
+                    .get(&utils::hash_key(last_peg, peg))
+                    .unwrap();
 
                 if line.dist <= self.config.skip_peg_within {
                     continue;
@@ -203,99 +204,5 @@ impl Pather {
             });
         }
         Blueprint::from_refs(peg_order, self.image.width(), self.image.height())
-    }
-
-    /// Get HashMap key for peg pair irrespective of order
-    fn hash_key(&self, peg_a: &Peg, peg_b: &Peg) -> (u16, u16) {
-        if peg_a.id < peg_b.id {
-            (peg_a.id, peg_b.id)
-        } else {
-            (peg_b.id, peg_a.id)
-        }
-    }
-
-    /// Render the blueprint as a raster image.
-    ///
-    /// # Arguments
-    ///
-    /// * `blueprint`- The order with which to connect the pegs.
-    pub fn render(&self, blueprint: &Blueprint) -> GrayImage {
-        // Create white img
-        let mut img = image::GrayImage::new(self.image.width(), self.image.height());
-        for (_, _, pixel) in img.enumerate_pixels_mut() {
-            pixel.0[0] = 255;
-        }
-
-        let opacity = 1. - self.yarn.opacity;
-
-        let pbar = self.pbar().with_message("Rendering img");
-
-        // Iterate with pairs of consecutive pegs
-        for (peg_a, peg_b) in pbar.wrap_iter(blueprint.zip()) {
-            let line = self.line_cache.get(&self.hash_key(peg_a, peg_b)).unwrap();
-            // let line = peg_a.line_to(peg_b);
-            line.zip().for_each(|(x, y)| {
-                let mut pixel = img.get_pixel_mut(*x, *y);
-                // pixel.0[0] = (pixel.0[0] as f64 * 0.99).floor() as u8;
-                pixel.0[0] = (pixel.0[0] as f64 * opacity).round() as u8;
-            })
-        }
-        img
-    }
-
-    /// Render the blueprint as a svg.
-    ///
-    /// # Arguments
-    ///
-    /// * `blueprint`- The order with which to connect the pegs.
-    pub fn render_svg(&self, blueprint: &Blueprint) -> Document {
-        let mut document = Document::new()
-            .set("viewbox", (0, 0, self.image.width(), self.image.height()))
-            .set("width", self.image.width())
-            .set("height", self.image.height());
-
-        let background = Rectangle::new()
-            .set("x", 0)
-            .set("y", 0)
-            .set("width", "100%")
-            .set("height", "100%")
-            .set("fill", "white");
-        document.append(background);
-
-        for (peg_a, peg_b) in blueprint
-            .zip()
-            .progress()
-            .with_message("Rendering svg")
-            .with_style(utils::progress_style())
-        {
-            let data = Data::new()
-                .move_to((peg_a.x, peg_a.y))
-                .line_to((peg_b.x, peg_b.y));
-            let path = Path::new()
-                .set("fill", "none")
-                .set("stroke", "black")
-                .set("stroke-width", self.yarn.width)
-                .set("opacity", self.yarn.opacity)
-                .set("d", data);
-            document.append(path);
-        }
-        document
-    }
-
-    fn pbar(&self) -> ProgressBar {
-        if self.config.progress_bar {
-            ProgressBar::new(self.config.iterations as u64)
-        } else {
-            ProgressBar::hidden()
-        }
-        .with_style(utils::progress_style())
-    }
-
-    fn spinner(&self) -> ProgressBar {
-        if self.config.progress_bar {
-            ProgressBar::new_spinner()
-        } else {
-            ProgressBar::hidden()
-        }
     }
 }
