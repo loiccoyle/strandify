@@ -63,15 +63,13 @@ fn main() -> Result<(), Box<dyn Error>> {
     debug!("yarn: {yarn:?}");
 
     let string_art = pather::Pather::new(img, pegs, yarn, config);
-    let blueprint = string_art.peg_order();
+    let blueprint = string_art.compute();
 
-    if output_file.extension().unwrap() == "svg" {
-        let svg_img = blueprint.render_svg(&string_art.yarn, string_art.config.progress_bar);
-        svg::save(output_file, &svg_img)?;
-    } else {
-        let img = blueprint.render_img(&string_art.yarn, string_art.config.progress_bar);
-        img.save(output_file)?;
-    }
+    blueprint.render(
+        &output_file,
+        &string_art.yarn,
+        string_art.config.progress_bar,
+    )?;
 
     Ok(())
 }

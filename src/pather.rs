@@ -37,10 +37,10 @@ impl PatherConfig {
 
     pub fn new_with_defaults() -> Self {
         Self {
-            iterations: 10000,
-            lighten_factor: 1.05,
+            iterations: 4000,
+            lighten_factor: 0.4,
             start_peg_radius: 5,
-            skip_peg_within: 100,
+            skip_peg_within: 0,
             progress_bar: false,
         }
     }
@@ -70,7 +70,7 @@ impl Pather {
         out
     }
 
-    pub fn from_file(
+    pub fn from_image_file(
         image_path: PathBuf,
         pegs: Vec<Peg>,
         yarn: Yarn,
@@ -119,21 +119,7 @@ impl Pather {
     }
 
     /// Compute the peg order
-    pub fn peg_order(&self) -> Blueprint {
-        // Algorithm:
-        //     peg_1 = pegs[0]
-        //     output = [peg_1]
-        //     for 0..iterations
-        //         line_values = []
-        //         search_pegs = {pegs} - {peg_1}
-        //         for peg in search_pegs
-        //             line = peg_1.line_to(peg)
-        //             pixels = image[line]
-        //             line_values.push(pixels.avg())
-        //         next_peg = search_pegs[line_values.argmax()]
-        //         output.append(next_peg)
-        //         peg_1 = next_peg
-
+    pub fn compute(&self) -> Blueprint {
         // let yarn_delta = self.yarn.delta() as u16;
         let opacity = 1. - self.config.lighten_factor;
         let layer_delta = 255. * self.config.lighten_factor;

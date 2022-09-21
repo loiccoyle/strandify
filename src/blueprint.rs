@@ -1,7 +1,7 @@
 use std::error::Error;
 use std::fs::File;
 use std::io::BufReader;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use image::GrayImage;
 use serde::{Deserialize, Serialize};
@@ -37,6 +37,7 @@ impl Blueprint {
         }
     }
 
+    /// Read a blueprint from a json file.
     pub fn from_file<P: AsRef<Path>>(file_path: P) -> Result<Self, Box<dyn Error>> {
         let file = File::open(file_path)?;
         let reader = BufReader::new(file);
@@ -45,6 +46,7 @@ impl Blueprint {
         Ok(out)
     }
 
+    /// Write a blueprint to a json file.
     pub fn to_file<P: AsRef<Path>>(&self, file_path: P) -> Result_serde<()> {
         let file = File::create(file_path).unwrap();
         serde_json::to_writer(&file, &self)?;
@@ -52,6 +54,7 @@ impl Blueprint {
         Ok(())
     }
 
+    /// Iterate over successive pairs of pegs.
     pub fn zip(
         &self,
     ) -> std::iter::Zip<std::slice::Iter<Peg>, std::iter::Skip<std::slice::Iter<Peg>>> {
@@ -123,5 +126,26 @@ impl Blueprint {
             document.append(path);
         }
         document
+    }
+
+    pub fn render(
+        &self,
+        output_file: &PathBuf,
+        yarn: &Yarn,
+        progress_bar: bool,
+    ) -> Result<(), Box<dyn Error>> {
+        let extension = match output_file.extension() {
+            Some(ext) => ext,
+            None => return Err("Could not determine file extension".into()),
+        };
+        if extension == "svg" {
+            let svg_img = self.render_svg(yarn, progress_bar);
+            svg::save(output_file, &svg_img)?;
+        } else {
+            let img = self.render_img(yarn, progress_bar);
+            img.save(output_file)?;
+        }
+
+        Ok(())
     }
 }
