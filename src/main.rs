@@ -1,9 +1,13 @@
-use clap::Parser;
-use log::{debug, info};
 use std::cmp::min;
 use std::error::Error;
+use std::fs::File;
+use std::io::BufReader;
 use std::iter::zip;
 use std::path::PathBuf;
+
+use clap::Parser;
+use log::{debug, info};
+use serde_json;
 
 mod blueprint;
 mod cli;
@@ -28,27 +32,40 @@ fn main() -> Result<(), Box<dyn Error>> {
     let skip_peg_within = args.peg_skip_within.unwrap_or(dist / 8);
     info!("Skip peg within: {skip_peg_within:?}px");
 
-    let (mut peg_coords_x, mut peg_coords_y) = if args.peg_shape == "circle" {
-        info!("Using circle distribution");
-        utils::circle_coords(dist / 2, center, args.peg_number)
-    } else if args.peg_shape == "square" {
-        info!("Using square distribution");
-        utils::square_coords(dist, center, args.peg_number)
+    let mut pegs: Vec<peg::Peg>;
+    if let Some(peg_path) = args.load_pegs_file {
+        // Load pegs from file
+        info!("Reading {peg_path:?}");
+        let reader = BufReader::new(File::open(peg_path)?);
+        pegs = serde_json::from_reader(reader)?;
     } else {
-        return Err("Unrecognized PEG_SHAPE".into());
-    };
+        info!("Generating pegs");
+        // Generate pegs from scratch
+        let (mut peg_coords_x, mut peg_coords_y) = if args.peg_shape == "circle" {
+            info!("Using circle peg distribution");
+            utils::circle_coords(dist / 2, center, args.peg_number)
+        } else if args.peg_shape == "square" {
+            info!("Using square peg distribution");
+            utils::square_coords(dist, center, args.peg_number)
+        } else {
+            return Err("Unrecognized PEG_SHAPE".into());
+        };
 
-    if args.peg_jitter.is_some() {
-        info!("Adding jitter to pegs");
-        (peg_coords_x, peg_coords_y) = utils::add_jitter(
-            (peg_coords_x, peg_coords_y),
-            args.peg_jitter.unwrap() as i64,
-        )
+        if let Some(jitter) = args.peg_jitter {
+            info!("Adding jitter to pegs");
+            (peg_coords_x, peg_coords_y) =
+                utils::add_jitter((peg_coords_x, peg_coords_y), jitter as i64)
+        }
+
+        pegs = vec![];
+        for (id, (peg_x, peg_y)) in zip(peg_coords_x, peg_coords_y).enumerate() {
+            pegs.push(peg::Peg::new(peg_x, peg_y, id as u16));
+        }
     }
 
-    let mut pegs: Vec<peg::Peg> = vec![];
-    for (id, (peg_x, peg_y)) in zip(peg_coords_x, peg_coords_y).enumerate() {
-        pegs.push(peg::Peg::new(peg_x, peg_y, id as u16));
+    if let Some(peg_path) = args.save_pegs_file {
+        info!("Saving pegs to {peg_path:?}");
+        return serde_json::to_writer(File::create(peg_path)?, &pegs).map_err(|err| err.into());
     }
 
     let config = pather::PatherConfig::new(
@@ -62,13 +79,13 @@ fn main() -> Result<(), Box<dyn Error>> {
     debug!("config: {config:?}");
     debug!("yarn: {yarn:?}");
 
-    let string_art = pather::Pather::new(img, pegs, yarn, config);
-    let blueprint = string_art.compute();
+    let string_pather = pather::Pather::new(img, pegs, yarn, config);
+    let blueprint = string_pather.compute();
 
     blueprint.render(
         &output_file,
-        &string_art.yarn,
-        string_art.config.progress_bar,
+        &string_pather.yarn,
+        string_pather.config.progress_bar,
     )?;
 
     Ok(())

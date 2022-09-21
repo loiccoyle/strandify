@@ -39,8 +39,7 @@ impl Blueprint {
 
     /// Read a blueprint from a json file.
     pub fn from_file<P: AsRef<Path>>(file_path: P) -> Result<Self, Box<dyn Error>> {
-        let file = File::open(file_path)?;
-        let reader = BufReader::new(file);
+        let reader = BufReader::new(File::open(file_path)?);
         let out: Self = serde_json::from_reader(reader)?;
 
         Ok(out)

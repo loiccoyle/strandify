@@ -68,6 +68,12 @@ pub struct Arguments {
     /// Encourages peg exploration at the expense of contrast [0, 1]
     #[clap(short, long, value_parser=number_between_0_and_1, default_value_t = 0.5)]
     pub lighten_factor: f64,
+    /// Write pegs to file
+    #[clap(long)]
+    pub save_pegs_file: Option<String>,
+    /// Read pegs from file
+    #[clap(long, validator=check_file_exists)]
+    pub load_pegs_file: Option<String>,
     /// Verbosity level.
     #[clap(flatten)]
     pub verbose: Verbosity,
