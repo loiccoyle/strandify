@@ -60,7 +60,7 @@ pub struct Arguments {
     #[clap(short = 's', value_parser, long)]
     pub peg_skip_within: Option<u32>,
     /// Yarn opacity [0, 1]
-    #[clap(short = 'o', long, value_parser=number_between_0_and_1, default_value_t = 0.2)]
+    #[clap(short = 'o', long, value_parser=number_between_0_and_1, default_value_t = 0.3)]
     pub yarn_opacity: f64,
     /// Yarn width
     #[clap(short = 'w', long, value_parser, default_value_t = 1)]
