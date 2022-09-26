@@ -144,13 +144,13 @@ impl Pather {
         let pbar = utils::pbar(self.config.iterations as u64, !self.config.progress_bar)
             .with_message("Computing peg order");
 
+        let mut last_peg = start_peg;
+        let mut last_last_peg = last_peg;
+
         for _ in pbar.wrap_iter(0..self.config.iterations) {
             min_loss = f64::MAX;
             min_peg = None;
             min_line = None;
-
-            let last_peg = peg_order.last().unwrap();
-            let last_last_peg = peg_order.get(peg_order.len() - 2).unwrap_or(last_peg);
 
             for peg in &self.pegs {
                 // don't connect to same peg or the previous one
@@ -181,6 +181,8 @@ impl Pather {
             }
             // debug!("loss {min_loss:?}");
             peg_order.push(min_peg.unwrap());
+            last_last_peg = last_peg;
+            last_peg = min_peg.unwrap();
             // Update the work img to reflect the added line
             // https://docs.rs/image/latest/image/struct.ImageBuffer.html
             min_line.unwrap().zip().for_each(|(x, y)| {
