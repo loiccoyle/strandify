@@ -67,10 +67,8 @@ impl Blueprint {
     /// * `yarn`- The yarn to use to render the img.
     /// * `progress_bar`- Show progress bar.
     pub fn render_img(&self, yarn: &Yarn, progress_bar: bool) -> GrayImage {
-        let mut img = image::GrayImage::new(self.width, self.height);
-        for (_, _, pixel) in img.enumerate_pixels_mut() {
-            pixel.0[0] = 255;
-        }
+        let mut img =
+            image::GrayImage::from_pixel(self.width, self.height, image::Luma { 0: [255] });
 
         let opacity = 1. - yarn.opacity;
 
