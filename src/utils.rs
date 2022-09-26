@@ -1,8 +1,9 @@
 use rand::{thread_rng, Rng};
-use std::f64::consts::PI;
+use std::{f64::consts::PI, path::Path};
 
 use crate::peg::Peg;
 
+use image::imageops;
 use indicatif::{ProgressBar, ProgressStyle};
 
 /// Compute the coords of evenly spaced points around a circle
@@ -151,4 +152,18 @@ pub fn hash_key(peg_a: &Peg, peg_b: &Peg) -> (u16, u16) {
     } else {
         (peg_b.id, peg_a.id)
     }
+}
+
+/// Open an image and set all fully transparent pixels to white
+pub fn open_img_transparency_to_white<P: AsRef<Path>>(
+    image_file: P,
+) -> image::ImageBuffer<image::Luma<u8>, Vec<u8>> {
+    let mut img_rgba = image::open(image_file).unwrap().into_rgba8();
+    for pixel in img_rgba.pixels_mut() {
+        // replace fully transparent pixel with white
+        if pixel.0[3] == 0 {
+            pixel.0 = [255, 255, 255, 255]
+        }
+    }
+    imageops::grayscale(&img_rgba)
 }
