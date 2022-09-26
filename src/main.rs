@@ -6,6 +6,7 @@ use std::iter::zip;
 use std::path::PathBuf;
 
 use clap::Parser;
+use image::imageops::grayscale;
 use log::{debug, info};
 use serde_json;
 
@@ -22,7 +23,15 @@ fn main() -> Result<(), Box<dyn Error>> {
         .init();
 
     debug!("cli args: {:?}", args);
-    let img = image::open(PathBuf::from(args.image)).unwrap().into_luma8();
+    let mut img_rgba = image::open(PathBuf::from(args.image)).unwrap().into_rgba8();
+    for pixel in img_rgba.pixels_mut() {
+        // replace fully transparent pixel with white
+        if pixel.0[3] == 0 {
+            pixel.0 = [255, 255, 255, 255]
+        }
+    }
+    let img = grayscale(&img_rgba);
+
     let output_file = PathBuf::from(args.output);
 
     let (width, height) = img.dimensions();
