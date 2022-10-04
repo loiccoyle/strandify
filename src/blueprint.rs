@@ -29,6 +29,7 @@ impl Blueprint {
         }
     }
 
+    /// Create a blueprint from a `Peg` references.
     pub fn from_refs(peg_order: Vec<&Peg>, width: u32, height: u32) -> Self {
         Self {
             peg_order: peg_order.into_iter().copied().collect(),
@@ -125,6 +126,13 @@ impl Blueprint {
         document
     }
 
+    /// Render the blueprint
+    ///
+    /// # Arguments:
+    ///
+    /// * `output_file`- Output file path.
+    /// * `yarn`- The yarn to use to render the img.
+    /// * `progress_bar`- Controls the display of the progress bar.
     pub fn render(
         &self,
         output_file: &PathBuf,
