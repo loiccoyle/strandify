@@ -82,11 +82,17 @@ fn main() -> Result<(), Box<dyn Error>> {
     let string_pather = pather::Pather::new(img, pegs, yarn, config);
     let blueprint = string_pather.compute();
 
-    blueprint.render(
-        &output_file,
-        &string_pather.yarn,
-        string_pather.config.progress_bar,
-    )?;
+    if output_file.extension().unwrap() == "json" {
+        info!("Writing blueprint to file.");
+        blueprint.to_file(&output_file)?;
+    } else {
+        info!("Rendering blueprint to file.");
+        blueprint.render(
+            &output_file,
+            &string_pather.yarn,
+            string_pather.config.progress_bar,
+        )?;
+    }
 
     Ok(())
 }

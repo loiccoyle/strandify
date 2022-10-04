@@ -39,7 +39,7 @@ pub struct Arguments {
     /// Input image file
     #[clap(validator=check_file_exists)]
     pub image: String,
-    /// Output image file
+    /// Output file, either image format or json
     pub output: String,
     /// Number of iterations
     #[clap(short, long, value_parser, default_value_t = 4000)]
