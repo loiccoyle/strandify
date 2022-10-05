@@ -36,9 +36,9 @@ fn number_between_0_and_1(value: &str) -> Result<f64, String> {
 #[clap(author = "Loic Coyle")]
 /// KnitArt
 pub struct Arguments {
-    /// Input image file
+    /// Input image of blueprint json file
     #[clap(validator=check_file_exists)]
-    pub image: String,
+    pub input: String,
     /// Output file, either image format or json
     pub output: Option<String>,
     /// Number of iterations
