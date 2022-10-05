@@ -8,11 +8,11 @@ use std::path::PathBuf;
 use clap::Parser;
 use log::{debug, info};
 
-mod blueprint;
-mod cli;
-mod pather;
-mod peg;
-mod utils;
+use stringart::blueprint;
+use stringart::cli;
+use stringart::pather;
+use stringart::peg;
+use stringart::utils;
 
 fn main() -> Result<(), Box<dyn Error>> {
     let args = cli::Arguments::parse();
