@@ -76,6 +76,12 @@ pub fn square_coords(
     (x_coords, y_coords)
 }
 
+/// Add 2d jitter to pegs.
+///
+/// # Arguments
+///
+/// * `(x_coords, y_coords)` - Vectors of x,y coords.
+/// * `jitter` - Amount of jitter to add, in pixels.
 pub fn add_jitter((x_coords, y_coords): (Vec<u32>, Vec<u32>), jitter: i64) -> (Vec<u32>, Vec<u32>) {
     let mut rng = thread_rng();
 
@@ -91,12 +97,12 @@ pub fn add_jitter((x_coords, y_coords): (Vec<u32>, Vec<u32>), jitter: i64) -> (V
     (x_coords_jit, y_coords_jit)
 }
 
-/// Get the pixels around a peg within radius
+/// Get the pixels around a peg within` radius`
 ///
 /// # Arguments
 ///
-/// *`(center_x, center_y)`- center around which to fetch surrounding pixels
-/// *`radius`- pixel radius around peg
+/// *`(center_x, center_y)` - center around which to fetch surrounding pixels
+/// *`radius` - pixel radius around peg
 pub fn pixels_around((center_x, center_y): (u32, u32), radius: u32) -> (Vec<u32>, Vec<u32>) {
     let mut x_coords: Vec<u32> = vec![];
     let mut y_coords: Vec<u32> = vec![];
