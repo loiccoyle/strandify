@@ -3,20 +3,20 @@ use clap_verbosity_flag::Verbosity;
 use image::io::Reader;
 use std::path::PathBuf;
 
-fn check_file_exists(image: &str) -> Result<(), String> {
-    let image_file = PathBuf::from(image);
-    if image_file.exists() {
-        let reader = Reader::open(&image_file)
+fn check_file_exists(input: &str) -> Result<(), String> {
+    let input_file = PathBuf::from(input);
+    if input_file.exists() {
+        let reader = Reader::open(&input_file)
             .unwrap()
             .with_guessed_format()
             .unwrap();
-        if reader.format().is_some() {
+        if input_file.extension().unwrap() == "json" || reader.format().is_some() {
             Ok(())
         } else {
-            Err(format!("File {:?} format not supported.", image_file))
+            Err(format!("File {:?} format not supported.", input_file))
         }
     } else {
-        Err(format!("File {:?} does not exist.", image_file))
+        Err(format!("File {:?} does not exist.", input_file))
     }
 }
 
