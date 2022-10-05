@@ -129,6 +129,10 @@ impl Line {
         self.x.len()
     }
 
+    pub fn is_empty(&self) -> bool {
+        self.x.is_empty()
+    }
+
     pub fn zip(&self) -> std::iter::Zip<std::slice::Iter<u32>, std::slice::Iter<u32>> {
         zip(&self.x, &self.y)
     }
