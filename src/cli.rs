@@ -40,12 +40,12 @@ pub struct Arguments {
     #[clap(validator=check_file_exists)]
     pub image: String,
     /// Output file, either image format or json
-    pub output: String,
+    pub output: Option<String>,
     /// Number of iterations
     #[clap(short, long, value_parser, default_value_t = 4000)]
     pub iterations: u32,
     /// Peg distribution shape
-    #[clap(short = 'S', long, value_parser=["circle", "square"], default_value = "circle")]
+    #[clap(short = 'S', long, value_parser=["circle", "square"], default_value = "circle", name="SHAPE")]
     pub peg_shape: String,
     /// Number of pegs
     #[clap(short = 'n', long, value_parser, default_value_t = 288)]
@@ -69,11 +69,11 @@ pub struct Arguments {
     #[clap(short, long, value_parser=number_between_0_and_1, default_value_t = 0.5)]
     pub lighten_factor: f64,
     /// Write pegs to file
-    #[clap(long)]
-    pub save_pegs_file: Option<String>,
+    #[clap(long, name = "PEG_FILE")]
+    pub save_pegs: Option<String>,
     /// Read pegs from file
-    #[clap(long, validator=check_file_exists)]
-    pub load_pegs_file: Option<String>,
+    #[clap(long, name="PEG_FILE", validator=check_file_exists)]
+    pub load_pegs: Option<String>,
     /// Verbosity level.
     #[clap(flatten)]
     pub verbose: Verbosity,

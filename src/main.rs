@@ -23,7 +23,6 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     debug!("cli args: {:?}", args);
     let img = utils::open_img_transparency_to_white(PathBuf::from(args.image));
-    let output_file = PathBuf::from(args.output);
 
     let (width, height) = img.dimensions();
     let min_dim = min(width, height) as f64;
@@ -33,7 +32,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     info!("Skip peg within: {skip_peg_within:?}px");
 
     let mut pegs: Vec<peg::Peg>;
-    if let Some(peg_path) = args.load_pegs_file {
+    if let Some(peg_path) = args.load_pegs {
         // Load pegs from file
         info!("Reading {peg_path:?}");
         let reader = BufReader::new(File::open(peg_path)?);
@@ -48,7 +47,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             info!("Using square peg distribution");
             utils::square_coords(dist, center, args.peg_number)
         } else {
-            return Err("Unrecognized PEG_SHAPE".into());
+            return Err(format!("Unrecognized SHAPE '{:?}'", args.peg_shape).into());
         };
 
         if let Some(jitter) = args.peg_jitter {
@@ -63,35 +62,39 @@ fn main() -> Result<(), Box<dyn Error>> {
         }
     }
 
-    if let Some(peg_path) = args.save_pegs_file {
+    if let Some(peg_path) = args.save_pegs {
         info!("Saving pegs to {peg_path:?}");
-        return serde_json::to_writer(File::create(peg_path)?, &pegs).map_err(|err| err.into());
+        serde_json::to_writer(File::create(peg_path)?, &pegs)?
     }
 
-    let config = pather::PatherConfig::new(
-        args.iterations,
-        args.lighten_factor,
-        5,
-        skip_peg_within,
-        !args.verbose.is_silent(),
-    );
-    let yarn = peg::Yarn::new(args.yarn_width, args.yarn_opacity);
-    debug!("config: {config:?}");
-    debug!("yarn: {yarn:?}");
+    if let Some(output_file) = args.output {
+        let output_file = PathBuf::from(output_file);
 
-    let string_pather = pather::Pather::new(img, pegs, yarn, config);
-    let blueprint = string_pather.compute();
+        let config = pather::PatherConfig::new(
+            args.iterations,
+            args.lighten_factor,
+            5,
+            skip_peg_within,
+            !args.verbose.is_silent(),
+        );
+        let yarn = peg::Yarn::new(args.yarn_width, args.yarn_opacity);
+        debug!("config: {config:?}");
+        debug!("yarn: {yarn:?}");
 
-    if output_file.extension().unwrap() == "json" {
-        info!("Writing blueprint to file.");
-        blueprint.to_file(&output_file)?;
-    } else {
-        info!("Rendering blueprint to file.");
-        blueprint.render(
-            &output_file,
-            &string_pather.yarn,
-            string_pather.config.progress_bar,
-        )?;
+        let string_pather = pather::Pather::new(img, pegs, yarn, config);
+        let blueprint = string_pather.compute();
+
+        if output_file.extension().unwrap() == "json" {
+            info!("Writing blueprint to {output_file:?}.");
+            blueprint.to_file(&output_file)?;
+        } else {
+            info!("Rendering blueprint to {output_file:?}.");
+            blueprint.render(
+                &output_file,
+                &string_pather.yarn,
+                string_pather.config.progress_bar,
+            )?;
+        }
     }
 
     Ok(())
