@@ -36,7 +36,7 @@ fn number_between_0_and_1(value: &str) -> Result<f64, String> {
 #[clap(author = "Loic Coyle")]
 /// KnitArt
 pub struct Arguments {
-    /// Input image of blueprint json file
+    /// Input image or blueprint json file
     #[clap(validator=check_file_exists)]
     pub input: String,
     /// Output file, either image format or json
@@ -69,10 +69,10 @@ pub struct Arguments {
     #[clap(short, long, value_parser=number_between_0_and_1, default_value_t = 0.5)]
     pub lighten_factor: f64,
     /// Write pegs to file
-    #[clap(long, name = "PEG_FILE")]
+    #[clap(long, name = "PEG_SAVE_FILE")]
     pub save_pegs: Option<String>,
     /// Read pegs from file
-    #[clap(long, name="PEG_FILE", validator=check_file_exists)]
+    #[clap(long, name="PEG_LOAD_FILE", validator=check_file_exists)]
     pub load_pegs: Option<String>,
     /// Verbosity level.
     #[clap(flatten)]
