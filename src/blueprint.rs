@@ -154,3 +154,44 @@ impl Blueprint {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use std::fs;
+    use std::path::PathBuf;
+
+    static TEST_DIR: &str = "./test_blueprint/";
+
+    #[cfg(test)]
+    #[ctor::ctor]
+    fn setup() {
+        let test_dir = PathBuf::from(TEST_DIR);
+        fs::create_dir(test_dir).unwrap();
+    }
+
+    #[cfg(test)]
+    #[ctor::dtor]
+    fn teardown() {
+        let test_dir = PathBuf::from(TEST_DIR);
+        if test_dir.is_dir() {
+            fs::remove_dir_all(&test_dir).unwrap();
+        }
+    }
+
+    #[test]
+    fn test_blueprint_to_from_file() {
+        let bp = Blueprint::new(vec![Peg::new(0, 0, 0), Peg::new(63, 63, 1)], 64, 64);
+        let bp_file = PathBuf::from(TEST_DIR).join("bp.json");
+        assert!(bp.to_file(&bp_file).is_ok());
+
+        let bp_read = Blueprint::from_file(&bp_file).unwrap();
+        assert_eq!(bp.height, bp_read.height);
+        assert_eq!(bp.width, bp_read.width);
+        for (peg_a, peg_b) in bp.peg_order.iter().zip(&bp_read.peg_order) {
+            assert_eq!(peg_a.id, peg_b.id);
+            assert_eq!(peg_a.x, peg_b.x);
+            assert_eq!(peg_a.y, peg_b.y);
+        }
+    }
+}
