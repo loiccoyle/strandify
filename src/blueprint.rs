@@ -1,7 +1,7 @@
 use std::error::Error;
 use std::fs::File;
 use std::io::BufReader;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use image::GrayImage;
 use serde::{Deserialize, Serialize};
@@ -68,8 +68,7 @@ impl Blueprint {
     /// * `yarn`- The yarn to use to render the img.
     /// * `progress_bar`- Show progress bar.
     pub fn render_img(&self, yarn: &Yarn, progress_bar: bool) -> GrayImage {
-        let mut img =
-            image::GrayImage::from_pixel(self.width, self.height, image::Luma { 0: [255] });
+        let mut img = image::GrayImage::from_pixel(self.width, self.height, image::Luma([255]));
 
         let opacity = 1. - yarn.opacity;
 
@@ -135,7 +134,7 @@ impl Blueprint {
     /// * `progress_bar`- Controls the display of the progress bar.
     pub fn render(
         &self,
-        output_file: &PathBuf,
+        output_file: &Path,
         yarn: &Yarn,
         progress_bar: bool,
     ) -> Result<(), Box<dyn Error>> {

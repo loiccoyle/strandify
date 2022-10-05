@@ -7,7 +7,6 @@ use std::path::PathBuf;
 
 use clap::Parser;
 use log::{debug, info};
-use serde_json;
 
 mod blueprint;
 mod cli;
@@ -26,7 +25,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     // Handle blueprint json as input
     if input_file.extension().unwrap() == "json" {
         info!("Loading blueprint from file '{input_file:?}'");
-        let output_file = PathBuf::from(args.output.as_ref().ok_or_else(|| "No OUTPUT provided.")?);
+        let output_file = PathBuf::from(args.output.as_ref().ok_or("No OUTPUT provided.")?);
 
         let bp = blueprint::Blueprint::from_file(input_file)?;
 
