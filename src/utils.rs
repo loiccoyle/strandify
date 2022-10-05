@@ -68,7 +68,7 @@ pub fn square_coords(
             x_coords.push(top_left_x + length - rem);
             y_coords.push(top_left_y + length);
         } else if side == 3 {
-            // lelft
+            // left
             x_coords.push(top_left_x);
             y_coords.push(top_left_y + length - rem);
         }
@@ -166,4 +166,17 @@ pub fn open_img_transparency_to_white<P: AsRef<Path>>(
         }
     }
     imageops::grayscale(&img_rgba)
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_abs_diff() {
+        assert_eq!(abs_diff(1., 2.), 1.);
+        assert_eq!(abs_diff(2., 1.), 1.);
+        assert_eq!(abs_diff(1, 2), 1);
+        assert_eq!(abs_diff(2, 1), 1);
+    }
 }
