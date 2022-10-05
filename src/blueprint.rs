@@ -29,7 +29,7 @@ impl Blueprint {
         }
     }
 
-    /// Create a blueprint from a `Peg` references.
+    /// Create a blueprint from `Peg` references.
     pub fn from_refs(peg_order: Vec<&Peg>, width: u32, height: u32) -> Self {
         Self {
             peg_order: peg_order.into_iter().copied().collect(),
