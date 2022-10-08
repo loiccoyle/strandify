@@ -1,4 +1,3 @@
-use rand::{thread_rng, Rng};
 use std::{f64::consts::PI, path::Path};
 
 use crate::peg::Peg;
@@ -74,27 +73,6 @@ pub fn square_coords(
         }
     }
     (x_coords, y_coords)
-}
-
-/// Add 2d jitter to pegs.
-///
-/// # Arguments
-///
-/// * `(x_coords, y_coords)`: Vectors of x,y coords.
-/// * `jitter`: Amount of jitter to add, in pixels.
-pub fn add_jitter((x_coords, y_coords): (Vec<u32>, Vec<u32>), jitter: i64) -> (Vec<u32>, Vec<u32>) {
-    let mut rng = thread_rng();
-
-    let x_coords_jit: Vec<u32> = x_coords
-        .into_iter()
-        .map(|x| (x as i64 + rng.gen_range(-jitter..jitter)) as u32)
-        .collect();
-    let y_coords_jit: Vec<u32> = y_coords
-        .into_iter()
-        .map(|x| (x as i64 + rng.gen_range(-jitter..jitter)) as u32)
-        .collect();
-
-    (x_coords_jit, y_coords_jit)
 }
 
 /// Get the pixels around a peg within `radius`.

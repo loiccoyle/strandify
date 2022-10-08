@@ -1,6 +1,7 @@
 use std::collections::HashSet;
 use std::iter::zip;
 
+use rand::{thread_rng, Rng};
 use serde::{Deserialize, Serialize};
 
 use crate::utils;
@@ -83,11 +84,34 @@ impl Peg {
         utils::pixels_around((self.x, self.y), radius)
     }
 
-    /// Compute the distance between 2 [`Pegs`](Peg).
+    /// Compute the distance between 2 [`Pegs`](Peg) in pixels.
     pub fn dist_to(&self, other: &Peg) -> u32 {
         let delta_x = utils::abs_diff(self.x, other.x);
         let delta_y = utils::abs_diff(self.y, other.y);
         ((delta_x * delta_x + delta_y * delta_y) as f64).sqrt() as u32
+    }
+
+    /// Add 2d jitter to the [`Peg`] returns a new [`Peg`] with added jitter.
+    ///
+    /// # Arguments
+    ///
+    /// * `jitter`: Amount of jitter to add, in pixels.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use stringart::peg::Peg;
+    /// let peg = Peg::new(10, 10, 0);
+    /// let peg_jitter = peg.with_jitter(2);
+    /// assert_eq!(peg_jitter.id, peg.id);
+    /// ```
+    pub fn with_jitter(&self, jitter: i64) -> Self {
+        let mut rng = thread_rng();
+        Self::new(
+            (self.x as i64 + rng.gen_range(-jitter..jitter)) as u32,
+            (self.y as i64 + rng.gen_range(-jitter..jitter)) as u32,
+            self.id,
+        )
     }
 }
 
@@ -242,6 +266,16 @@ mod test {
         let (x_coords, y_coords) = peg.around(1);
         assert_eq!(x_coords, vec![9, 10, 10, 10, 11]);
         assert_eq!(y_coords, vec![10, 9, 10, 11, 10]);
+    }
+
+    #[test]
+    fn peg_jitter() {
+        let peg = Peg::new(10, 10, 0);
+        let jitter = 2;
+        let peg_jitter = peg.with_jitter(jitter);
+        assert!(peg_jitter.x <= (peg.x as i64 + jitter) as u32);
+        assert!(peg_jitter.x >= (peg.x as i64 - jitter) as u32);
+        assert_eq!(peg_jitter.id, peg.id);
     }
 
     #[test]

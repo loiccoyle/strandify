@@ -55,7 +55,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         info!("Generating pegs");
         let center = (width / 2, height / 2);
         // Generate pegs from scratch
-        let (mut peg_coords_x, mut peg_coords_y) = if args.peg_shape == "circle" {
+        let (peg_coords_x, peg_coords_y) = if args.peg_shape == "circle" {
             info!("Using circle peg distribution");
             utils::circle_coords(dist / 2, center, args.peg_number)
         } else if args.peg_shape == "square" {
@@ -65,15 +65,17 @@ fn main() -> Result<(), Box<dyn Error>> {
             return Err(format!("Unrecognized SHAPE '{:?}'", args.peg_shape).into());
         };
 
-        if let Some(jitter) = args.peg_jitter {
-            info!("Adding jitter to pegs");
-            (peg_coords_x, peg_coords_y) =
-                utils::add_jitter((peg_coords_x, peg_coords_y), jitter as i64)
-        }
-
         pegs = vec![];
         for (id, (peg_x, peg_y)) in zip(peg_coords_x, peg_coords_y).enumerate() {
             pegs.push(peg::Peg::new(peg_x, peg_y, id as u16));
+        }
+
+        // Add jitter to pegs
+        if let Some(jitter) = args.peg_jitter {
+            pegs = pegs
+                .iter()
+                .map(|peg| peg.with_jitter(jitter as i64))
+                .collect();
         }
     }
 
