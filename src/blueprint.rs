@@ -59,6 +59,19 @@ impl Blueprint {
     }
 
     /// Iterate over successive pairs of [`Pegs`](Peg).
+    ///
+    /// # Examples
+    ///
+    ///```
+    /// use stringart::blueprint::Blueprint;
+    /// use stringart::peg::Peg;
+    /// let bp = Blueprint::new(vec![Peg::new(0, 0, 0), Peg::new(3, 3, 1)], 4, 4);
+    /// for (peg_a, peg_b) in bp.zip() {
+    ///     assert_eq!(peg_a.id, 0);
+    ///     assert_eq!(peg_b.id, 1);
+    /// }
+    /// assert_eq!(bp.zip().len(), 1);
+    ///```
     pub fn zip(
         &self,
     ) -> std::iter::Zip<std::slice::Iter<Peg>, std::iter::Skip<std::slice::Iter<Peg>>> {
@@ -196,5 +209,11 @@ mod test {
             assert_eq!(peg_a.x, peg_b.x);
             assert_eq!(peg_a.y, peg_b.y);
         }
+    }
+
+    #[test]
+    fn zip() {
+        let bp = Blueprint::new(vec![Peg::new(0, 0, 0), Peg::new(63, 63, 1)], 64, 64);
+        assert_eq!(bp.zip().len(), 1);
     }
 }
