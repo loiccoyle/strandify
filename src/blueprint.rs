@@ -15,12 +15,16 @@ use crate::utils;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Blueprint {
+    /// The order with which to connect the [`Pegs`](Peg).
     pub peg_order: Vec<Peg>,
+    /// Width of the [`Blueprint`].
     pub width: u32,
+    /// Height of the [`blueprint`].
     pub height: u32,
 }
 
 impl Blueprint {
+    /// Creates a new [`Blueprint`].
     pub fn new(peg_order: Vec<Peg>, width: u32, height: u32) -> Self {
         Self {
             peg_order,
@@ -29,7 +33,7 @@ impl Blueprint {
         }
     }
 
-    /// Create a blueprint from `Peg` references.
+    /// Create a [`Blueprint`] from [`Peg`] references.
     pub fn from_refs(peg_order: Vec<&Peg>, width: u32, height: u32) -> Self {
         Self {
             peg_order: peg_order.into_iter().copied().collect(),
@@ -38,7 +42,7 @@ impl Blueprint {
         }
     }
 
-    /// Read a blueprint from a json file.
+    /// Read a [`Blueprint`] from a json file.
     pub fn from_file<P: AsRef<Path>>(file_path: P) -> Result<Self, Box<dyn Error>> {
         let reader = BufReader::new(File::open(file_path)?);
         let out: Self = serde_json::from_reader(reader)?;
@@ -46,7 +50,7 @@ impl Blueprint {
         Ok(out)
     }
 
-    /// Write a blueprint to a json file.
+    /// Write a [`Blueprint`] to a json file.
     pub fn to_file<P: AsRef<Path>>(&self, file_path: P) -> Result_serde<()> {
         let file = File::create(file_path).unwrap();
         serde_json::to_writer(&file, &self)?;
@@ -54,19 +58,19 @@ impl Blueprint {
         Ok(())
     }
 
-    /// Iterate over successive pairs of pegs.
+    /// Iterate over successive pairs of [`Pegs`](Peg).
     pub fn zip(
         &self,
     ) -> std::iter::Zip<std::slice::Iter<Peg>, std::iter::Skip<std::slice::Iter<Peg>>> {
         self.peg_order.iter().zip(self.peg_order.iter().skip(1))
     }
 
-    /// Render the blueprint as a raster image.
+    /// Render the [`Blueprint`] as a raster image.
     ///
     /// # Arguments
     ///
-    /// * `yarn`- The yarn to use to render the img.
-    /// * `progress_bar`- Show progress bar.
+    /// * `yarn`: The [`Yarn`] to use to render the [`Blueprint`].
+    /// * `progress_bar`: Show progress bar.
     pub fn render_img(&self, yarn: &Yarn, progress_bar: bool) -> GrayImage {
         let mut img = image::GrayImage::from_pixel(self.width, self.height, image::Luma([255]));
 
@@ -87,12 +91,12 @@ impl Blueprint {
         img
     }
 
-    /// Render the blueprint as a svg.
+    /// Render the [`Blueprint`] as a svg.
     ///
     /// # Arguments
     ///
-    /// * `yarn`- The yarn to use to render the img.
-    /// * `progress_bar`- Show progress bar.
+    /// * `yarn`: The [`Yarn`] to use to render the [`Blueprint`].
+    /// * `progress_bar`: Show progress bar.
     pub fn render_svg(&self, yarn: &Yarn, progress_bar: bool) -> Document {
         let mut document = Document::new()
             .set("viewbox", (0, 0, self.width, self.height))
@@ -125,13 +129,13 @@ impl Blueprint {
         document
     }
 
-    /// Render the blueprint
+    /// Render the [`Blueprint`].
     ///
     /// # Arguments:
     ///
-    /// * `output_file`- Output file path.
-    /// * `yarn`- The yarn to use to render the img.
-    /// * `progress_bar`- Controls the display of the progress bar.
+    /// * `output_file`: Output file path, image format or svg.
+    /// * `yarn`: The [`Yarn`] to use to render the [`Blueprint`].
+    /// * `progress_bar`: Show progress bar.
     pub fn render(
         &self,
         output_file: &Path,
@@ -179,7 +183,7 @@ mod test {
     }
 
     #[test]
-    fn test_blueprint_to_from_file() {
+    fn blueprint_to_from_file() {
         let bp = Blueprint::new(vec![Peg::new(0, 0, 0), Peg::new(63, 63, 1)], 64, 64);
         let bp_file = PathBuf::from(TEST_DIR).join("bp.json");
         assert!(bp.to_file(&bp_file).is_ok());

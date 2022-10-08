@@ -34,7 +34,7 @@ fn number_between_0_and_1(value: &str) -> Result<f64, String> {
 
 #[derive(Parser, Debug)]
 #[clap(author = "Loic Coyle")]
-/// KnitArt
+/// CLI utility to generate string art.
 pub struct Arguments {
     /// Input image or blueprint json file
     #[clap(validator=check_file_exists)]

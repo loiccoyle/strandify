@@ -19,7 +19,7 @@ fn input_file() -> PathBuf {
 }
 
 #[test]
-fn test_help() -> Result<(), Box<dyn Error>> {
+fn help() -> Result<(), Box<dyn Error>> {
     let mut cmd = assert_cmd::Command::cargo_bin("stringart")?;
     cmd.arg("--help");
 
@@ -28,7 +28,7 @@ fn test_help() -> Result<(), Box<dyn Error>> {
 }
 
 #[test]
-fn test_save_load_pegs() -> Result<(), Box<dyn Error>> {
+fn save_load_pegs() -> Result<(), Box<dyn Error>> {
     let n_pegs = 10;
     let peg_file = assert_fs::NamedTempFile::new("pegs.json").unwrap();
     let peg_file_str = peg_file.path().to_str().unwrap();
@@ -67,7 +67,7 @@ fn test_save_load_pegs() -> Result<(), Box<dyn Error>> {
 }
 
 #[test]
-fn test_string_art_img() -> Result<(), Box<dyn Error>> {
+fn string_art_img() -> Result<(), Box<dyn Error>> {
     let output_file = assert_fs::NamedTempFile::new("output.jpg").unwrap();
 
     let mut cmd = assert_cmd::Command::cargo_bin("stringart")?;
@@ -86,7 +86,7 @@ fn test_string_art_img() -> Result<(), Box<dyn Error>> {
 }
 
 #[test]
-fn test_string_art_svg() -> Result<(), Box<dyn Error>> {
+fn string_art_svg() -> Result<(), Box<dyn Error>> {
     let output_file = assert_fs::NamedTempFile::new("output.svg").unwrap();
 
     let mut cmd = assert_cmd::Command::cargo_bin("stringart")?;
@@ -102,7 +102,7 @@ fn test_string_art_svg() -> Result<(), Box<dyn Error>> {
 }
 
 #[test]
-fn test_save_render_string_art_blueprint() -> Result<(), Box<dyn Error>> {
+fn save_render_string_art_blueprint() -> Result<(), Box<dyn Error>> {
     let n_lines = 2000;
     let blueprint_file = assert_fs::NamedTempFile::new("bp.json").unwrap();
 

@@ -10,20 +10,20 @@ use indicatif::{ProgressBar, ProgressStyle};
 ///
 /// # Arguments
 ///
-/// * `radius` - the radius of the circle
-/// * (`center_x`,` center_y`) - the coords of the center point
-/// * `n_division` - the number of divisions
+/// * `radius`: the radius of the circle
+/// * (`center_x`,` center_y`): the coords of the center point
+/// * `n_pegs`: the number of pegs
 pub fn circle_coords(
     radius: u32,
     (center_x, center_y): (u32, u32),
-    n_division: u32,
+    n_pegs: u32,
 ) -> (Vec<u32>, Vec<u32>) {
     let radius = radius as f64;
-    let angle = 2. * PI / n_division as f64;
+    let angle = 2. * PI / n_pegs as f64;
     let mut points_x = vec![];
     let mut points_y = vec![];
     let mut i_angle: f64;
-    for i in 0..n_division {
+    for i in 0..n_pegs {
         i_angle = i as f64 * angle;
         points_x.push((radius * (i_angle).cos() + center_x as f64).round() as u32);
         points_y.push((radius * (i_angle).sin() + center_y as f64).round() as u32);
@@ -35,9 +35,9 @@ pub fn circle_coords(
 ///
 /// # Arguments
 ///
-/// * `length` - the legnth of the side of the square
-/// * (`center_x`,` center_y`) - the coords of the center point
-/// * `n_pegs` - the number of pegs
+/// * `length`: the legnth of the side of the square
+/// * (`center_x`,` center_y`): the coords of the center point
+/// * `n_pegs`: the number of pegs
 pub fn square_coords(
     length: u32,
     (center_x, center_y): (u32, u32),
@@ -80,8 +80,8 @@ pub fn square_coords(
 ///
 /// # Arguments
 ///
-/// * `(x_coords, y_coords)` - Vectors of x,y coords.
-/// * `jitter` - Amount of jitter to add, in pixels.
+/// * `(x_coords, y_coords)`: Vectors of x,y coords.
+/// * `jitter`: Amount of jitter to add, in pixels.
 pub fn add_jitter((x_coords, y_coords): (Vec<u32>, Vec<u32>), jitter: i64) -> (Vec<u32>, Vec<u32>) {
     let mut rng = thread_rng();
 
@@ -97,12 +97,12 @@ pub fn add_jitter((x_coords, y_coords): (Vec<u32>, Vec<u32>), jitter: i64) -> (V
     (x_coords_jit, y_coords_jit)
 }
 
-/// Get the pixels around a peg within` radius`
+/// Get the pixels around a peg within `radius`.
 ///
 /// # Arguments
 ///
-/// *`(center_x, center_y)` - center around which to fetch surrounding pixels
-/// *`radius` - pixel radius around peg
+/// *`(center_x, center_y)`: Center around which to fetch surrounding pixels.
+/// *`radius`: Pixel radius around peg.
 pub fn pixels_around((center_x, center_y): (u32, u32), radius: u32) -> (Vec<u32>, Vec<u32>) {
     let mut x_coords: Vec<u32> = vec![];
     let mut y_coords: Vec<u32> = vec![];
@@ -160,7 +160,7 @@ pub fn hash_key(peg_a: &Peg, peg_b: &Peg) -> (u16, u16) {
     }
 }
 
-/// Open an image and set all fully transparent pixels to white
+/// Open an image and set all fully transparent pixels to white.
 pub fn open_img_transparency_to_white<P: AsRef<Path>>(
     image_file: P,
 ) -> image::ImageBuffer<image::Luma<u8>, Vec<u8>> {

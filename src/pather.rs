@@ -1,6 +1,7 @@
 use image::GrayImage;
 use log::{debug, info};
 use std::collections::HashMap;
+use std::error::Error;
 use std::path::PathBuf;
 
 use itertools::Itertools;
@@ -11,14 +12,21 @@ use crate::utils;
 
 #[derive(Debug)]
 pub struct PatherConfig {
+    /// Number of [`Peg`] connections.
     pub iterations: u32,
+    /// How much to lighten the the pixels at each pass, between 0 and 1.
+    /// Large values encourage exploration.
     pub lighten_factor: f64,
+    /// Radius around [`Pegs`](Peg), in pixels, to use to determine the starting [`Peg`].
     pub start_peg_radius: u32,
+    /// Don't connect [`Pegs`](Peg) within distance, in pixels.
     pub skip_peg_within: u32,
+    /// Display progress bar.
     pub progress_bar: bool,
 }
 
 impl PatherConfig {
+    /// Creates a new [`PatherConfig`].
     pub fn new(
         iterations: u32,
         lighten_factor: f64,
@@ -35,7 +43,7 @@ impl PatherConfig {
         }
     }
 
-    pub fn new_with_defaults() -> Self {
+    pub fn with_defaults() -> Self {
         Self {
             iterations: 4000,
             lighten_factor: 0.4,
@@ -48,15 +56,20 @@ impl PatherConfig {
 
 #[derive(Debug)]
 pub struct Pather {
+    /// Input grayscale image.
     pub image: GrayImage,
+    /// [`Peg`] vector.
     pub pegs: Vec<Peg>,
+    /// [`Yarn`], only the width field is important to compute the [`Blueprint`].
     pub yarn: Yarn,
+    /// [`PatherConfig`], algorithm config.
     pub config: PatherConfig,
     /// Holds the pixel coords of all the lines
     line_cache: HashMap<(u16, u16), Line>,
 }
 
 impl Pather {
+    /// Creates a new [`Pather`].
     pub fn new(img: GrayImage, pegs: Vec<Peg>, yarn: Yarn, config: PatherConfig) -> Self {
         let line_cache = HashMap::new();
         let mut out = Self {
@@ -70,17 +83,22 @@ impl Pather {
         out
     }
 
+    /// Creates a nes [`Pather`] from an image file.
+    ///
+    /// # Errors
+    ///
+    /// This function will return an error if [`image::open`] fails to open the image file.
     pub fn from_image_file(
         image_path: PathBuf,
         pegs: Vec<Peg>,
         yarn: Yarn,
         config: PatherConfig,
-    ) -> Self {
-        let img = image::open(image_path).unwrap().into_luma8();
-        Self::new(img, pegs, yarn, config)
+    ) -> Result<Self, Box<dyn Error>> {
+        let img = image::open(image_path)?.into_luma8();
+        Ok(Self::new(img, pegs, yarn, config))
     }
 
-    /// Populate the [line_cache] with the pixel coords of all the line between the peg pairs
+    /// Populate the `line_cache` with the pixel coords of all the line between the [`Peg`] pairs.
     fn populate_line_cache(&mut self) {
         info!("Populating line cache");
 
@@ -94,7 +112,7 @@ impl Pather {
         debug!("# line cache entries: {:?}", self.line_cache.len());
     }
 
-    /// Get starting peg by taking the peg located on the darkest pixel
+    /// Get starting peg by taking the [`Peg`] located on the darkest pixel.
     fn get_start_peg(&self, radius: u32) -> &Peg {
         let peg_avgs: Vec<u32> = self
             .pegs
@@ -118,7 +136,7 @@ impl Pather {
         &self.pegs[min_index]
     }
 
-    /// Compute the peg order
+    /// Compute the [`Blueprint`].
     pub fn compute(&self) -> Blueprint {
         // let yarn_delta = self.yarn.delta() as u16;
         let opacity = 1. - self.config.lighten_factor;
