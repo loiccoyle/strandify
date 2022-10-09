@@ -160,7 +160,7 @@ impl Pather {
         let mut min_peg: Option<&Peg>;
 
         let pbar = utils::pbar(self.config.iterations as u64, !self.config.progress_bar)
-            .with_message("Computing peg order");
+            .with_message("Computing blueprint");
 
         let mut last_peg = start_peg;
         let mut last_last_peg = last_peg;
