@@ -65,7 +65,7 @@ pub struct Arguments {
     /// Yarn width
     #[clap(short = 'w', long, value_parser, default_value_t = 1)]
     pub yarn_width: u32,
-    /// Encourages peg exploration at the expense of contrast [0, 1]
+    /// How much to lighten the pixels at each line pass, low values encourage line overlap [0, 1]
     #[clap(short, long, value_parser=number_between_0_and_1, default_value_t = 0.5)]
     pub lighten_factor: f64,
     /// Write pegs to file

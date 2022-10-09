@@ -15,7 +15,7 @@ pub struct PatherConfig {
     /// Number of [`Peg`] connections.
     pub iterations: u32,
     /// How much to lighten the the pixels at each pass, between 0 and 1.
-    /// Large values encourage exploration.
+    /// Low values encourage line overlap.
     pub lighten_factor: f64,
     /// Radius around [`Pegs`](Peg), in pixels, to use to determine the starting [`Peg`].
     pub start_peg_radius: u32,
