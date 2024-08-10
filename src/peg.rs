@@ -1,6 +1,7 @@
 use std::collections::HashSet;
 use std::iter::zip;
 
+use itertools::Itertools;
 use rand::{thread_rng, Rng};
 use serde::{Deserialize, Serialize};
 
@@ -22,6 +23,7 @@ impl Peg {
         Self { x, y, id }
     }
 
+    /// Get the pixel coords connecting 2 [`Pegs`](Peg).
     pub fn line_to(&self, other: &Peg, width: f32) -> Line {
         let mut pixels = HashSet::new();
 
@@ -60,64 +62,20 @@ impl Peg {
 
         let mut x_coords = Vec::new();
         let mut y_coords = Vec::new();
-        pixels.iter().for_each(|(x, y)| {
-            x_coords.push(*x as u32);
-            y_coords.push(*y as u32);
-        });
+        pixels
+            .iter()
+            .sorted_by(|(x_a, y_a), (x_b, y_b)| {
+                if x_a + y_a > x_b + y_b {
+                    std::cmp::Ordering::Greater
+                } else {
+                    std::cmp::Ordering::Less
+                }
+            })
+            .for_each(|(x, y)| {
+                x_coords.push(*x as u32);
+                y_coords.push(*y as u32);
+            });
         Line::new(x_coords, y_coords, self.dist_to(other))
-    }
-
-    /// Get the pixel coords connecting 2 [`Pegs`](Peg).
-    pub fn line_to_2(&self, other: &Peg) -> Line {
-        let delta_x = utils::abs_diff(self.x, other.x);
-        let delta_y = utils::abs_diff(self.y, other.y);
-        let dist = self.dist_to(other);
-
-        // vertical line
-        let x_coords: Vec<u32>;
-        let y_coords: Vec<u32>;
-
-        if delta_x == 0 && delta_y != 0 {
-            y_coords = (self.y.min(other.y)..=self.y.max(other.y)).collect();
-            x_coords = vec![self.x; y_coords.len()]
-            // return Line::new(x_coords, y_coords, dist);
-        } else if delta_x >= delta_y {
-            let line_fn = self.line_x_fn_to(other);
-            x_coords = (self.x.min(other.x)..=self.x.max(other.x)).collect();
-            y_coords = x_coords
-                .clone()
-                .into_iter()
-                .map(line_fn)
-                .map(|y| y.round() as u32)
-                .collect();
-        } else {
-            let line_fn = self.line_y_fn_to(other);
-            y_coords = (self.y.min(other.y)..=self.y.max(other.y)).collect();
-            x_coords = y_coords
-                .clone()
-                .into_iter()
-                .map(line_fn)
-                .map(|x| x.round() as u32)
-                .collect();
-        }
-        Line::new(x_coords, y_coords, dist)
-    }
-
-    fn get_line_coefs(&self, other: &Peg) -> (f64, f64) {
-        let slope: f64 =
-            (f64::from(other.y) - f64::from(self.y)) / (f64::from(other.x) - f64::from(self.x));
-        let intercept: f64 = f64::from(self.y) - slope * f64::from(self.x);
-        (slope, intercept)
-    }
-
-    fn line_x_fn_to(&self, other: &Peg) -> Box<dyn FnMut(u32) -> f64> {
-        let (slope, intercept) = self.get_line_coefs(other);
-        Box::new(move |x| slope * f64::from(x) + intercept)
-    }
-
-    fn line_y_fn_to(&self, other: &Peg) -> Box<dyn FnMut(u32) -> f64> {
-        let (slope, intercept) = self.get_line_coefs(other);
-        Box::new(move |y| f64::from(y) / slope - intercept / slope)
     }
 
     /// Get the pixels around a [`Peg`] within radius.
@@ -265,21 +223,6 @@ impl Yarn {
 #[cfg(test)]
 mod test {
     use super::*;
-
-    #[test]
-    fn peg_get_line_coefs() {
-        let peg_a = Peg::new(0, 0, 0);
-        let peg_b = Peg::new(1, 1, 1);
-        let (slope, intercept) = peg_a.get_line_coefs(&peg_b);
-        assert_eq!(slope, 1.);
-        assert_eq!(intercept, 0.);
-
-        let peg_a = Peg::new(1, 1, 0);
-        let peg_b = Peg::new(0, 1, 1);
-        let (slope, intercept) = peg_a.get_line_coefs(&peg_b);
-        assert_eq!(slope, 0.);
-        assert_eq!(intercept, 1.);
-    }
 
     #[test]
     fn peg_line_to() {
