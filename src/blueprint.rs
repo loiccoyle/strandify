@@ -3,7 +3,7 @@ use std::fs::File;
 use std::io::BufReader;
 use std::path::Path;
 
-use image::GrayImage;
+use image::{imageops, DynamicImage, Rgba};
 use serde::{Deserialize, Serialize};
 use serde_json::Result as Result_serde;
 use svg::node::element::path::Data;
@@ -21,24 +21,38 @@ pub struct Blueprint {
     pub width: u32,
     /// Height of the [`blueprint`].
     pub height: u32,
+    /// Background
+    pub background: Option<(u8, u8, u8)>,
 }
 
 impl Blueprint {
     /// Creates a new [`Blueprint`].
-    pub fn new(peg_order: Vec<Peg>, width: u32, height: u32) -> Self {
+    pub fn new(
+        peg_order: Vec<Peg>,
+        width: u32,
+        height: u32,
+        background: Option<(u8, u8, u8)>,
+    ) -> Self {
         Self {
             peg_order,
             width,
             height,
+            background,
         }
     }
 
     /// Create a [`Blueprint`] from [`Peg`] references.
-    pub fn from_refs(peg_order: Vec<&Peg>, width: u32, height: u32) -> Self {
+    pub fn from_refs(
+        peg_order: Vec<&Peg>,
+        width: u32,
+        height: u32,
+        background: Option<(u8, u8, u8)>,
+    ) -> Self {
         Self {
             peg_order: peg_order.into_iter().copied().collect(),
             width,
             height,
+            background,
         }
     }
 
@@ -84,24 +98,53 @@ impl Blueprint {
     ///
     /// * `yarn`: The [`Yarn`] to use to render the [`Blueprint`].
     /// * `progress_bar`: Show progress bar.
-    pub fn render_img(&self, yarn: &Yarn, progress_bar: bool) -> GrayImage {
-        let mut img = image::GrayImage::from_pixel(self.width, self.height, image::Luma([255]));
+    pub fn render_img(&self, yarn: &Yarn, progress_bar: bool) -> image::RgbaImage {
+        let (r, g, b) = yarn.color;
+        let mut paint = tiny_skia::Paint::default();
+        paint.set_color_rgba8(r, g, b, (yarn.opacity * 255.).round() as u8);
+        paint.anti_alias = true;
 
-        let opacity = 1. - yarn.opacity;
+        let path = {
+            let mut pb = tiny_skia::PathBuilder::new();
+            let mut iter = self.peg_order.iter();
+            let start = iter.next().unwrap();
 
-        let pbar = utils::pbar(self.peg_order.len() as u64 - 1, !progress_bar)
-            .with_message("Rendering image");
+            pb.move_to(start.x as f32, start.y as f32);
+            let pbar = utils::pbar(self.peg_order.len() as u64 - 1, !progress_bar)
+                .with_message("Rendering image");
+            for peg in pbar.wrap_iter(iter) {
+                pb.line_to(peg.x as f32, peg.y as f32);
+            }
+            pb.finish().unwrap()
+        };
 
-        // Iterate with pairs of consecutive pegs
-        for (peg_a, peg_b) in pbar.wrap_iter(self.zip()) {
-            let line = peg_a.line_to(peg_b).with_width(yarn.width);
-            line.zip().for_each(|(x, y)| {
-                let mut pixel = img.get_pixel_mut(*x, *y);
-                // pixel.0[0] = (pixel.0[0] as f64 * 0.99).floor() as u8;
-                pixel.0[0] = (pixel.0[0] as f64 * opacity).round() as u8;
-            })
+        let stroke = tiny_skia::Stroke {
+            width: yarn.width as f32 / 2.,
+            line_cap: tiny_skia::LineCap::Round,
+            ..Default::default()
+        };
+
+        let mut pixmap = tiny_skia::Pixmap::new(self.width, self.height).unwrap();
+        pixmap.stroke_path(
+            &path,
+            &paint,
+            &stroke,
+            tiny_skia::Transform::identity(),
+            None,
+        );
+        // pixmap.save_png("image.png").unwrap();
+        let img =
+            image::ImageBuffer::from_vec(self.width, self.height, pixmap.data().to_vec()).unwrap();
+
+        if let Some((r, g, b)) = self.background {
+            // add a background
+            let mut out =
+                image::RgbaImage::from_pixel(self.width, self.height, Rgba([r, g, b, 255]));
+            imageops::overlay(&mut out, &img, 0, 0);
+            out
+        } else {
+            img
         }
-        img
     }
 
     /// Render the [`Blueprint`] as a svg.
@@ -111,17 +154,20 @@ impl Blueprint {
     /// * `yarn`: The [`Yarn`] to use to render the [`Blueprint`].
     /// * `progress_bar`: Show progress bar.
     pub fn render_svg(&self, yarn: &Yarn, progress_bar: bool) -> Document {
+        let (r, g, b) = yarn.color;
         let mut document = Document::new()
             .set("viewbox", (0, 0, self.width, self.height))
             .set("width", self.width)
             .set("height", self.height);
 
-        let background = Rectangle::new()
+        let mut background = Rectangle::new()
             .set("x", 0)
             .set("y", 0)
             .set("width", "100%")
-            .set("height", "100%")
-            .set("fill", "white");
+            .set("height", "100%");
+        if let Some((bg_r, bg_g, bg_b)) = self.background {
+            background = background.set("fill", format!("rgb({bg_r}, {bg_g}, {bg_b})"));
+        }
         document.append(background);
 
         let pbar = utils::pbar(self.peg_order.len() as u64 - 1, !progress_bar)
@@ -133,7 +179,7 @@ impl Blueprint {
                 .line_to((peg_b.x, peg_b.y));
             let path = PathSVG::new()
                 .set("fill", "none")
-                .set("stroke", "black")
+                .set("stroke", format!("rgb({r}, {g}, {b})"))
                 .set("stroke-width", yarn.width)
                 .set("opacity", yarn.opacity)
                 .set("d", data);
@@ -164,7 +210,12 @@ impl Blueprint {
             svg::save(output_file, &svg_img)?;
         } else {
             let img = self.render_img(yarn, progress_bar);
-            img.save(output_file)?;
+            if output_file.extension().unwrap() != "png" {
+                let out = DynamicImage::from(img).to_rgb8();
+                out.save(output_file)?;
+            } else {
+                img.save(output_file)?;
+            }
         }
 
         Ok(())
@@ -197,7 +248,12 @@ mod test {
 
     #[test]
     fn blueprint_to_from_file() {
-        let bp = Blueprint::new(vec![Peg::new(0, 0, 0), Peg::new(63, 63, 1)], 64, 64);
+        let bp = Blueprint::new(
+            vec![Peg::new(0, 0, 0), Peg::new(63, 63, 1)],
+            64,
+            64,
+            Some((0, 0, 0)),
+        );
         let bp_file = PathBuf::from(TEST_DIR).join("bp.json");
         assert!(bp.to_file(&bp_file).is_ok());
 
@@ -213,7 +269,12 @@ mod test {
 
     #[test]
     fn zip() {
-        let bp = Blueprint::new(vec![Peg::new(0, 0, 0), Peg::new(63, 63, 1)], 64, 64);
+        let bp = Blueprint::new(
+            vec![Peg::new(0, 0, 0), Peg::new(63, 63, 1)],
+            64,
+            64,
+            Some((255, 255, 255)),
+        );
         assert_eq!(bp.zip().len(), 1);
     }
 }

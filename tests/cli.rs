@@ -3,11 +3,9 @@ use std::fs::File;
 use std::io::BufReader;
 use std::path::PathBuf;
 
-use assert_cmd;
 use assert_fs::prelude::*;
 use image::{self, GenericImageView};
 use predicates::prelude::*;
-use serde_json;
 
 use stringart::blueprint::Blueprint;
 use stringart::peg::Peg;

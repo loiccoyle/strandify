@@ -6,6 +6,7 @@ use std::iter::zip;
 use std::path::PathBuf;
 
 use clap::Parser;
+use image::imageops;
 use log::{debug, info};
 
 use stringart::blueprint;
@@ -35,17 +36,50 @@ fn main() -> Result<(), Box<dyn Error>> {
             bp.to_file(&output_file).map_err(|err| err.into())
         } else {
             info!("Rendering blueprint to {output_file:?}.");
-            let yarn = peg::Yarn::new(args.yarn_width, args.yarn_opacity);
+            let yarn = peg::Yarn::new(args.yarn_width, args.yarn_opacity, (0, 0, 0));
             bp.render(&output_file, &yarn, !args.verbose.is_silent())
         };
     }
-    // Handle the generation of pegs and computation of blueprint
-    let img = utils::open_img_transparency_to_white(PathBuf::from(args.input));
+    let img_rgb = utils::open_img_transparency_to_white(PathBuf::from(args.input));
 
-    let (width, height) = img.dimensions();
+    let img =
+        if (args.yarn_color.r == args.yarn_color.g) && (args.yarn_color.g == args.yarn_color.b) {
+            info!("converting to grayscale");
+            // if yarn is grey scale, just convert the img to black and white
+            imageops::grayscale(&img_rgb)
+        } else {
+            // otherwise project along the color vector
+            // convert to [0, 1]
+            let yarn_color_float = (
+                args.yarn_color.r as f64 / 255.,
+                args.yarn_color.g as f64 / 255.,
+                args.yarn_color.b as f64 / 255.,
+            );
+
+            info!("projecting along {yarn_color_float:?}");
+            let mut img = image::GrayImage::new(img_rgb.width(), img_rgb.height());
+            // compute the norm of the yarn color vector
+            let color_norm = ((yarn_color_float.0).powi(2)
+                + (yarn_color_float.1).powi(2)
+                + (yarn_color_float.2).powi(2))
+            .powf(1. / 2.);
+            info!("norm: {color_norm}");
+            // project the color space onto the yarn color vector
+            for (pixel, pixel_rgb) in zip(img.pixels_mut(), img_rgb.pixels()) {
+                pixel.0 = [((pixel_rgb.0[0] as f64 * yarn_color_float.0
+                    + pixel_rgb.0[1] as f64 * yarn_color_float.1
+                    + pixel_rgb.0[2] as f64 * yarn_color_float.2)
+                    / color_norm)
+                    .round() as u8];
+            }
+            img
+        };
+
+    let (width, height) = img_rgb.dimensions();
     let dist = ((min(width, height) as f64) * (1. - args.peg_margin)).round() as u32;
 
     let mut pegs: Vec<peg::Peg>;
+    // Handle the generation of pegs and computation of blueprint
     if let Some(peg_path) = args.load_pegs {
         // Load pegs from file
         info!("Reading {peg_path:?}");
@@ -85,7 +119,6 @@ fn main() -> Result<(), Box<dyn Error>> {
     }
 
     if let Some(output_file) = args.output {
-        let output_file = PathBuf::from(output_file);
         let skip_peg_within = args.peg_skip_within.unwrap_or(dist / 8);
         info!("Skip peg within: {skip_peg_within:?}px");
 
@@ -96,20 +129,32 @@ fn main() -> Result<(), Box<dyn Error>> {
             skip_peg_within,
             !args.verbose.is_silent(),
         );
-        let yarn = peg::Yarn::new(args.yarn_width, args.yarn_opacity);
         debug!("config: {config:?}");
-        debug!("yarn: {yarn:?}");
 
-        let string_pather = pather::Pather::new(img, pegs, yarn, config);
-        let bp = string_pather.compute();
+        let out_file = PathBuf::from(output_file.clone());
 
-        if output_file.extension().unwrap() == "json" {
-            info!("Writing blueprint to {output_file:?}.");
-            bp.to_file(&output_file)?;
+        let string_pather = pather::Pather::new(
+            img.clone(),
+            pegs.clone(),
+            peg::Yarn::new(
+                args.yarn_width,
+                args.yarn_opacity,
+                (args.yarn_color.r, args.yarn_color.g, args.yarn_color.b),
+            ),
+            config.clone(),
+        );
+        let mut bp = string_pather.compute();
+        if args.transparent {
+            bp.background = None;
+        }
+
+        if out_file.extension().unwrap() == "json" {
+            info!("Writing blueprint to {out_file:?}.");
+            bp.to_file(&out_file)?;
         } else {
-            info!("Rendering blueprint to {output_file:?}.");
+            info!("Rendering blueprint to {out_file:?}.");
             bp.render(
-                &output_file,
+                &out_file,
                 &string_pather.yarn,
                 string_pather.config.progress_bar,
             )?;

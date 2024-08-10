@@ -1,17 +1,18 @@
 use clap::Parser;
 use clap_verbosity_flag::Verbosity;
-use image::io::Reader;
+use image::ImageReader;
 use std::path::PathBuf;
+use std::str::FromStr;
 
-fn check_file_exists(input: &str) -> Result<(), String> {
+fn check_file_exists(input: &str) -> Result<String, String> {
     let input_file = PathBuf::from(input);
     if input_file.exists() {
-        let reader = Reader::open(&input_file)
+        let reader = ImageReader::open(&input_file)
             .unwrap()
             .with_guessed_format()
             .unwrap();
         if input_file.extension().unwrap() == "json" || reader.format().is_some() {
-            Ok(())
+            Ok(input.into())
         } else {
             Err(format!("File {:?} format not supported.", input_file))
         }
@@ -32,18 +33,48 @@ fn number_between_0_and_1(value: &str) -> Result<f64, String> {
     }
 }
 
+#[derive(Debug, Clone)]
+pub struct Rgb {
+    pub r: u8,
+    pub g: u8,
+    pub b: u8,
+}
+
+impl FromStr for Rgb {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let parts: Vec<&str> = s.split_whitespace().collect();
+        if parts.len() != 3 {
+            return Err("Expected three values separated by spaces".into());
+        }
+
+        let r = parts[0].trim().parse().map_err(|_| "Invalid red value")?;
+        let g = parts[1].trim().parse().map_err(|_| "Invalid green value")?;
+        let b = parts[2].trim().parse().map_err(|_| "Invalid blue value")?;
+
+        Ok(Rgb { r, g, b })
+    }
+}
+
 #[derive(Parser, Debug)]
 #[clap(author = "Loic Coyle")]
 /// CLI utility to generate string art.
 pub struct Arguments {
     /// Input image or blueprint json file
-    #[clap(validator=check_file_exists)]
+    #[clap(value_parser=check_file_exists)]
     pub input: String,
     /// Output file, either image format or json
     pub output: Option<String>,
     /// Number of iterations
     #[clap(short, long, value_parser, default_value_t = 4000)]
     pub iterations: u32,
+    /// Transparent background
+    #[clap(short = 't', action, default_value_t = false)]
+    pub transparent: bool,
+    /// Yarn color
+    #[clap(short = 'C', long, value_parser, default_value = "0 0 0")]
+    pub yarn_color: Rgb,
     /// Peg distribution shape
     #[clap(short = 'S', long, value_parser=["circle", "square"], default_value = "circle", name="SHAPE")]
     pub peg_shape: String,
@@ -72,7 +103,7 @@ pub struct Arguments {
     #[clap(long, name = "PEG_SAVE_FILE")]
     pub save_pegs: Option<String>,
     /// Read pegs from file
-    #[clap(long, name="PEG_LOAD_FILE", validator=check_file_exists)]
+    #[clap(long, name="PEG_LOAD_FILE", value_parser=check_file_exists)]
     pub load_pegs: Option<String>,
     /// Verbosity level.
     #[clap(flatten)]

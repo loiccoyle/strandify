@@ -1,16 +1,16 @@
-use image::GrayImage;
 use log::{debug, info};
 use std::collections::HashMap;
 use std::error::Error;
 use std::path::PathBuf;
 
+use image::GrayImage;
 use itertools::Itertools;
 
 use crate::blueprint::Blueprint;
 use crate::peg::{Line, Peg, Yarn};
 use crate::utils;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct PatherConfig {
     /// Number of [`Peg`] connections.
     pub iterations: u32,
@@ -102,8 +102,17 @@ impl Pather {
     fn populate_line_cache(&mut self) {
         info!("Populating line cache");
 
-        let pbar = utils::spinner(!self.config.progress_bar).with_message("Populating line cache");
-        for (peg_a, peg_b) in pbar.wrap_iter(self.pegs.iter().tuple_combinations()) {
+        let peg_combinations = self
+            .pegs
+            .iter()
+            .tuple_combinations()
+            .filter(|(peg_a, peg_b)| peg_a.dist_to(peg_b) >= self.config.skip_peg_within)
+            .collect_vec();
+
+        let pbar = utils::pbar(peg_combinations.len() as u64, !self.config.progress_bar)
+            .with_message("Populating line cache");
+
+        for (peg_a, peg_b) in pbar.wrap_iter(peg_combinations.iter()) {
             self.line_cache.insert(
                 utils::hash_key(peg_a, peg_b),
                 peg_a.line_to(peg_b).with_width(self.yarn.width),
@@ -138,8 +147,6 @@ impl Pather {
 
     /// Compute the [`Blueprint`].
     pub fn compute(&self) -> Blueprint {
-        // let yarn_delta = self.yarn.delta() as u16;
-        let opacity = 1. - self.config.lighten_factor;
         let layer_delta = 255. * self.config.lighten_factor;
 
         let max_dist = self
@@ -175,14 +182,10 @@ impl Pather {
                 if peg.id == last_peg.id || peg.id == last_last_peg.id {
                     continue;
                 }
-                let line = self
-                    .line_cache
-                    .get(&utils::hash_key(last_peg, peg))
-                    .unwrap();
-
-                if line.dist <= self.config.skip_peg_within {
-                    continue;
-                }
+                let line = match self.line_cache.get(&utils::hash_key(last_peg, peg)) {
+                    None => continue,
+                    Some(line) => line,
+                };
 
                 let loss = line
                     .zip()
@@ -204,11 +207,16 @@ impl Pather {
             // Update the work img to reflect the added line
             // https://docs.rs/image/latest/image/struct.ImageBuffer.html
             min_line.unwrap().zip().for_each(|(x, y)| {
-                let mut pixel = work_img.get_pixel_mut(*x, *y);
-                pixel.0[0] = (opacity * pixel.0[0] as f64 + layer_delta).min(255.) as u8;
-                // pixel.0[0] = cmp::min(pixel.0[0] as u16 + yarn_delta, 255) as u8;
+                let pixel = work_img.get_pixel_mut(*x, *y);
+                pixel.0[0] = (pixel.0[0] as f64 + layer_delta).min(255.) as u8;
             });
         }
-        Blueprint::from_refs(peg_order, self.image.width(), self.image.height())
+
+        Blueprint::from_refs(
+            peg_order,
+            self.image.width(),
+            self.image.height(),
+            Some((255, 255, 255)),
+        )
     }
 }

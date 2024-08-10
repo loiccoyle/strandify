@@ -1,8 +1,7 @@
 use std::{f64::consts::PI, path::Path};
 
 use crate::peg::Peg;
-
-use image::imageops;
+use image::ImageBuffer;
 use indicatif::{ProgressBar, ProgressStyle};
 
 /// Compute the coords of evenly spaced points around a circle
@@ -141,7 +140,7 @@ pub fn hash_key(peg_a: &Peg, peg_b: &Peg) -> (u16, u16) {
 /// Open an image and set all fully transparent pixels to white.
 pub fn open_img_transparency_to_white<P: AsRef<Path>>(
     image_file: P,
-) -> image::ImageBuffer<image::Luma<u8>, Vec<u8>> {
+) -> image::ImageBuffer<image::Rgb<u8>, Vec<u8>> {
     let mut img_rgba = image::open(image_file).unwrap().into_rgba8();
     for pixel in img_rgba.pixels_mut() {
         // replace fully transparent pixel with white
@@ -149,7 +148,29 @@ pub fn open_img_transparency_to_white<P: AsRef<Path>>(
             pixel.0 = [255, 255, 255, 255]
         }
     }
-    imageops::grayscale(&img_rgba)
+    image::DynamicImage::ImageRgba8(img_rgba).to_rgb8()
+}
+
+type RgbImage = image::ImageBuffer<image::Rgb<u8>, Vec<u8>>;
+pub fn split_channels(
+    img: &image::ImageBuffer<image::Rgb<u8>, Vec<u8>>,
+) -> (RgbImage, RgbImage, RgbImage) {
+    let (width, height) = img.dimensions();
+
+    // Create buffers for each channel
+    let mut red: image::ImageBuffer<image::Rgb<u8>, Vec<u8>> = ImageBuffer::new(width, height);
+    let mut green: image::ImageBuffer<image::Rgb<u8>, Vec<u8>> = ImageBuffer::new(width, height);
+    let mut blue: image::ImageBuffer<image::Rgb<u8>, Vec<u8>> = ImageBuffer::new(width, height);
+
+    // Iterate over the pixels and split the channels
+    for (x, y, pixel) in img.enumerate_pixels() {
+        let image::Rgb([r, g, b]) = *pixel;
+        red.put_pixel(x, y, image::Rgb([r, 0, 0]));
+        green.put_pixel(x, y, image::Rgb([0, g, 0]));
+        blue.put_pixel(x, y, image::Rgb([0, 0, b]));
+    }
+
+    (red, green, blue)
 }
 
 #[cfg(test)]

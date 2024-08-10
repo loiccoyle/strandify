@@ -192,18 +192,28 @@ impl Line {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Yarn {
     /// Width of the [`Yarn`], in pixels.
     pub width: u32,
     /// [`Yarn`] opacity, used when rendering a [`Blueprint`](crate::blueprint::Blueprint).
     pub opacity: f64,
+    /// [`Yarn`] color.
+    pub color: (u8, u8, u8),
 }
 
 impl Yarn {
     /// Creates a new [`Yarn`].
-    pub fn new(width: u32, opacity: f64) -> Self {
-        Self { width, opacity }
+    pub fn new(width: u32, opacity: f64, color: (u8, u8, u8)) -> Self {
+        Self {
+            width,
+            opacity,
+            color,
+        }
+    }
+
+    pub fn set_color(&mut self, color: (u8, u8, u8)) {
+        self.color = color
     }
 }
 
@@ -233,14 +243,14 @@ mod test {
         let line = peg_a.line_to(&peg_b);
         assert_eq!(line.x, vec![0, 1]);
         assert_eq!(line.y, vec![0, 1]);
-        assert_eq!(line.dist, f32::from(2.0).sqrt() as u32);
+        assert_eq!(line.dist, f32::sqrt(2.0) as u32);
 
         let peg_a = Peg::new(1, 1, 0);
         let peg_b = Peg::new(0, 0, 1);
         let line = peg_a.line_to(&peg_b);
         assert_eq!(line.x, vec![0, 1]);
         assert_eq!(line.y, vec![0, 1]);
-        assert_eq!(line.dist, f32::from(2.0).sqrt() as u32);
+        assert_eq!(line.dist, f32::sqrt(2.0) as u32);
 
         // horizontal line
         let peg_a = Peg::new(0, 1, 0);
