@@ -41,36 +41,65 @@ pub fn square_coords(
     (center_x, center_y): (u32, u32),
     n_pegs: u32,
 ) -> (Vec<u32>, Vec<u32>) {
-    let dist_between: f64 = 4. * length as f64 / n_pegs as f64;
+    rectangle_coords(length, length, (center_x, center_y), n_pegs)
+}
 
-    let top_left_x = center_x - length / 2;
-    let top_left_y = center_y - length / 2;
+/// Compute the coords of evenly spaced points around a rectangle
+///
+/// # Arguments
+///
+/// * `width`: the width of the side of the rectangle.
+/// * `height`: the height of the side of the rectangle.
+/// * (`center_x`,` center_y`): the coords of the center point
+/// * `n_pegs`: the number of pegs
+pub fn rectangle_coords(
+    width: u32,
+    height: u32,
+    (center_x, center_y): (u32, u32),
+    n_pegs: u32,
+) -> (Vec<u32>, Vec<u32>) {
+    let (center_x, center_y) = (center_x as f64, center_y as f64);
+    let width = width as f64;
+    let height = height as f64;
+    let half_width = width / 2.0;
+    let half_height = height / 2.0;
 
-    let mut x_coords: Vec<u32> = vec![];
-    let mut y_coords: Vec<u32> = vec![];
+    let perimeter = 2.0 * (width + height);
+    let step_length = perimeter / n_pegs as f64;
 
-    for i in 0..n_pegs {
-        let dist = (i as f64 * dist_between) as u32;
-        let side = dist / length;
-        let rem = dist % length;
-        if side == 0 {
-            // top
-            x_coords.push(top_left_x + rem);
-            y_coords.push(top_left_y);
-        } else if side == 1 {
-            // right
-            x_coords.push(top_left_x + length);
-            y_coords.push(top_left_y + rem);
-        } else if side == 2 {
-            // bottom
-            x_coords.push(top_left_x + length - rem);
-            y_coords.push(top_left_y + length);
-        } else if side == 3 {
-            // left
-            x_coords.push(top_left_x);
-            y_coords.push(top_left_y + length - rem);
-        }
+    let mut x_coords: Vec<u32> = Vec::with_capacity(n_pegs as usize);
+    let mut y_coords: Vec<u32> = Vec::with_capacity(n_pegs as usize);
+
+    // Current position in perimeter
+    let mut current_distance = 0.0;
+
+    for _ in 0..n_pegs {
+        let point = if current_distance < width {
+            // Bottom edge
+            (
+                center_x - half_width + current_distance,
+                center_y - half_height,
+            )
+        } else if current_distance < width + height {
+            // Right edge
+            let dist = current_distance - width;
+            (center_x + half_width, center_y - half_height + dist)
+        } else if current_distance < 2.0 * width + height {
+            // Top edge
+            let dist = current_distance - width - height;
+            (center_x + half_width - dist, center_y + half_height)
+        } else {
+            // Left edge
+            let dist = current_distance - 2.0 * width - height;
+            (center_x - half_width, center_y + half_height - dist)
+        };
+
+        x_coords.push(point.0.round() as u32);
+        y_coords.push(point.1.round() as u32);
+
+        current_distance += step_length;
     }
+
     (x_coords, y_coords)
 }
 

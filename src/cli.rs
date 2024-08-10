@@ -79,7 +79,7 @@ pub struct Arguments {
     #[clap(long, value_parser, default_value_t = false)]
     pub project_to_yarn_color: bool,
     /// Peg distribution shape
-    #[clap(short = 'S', long, value_parser=["circle", "square"], default_value = "circle", name="SHAPE")]
+    #[clap(short = 'S', long, value_parser=["circle", "square", "border"], default_value = "circle", name="SHAPE")]
     pub peg_shape: String,
     /// Number of pegs
     #[clap(short = 'n', long, value_parser, default_value_t = 288)]

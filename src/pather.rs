@@ -113,10 +113,8 @@ impl Pather {
             .with_message("Populating line cache");
 
         for (peg_a, peg_b) in pbar.wrap_iter(peg_combinations.iter()) {
-            self.line_cache.insert(
-                utils::hash_key(peg_a, peg_b),
-                peg_a.line_to(peg_b, self.yarn.width),
-            );
+            self.line_cache
+                .insert(utils::hash_key(peg_a, peg_b), peg_a.line_to(peg_b, 1.));
         }
         debug!("# line cache entries: {:?}", self.line_cache.len());
     }

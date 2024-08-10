@@ -42,7 +42,9 @@ fn main() -> Result<(), Box<dyn Error>> {
     }
     let img_rgb = utils::open_img_transparency_to_white(PathBuf::from(args.input));
 
-    let img = if args.project_to_yarn_color {
+    let img = if args.project_to_yarn_color
+        && (args.yarn_color.r != args.yarn_color.g || args.yarn_color.g != args.yarn_color.b)
+    {
         info!("Projecting to yarn color");
         // otherwise project along the color vector
         // convert to [0, 1]
@@ -95,7 +97,9 @@ fn main() -> Result<(), Box<dyn Error>> {
     };
 
     let (width, height) = img_rgb.dimensions();
-    let dist = ((min(width, height) as f64) * (1. - args.peg_margin)).round() as u32;
+    let min_dim = min(width, height);
+    let margin = (min_dim as f64 * args.peg_margin).round() as u32;
+    info!("Peg margin: {margin}px");
 
     let mut pegs: Vec<peg::Peg>;
     // Handle the generation of pegs and computation of blueprint
@@ -110,10 +114,18 @@ fn main() -> Result<(), Box<dyn Error>> {
         // Generate pegs from scratch
         let (peg_coords_x, peg_coords_y) = if args.peg_shape == "circle" {
             info!("Using circle peg distribution");
-            utils::circle_coords(dist / 2, center, args.peg_number)
+            utils::circle_coords((min_dim - 2 * margin) / 2, center, args.peg_number)
         } else if args.peg_shape == "square" {
             info!("Using square peg distribution");
-            utils::square_coords(dist, center, args.peg_number)
+            utils::square_coords(min_dim - 2 * margin, center, args.peg_number)
+        } else if args.peg_shape == "border" {
+            info!("Using border peg distribution");
+            utils::rectangle_coords(
+                width - 2 * margin,
+                height - 2 * margin,
+                center,
+                args.peg_number,
+            )
         } else {
             return Err(format!("Unrecognized SHAPE '{:?}'", args.peg_shape).into());
         };
@@ -138,7 +150,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     }
 
     if let Some(output_file) = args.output {
-        let skip_peg_within = args.peg_skip_within.unwrap_or(dist / 8);
+        let skip_peg_within = args.peg_skip_within.unwrap_or(min_dim / 8);
         info!("Skip peg within: {skip_peg_within:?}px");
 
         let config = pather::PatherConfig::new(
