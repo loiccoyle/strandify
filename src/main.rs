@@ -42,38 +42,58 @@ fn main() -> Result<(), Box<dyn Error>> {
     }
     let img_rgb = utils::open_img_transparency_to_white(PathBuf::from(args.input));
 
-    let img =
-        if (args.yarn_color.r == args.yarn_color.g) && (args.yarn_color.g == args.yarn_color.b) {
-            info!("converting to grayscale");
-            // if yarn is grey scale, just convert the img to black and white
-            imageops::grayscale(&img_rgb)
-        } else {
-            // otherwise project along the color vector
-            // convert to [0, 1]
-            let yarn_color_float = (
-                args.yarn_color.r as f64 / 255.,
-                args.yarn_color.g as f64 / 255.,
-                args.yarn_color.b as f64 / 255.,
-            );
+    let img = if (args.yarn_color.r == args.yarn_color.g)
+        && (args.yarn_color.g == args.yarn_color.b)
+    {
+        info!("converting to grayscale");
+        // if yarn is grey scale, just convert the img to black and white
+        imageops::grayscale(&img_rgb)
+    } else {
+        // otherwise project along the color vector
+        // convert to [0, 1]
+        let yarn_color_float = (
+            args.yarn_color.r as f32 / 255.,
+            args.yarn_color.g as f32 / 255.,
+            args.yarn_color.b as f32 / 255.,
+        );
+        // compute the norm of the yarn color vector
+        let color_norm = ((yarn_color_float.0).powi(2)
+            + (yarn_color_float.1).powi(2)
+            + (yarn_color_float.2).powi(2))
+        .sqrt();
 
-            info!("projecting along {yarn_color_float:?}");
-            let mut img = image::GrayImage::new(img_rgb.width(), img_rgb.height());
-            // compute the norm of the yarn color vector
-            let color_norm = ((yarn_color_float.0).powi(2)
-                + (yarn_color_float.1).powi(2)
-                + (yarn_color_float.2).powi(2))
-            .powf(1. / 2.);
-            info!("norm: {color_norm}");
-            // project the color space onto the yarn color vector
-            for (pixel, pixel_rgb) in zip(img.pixels_mut(), img_rgb.pixels()) {
-                pixel.0 = [((pixel_rgb.0[0] as f64 * yarn_color_float.0
-                    + pixel_rgb.0[1] as f64 * yarn_color_float.1
-                    + pixel_rgb.0[2] as f64 * yarn_color_float.2)
-                    / color_norm)
-                    .round() as u8];
+        info!("projecting along {yarn_color_float:?}");
+        let mut img = image::GrayImage::new(img_rgb.width(), img_rgb.height());
+        info!("norm: {color_norm}");
+        // project the color space onto the yarn color vector
+        let mut value_min = 255;
+        let mut value_max = 0;
+        for (pixel, pixel_rgb) in zip(img.pixels_mut(), img_rgb.pixels()) {
+            let intensity = (pixel_rgb.0[0] as f32 * yarn_color_float.0
+                + pixel_rgb.0[1] as f32 * yarn_color_float.1
+                + pixel_rgb.0[2] as f32 * yarn_color_float.2)
+                / (yarn_color_float.0 + yarn_color_float.1 + yarn_color_float.2);
+
+            let adjusted = intensity
+                - 0.5
+                    * ((pixel_rgb.0[0] as f32 + pixel_rgb.0[1] as f32 + pixel_rgb.0[2] as f32)
+                        - intensity);
+            let value = (255. - adjusted).clamp(0., 255.) as u8;
+            pixel.0 = [value];
+            if value < value_min {
+                value_min = value;
             }
-            img
-        };
+            if value > value_max {
+                value_max = value;
+            }
+        }
+        // min max scale to use the full color space
+        for pixel in img.pixels_mut() {
+            pixel.0[0] = (255. * (pixel.0[0] - value_min) as f32 / (value_max - value_min) as f32)
+                .round() as u8;
+        }
+        img
+    };
 
     let (width, height) = img_rgb.dimensions();
     let dist = ((min(width, height) as f64) * (1. - args.peg_margin)).round() as u32;

@@ -14,7 +14,7 @@ stringart lincoln.jpg lincoln_out.jpg -o 0.3 -l 0.2 -j 3
 ## Mona Lisa
 
 ```sh
-stringart mona_lisa.jpg mona_lisa_out.jpg -o 0.2 -l 0.08 -S square
+stringart mona_lisa.jpg mona_lisa_out.jpg -o 0.15 -l 0.08 -S square
 ```
 
 ![Mona Lisa input](./mona_lisa.jpg)

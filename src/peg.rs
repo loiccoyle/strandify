@@ -22,8 +22,53 @@ impl Peg {
         Self { x, y, id }
     }
 
+    pub fn line_to(&self, other: &Peg, width: f32) -> Line {
+        let mut pixels = HashSet::new();
+
+        // Bresenham's line algorithm
+        let dx: i32 = utils::abs_diff(other.x, self.x) as i32;
+        let dy: i32 = -(utils::abs_diff(other.y, self.y) as i32);
+        let sx: i32 = if self.x < other.x { 1 } else { -1 };
+        let sy: i32 = if self.y < other.y { 1 } else { -1 };
+        let mut err = dx + dy;
+
+        let mut x = self.x as i32;
+        let mut y = self.y as i32;
+
+        loop {
+            // Add pixels for the current position and its surrounding area based on width
+            for ox in -(width as i32 / 2)..=(width as i32 / 2) {
+                for oy in -(width as i32 / 2)..=(width as i32 / 2) {
+                    pixels.insert((x + ox, y + oy));
+                }
+            }
+
+            if x == other.x as i32 && y == other.y as i32 {
+                break;
+            }
+
+            let e2 = 2 * err;
+            if e2 >= dy {
+                err += dy;
+                x += sx;
+            }
+            if e2 <= dx {
+                err += dx;
+                y += sy;
+            }
+        }
+
+        let mut x_coords = Vec::new();
+        let mut y_coords = Vec::new();
+        pixels.iter().for_each(|(x, y)| {
+            x_coords.push(*x as u32);
+            y_coords.push(*y as u32);
+        });
+        Line::new(x_coords, y_coords, self.dist_to(other))
+    }
+
     /// Get the pixel coords connecting 2 [`Pegs`](Peg).
-    pub fn line_to(&self, other: &Peg) -> Line {
+    pub fn line_to_2(&self, other: &Peg) -> Line {
         let delta_x = utils::abs_diff(self.x, other.x);
         let delta_y = utils::abs_diff(self.y, other.y);
         let dist = self.dist_to(other);
@@ -195,7 +240,7 @@ impl Line {
 #[derive(Debug, Clone)]
 pub struct Yarn {
     /// Width of the [`Yarn`], in pixels.
-    pub width: u32,
+    pub width: f32,
     /// [`Yarn`] opacity, used when rendering a [`Blueprint`](crate::blueprint::Blueprint).
     pub opacity: f64,
     /// [`Yarn`] color.
@@ -204,7 +249,7 @@ pub struct Yarn {
 
 impl Yarn {
     /// Creates a new [`Yarn`].
-    pub fn new(width: u32, opacity: f64, color: (u8, u8, u8)) -> Self {
+    pub fn new(width: f32, opacity: f64, color: (u8, u8, u8)) -> Self {
         Self {
             width,
             opacity,
@@ -240,14 +285,14 @@ mod test {
     fn peg_line_to() {
         let peg_a = Peg::new(0, 0, 0);
         let peg_b = Peg::new(1, 1, 1);
-        let line = peg_a.line_to(&peg_b);
+        let line = peg_a.line_to(&peg_b, 1.);
         assert_eq!(line.x, vec![0, 1]);
         assert_eq!(line.y, vec![0, 1]);
         assert_eq!(line.dist, f32::sqrt(2.0) as u32);
 
         let peg_a = Peg::new(1, 1, 0);
         let peg_b = Peg::new(0, 0, 1);
-        let line = peg_a.line_to(&peg_b);
+        let line = peg_a.line_to(&peg_b, 1.);
         assert_eq!(line.x, vec![0, 1]);
         assert_eq!(line.y, vec![0, 1]);
         assert_eq!(line.dist, f32::sqrt(2.0) as u32);
@@ -255,7 +300,7 @@ mod test {
         // horizontal line
         let peg_a = Peg::new(0, 1, 0);
         let peg_b = Peg::new(3, 1, 1);
-        let line = peg_a.line_to(&peg_b);
+        let line = peg_a.line_to(&peg_b, 1.);
         assert_eq!(line.x, vec![0, 1, 2, 3]);
         assert_eq!(line.y, vec![1, 1, 1, 1]);
         assert_eq!(line.dist, 3);
@@ -263,7 +308,7 @@ mod test {
         // vertical line
         let peg_a = Peg::new(0, 0, 0);
         let peg_b = Peg::new(0, 1, 1);
-        let line = peg_a.line_to(&peg_b);
+        let line = peg_a.line_to(&peg_b, 1.);
         assert_eq!(line.x, vec![0, 0]);
         assert_eq!(line.y, vec![0, 1]);
         assert_eq!(line.dist, 1);

@@ -1,11 +1,13 @@
+use image::DynamicImage;
+use resvg::render;
+use resvg::tiny_skia;
+use resvg::usvg;
+use serde::{Deserialize, Serialize};
+use serde_json::Result as Result_serde;
 use std::error::Error;
 use std::fs::File;
 use std::io::BufReader;
 use std::path::Path;
-
-use image::{imageops, DynamicImage, Rgba};
-use serde::{Deserialize, Serialize};
-use serde_json::Result as Result_serde;
 use svg::node::element::path::Data;
 use svg::node::element::{Path as PathSVG, Rectangle};
 use svg::{Document, Node};
@@ -99,52 +101,18 @@ impl Blueprint {
     /// * `yarn`: The [`Yarn`] to use to render the [`Blueprint`].
     /// * `progress_bar`: Show progress bar.
     pub fn render_img(&self, yarn: &Yarn, progress_bar: bool) -> image::RgbaImage {
-        let (r, g, b) = yarn.color;
-        let mut paint = tiny_skia::Paint::default();
-        paint.set_color_rgba8(r, g, b, (yarn.opacity * 255.).round() as u8);
-        paint.anti_alias = true;
-
-        let path = {
-            let mut pb = tiny_skia::PathBuilder::new();
-            let mut iter = self.peg_order.iter();
-            let start = iter.next().unwrap();
-
-            pb.move_to(start.x as f32, start.y as f32);
-            let pbar = utils::pbar(self.peg_order.len() as u64 - 1, !progress_bar)
-                .with_message("Rendering image");
-            for peg in pbar.wrap_iter(iter) {
-                pb.line_to(peg.x as f32, peg.y as f32);
-            }
-            pb.finish().unwrap()
-        };
-
-        let stroke = tiny_skia::Stroke {
-            width: yarn.width as f32 / 2.,
-            line_cap: tiny_skia::LineCap::Round,
-            ..Default::default()
-        };
+        let document = self.render_svg(yarn, progress_bar);
+        let svg_data = document.to_string();
+        let svg_tree = usvg::Tree::from_str(&svg_data, &usvg::Options::default()).unwrap();
 
         let mut pixmap = tiny_skia::Pixmap::new(self.width, self.height).unwrap();
-        pixmap.stroke_path(
-            &path,
-            &paint,
-            &stroke,
-            tiny_skia::Transform::identity(),
-            None,
-        );
-        // pixmap.save_png("image.png").unwrap();
+        let mut pixmap_mut = pixmap.as_mut();
+
+        render(&svg_tree, tiny_skia::Transform::identity(), &mut pixmap_mut);
         let img =
             image::ImageBuffer::from_vec(self.width, self.height, pixmap.data().to_vec()).unwrap();
 
-        if let Some((r, g, b)) = self.background {
-            // add a background
-            let mut out =
-                image::RgbaImage::from_pixel(self.width, self.height, Rgba([r, g, b, 255]));
-            imageops::overlay(&mut out, &img, 0, 0);
-            out
-        } else {
-            img
-        }
+        img
     }
 
     /// Render the [`Blueprint`] as a svg.
@@ -160,15 +128,15 @@ impl Blueprint {
             .set("width", self.width)
             .set("height", self.height);
 
-        let mut background = Rectangle::new()
-            .set("x", 0)
-            .set("y", 0)
-            .set("width", "100%")
-            .set("height", "100%");
         if let Some((bg_r, bg_g, bg_b)) = self.background {
-            background = background.set("fill", format!("rgb({bg_r}, {bg_g}, {bg_b})"));
+            let background = Rectangle::new()
+                .set("x", 0)
+                .set("y", 0)
+                .set("width", "100%")
+                .set("height", "100%")
+                .set("fill", format!("rgb({bg_r}, {bg_g}, {bg_b})"));
+            document.append(background);
         }
-        document.append(background);
 
         let pbar = utils::pbar(self.peg_order.len() as u64 - 1, !progress_bar)
             .with_message("Rendering svg");
@@ -182,6 +150,7 @@ impl Blueprint {
                 .set("stroke", format!("rgb({r}, {g}, {b})"))
                 .set("stroke-width", yarn.width)
                 .set("opacity", yarn.opacity)
+                .set("stroke-linecap", "round")
                 .set("d", data);
             document.append(path);
         }
