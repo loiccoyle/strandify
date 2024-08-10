@@ -42,13 +42,8 @@ fn main() -> Result<(), Box<dyn Error>> {
     }
     let img_rgb = utils::open_img_transparency_to_white(PathBuf::from(args.input));
 
-    let img = if (args.yarn_color.r == args.yarn_color.g)
-        && (args.yarn_color.g == args.yarn_color.b)
-    {
-        info!("converting to grayscale");
-        // if yarn is grey scale, just convert the img to black and white
-        imageops::grayscale(&img_rgb)
-    } else {
+    let img = if args.project_to_yarn_color {
+        info!("Projecting to yarn color");
         // otherwise project along the color vector
         // convert to [0, 1]
         let yarn_color_float = (
@@ -93,6 +88,10 @@ fn main() -> Result<(), Box<dyn Error>> {
                 .round() as u8;
         }
         img
+    } else {
+        info!("converting to grayscale");
+        // if yarn is grey scale, just convert the img to black and white
+        imageops::grayscale(&img_rgb)
     };
 
     let (width, height) = img_rgb.dimensions();

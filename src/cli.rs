@@ -75,6 +75,9 @@ pub struct Arguments {
     /// Yarn color
     #[clap(short = 'C', long, value_parser, default_value = "0 0 0")]
     pub yarn_color: Rgb,
+    /// Project image to yarn color.
+    #[clap(long, value_parser, default_value_t = false)]
+    pub project_to_yarn_color: bool,
     /// Peg distribution shape
     #[clap(short = 'S', long, value_parser=["circle", "square"], default_value = "circle", name="SHAPE")]
     pub peg_shape: String,
