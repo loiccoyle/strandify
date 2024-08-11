@@ -178,6 +178,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         if args.transparent {
             bp.background = None;
         }
+        bp.render_scale = args.output_scale;
 
         if out_file.extension().unwrap() == "json" {
             info!("Writing blueprint to {out_file:?}.");

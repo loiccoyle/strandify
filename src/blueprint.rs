@@ -25,6 +25,8 @@ pub struct Blueprint {
     pub height: u32,
     /// Background
     pub background: Option<(u8, u8, u8)>,
+
+    pub render_scale: f64,
 }
 
 impl Blueprint {
@@ -34,12 +36,14 @@ impl Blueprint {
         width: u32,
         height: u32,
         background: Option<(u8, u8, u8)>,
+        render_scale: f64,
     ) -> Self {
         Self {
             peg_order,
             width,
             height,
             background,
+            render_scale,
         }
     }
 
@@ -49,12 +53,14 @@ impl Blueprint {
         width: u32,
         height: u32,
         background: Option<(u8, u8, u8)>,
+        render_scale: f64,
     ) -> Self {
         Self {
             peg_order: peg_order.into_iter().copied().collect(),
             width,
             height,
             background,
+            render_scale,
         }
     }
 
@@ -81,7 +87,7 @@ impl Blueprint {
     ///```
     /// use stringart::blueprint::Blueprint;
     /// use stringart::peg::Peg;
-    /// let bp = Blueprint::new(vec![Peg::new(0, 0, 0), Peg::new(3, 3, 1)], 4, 4, Some((255, 255, 255)));
+    /// let bp = Blueprint::new(vec![Peg::new(0, 0, 0), Peg::new(3, 3, 1)], 4, 4, Some((255, 255, 255)), 1.);
     /// for (peg_a, peg_b) in bp.zip() {
     ///     assert_eq!(peg_a.id, 0);
     ///     assert_eq!(peg_b.id, 1);
@@ -105,12 +111,15 @@ impl Blueprint {
         let svg_data = document.to_string();
         let svg_tree = usvg::Tree::from_str(&svg_data, &usvg::Options::default()).unwrap();
 
-        let mut pixmap = tiny_skia::Pixmap::new(self.width, self.height).unwrap();
+        let render_width = (self.width as f64 * self.render_scale).round() as u32;
+        let render_height = (self.height as f64 * self.render_scale).round() as u32;
+
+        let mut pixmap = tiny_skia::Pixmap::new(render_width, render_height).unwrap();
         let mut pixmap_mut = pixmap.as_mut();
 
         render(&svg_tree, tiny_skia::Transform::identity(), &mut pixmap_mut);
-        let img =
-            image::ImageBuffer::from_vec(self.width, self.height, pixmap.data().to_vec()).unwrap();
+        let img = image::ImageBuffer::from_vec(render_width, render_height, pixmap.data().to_vec())
+            .unwrap();
 
         img
     }
@@ -123,10 +132,13 @@ impl Blueprint {
     /// * `progress_bar`: Show progress bar.
     pub fn render_svg(&self, yarn: &Yarn, progress_bar: bool) -> Document {
         let (r, g, b) = yarn.color;
+        let render_width = (self.width as f64 * self.render_scale).round() as u32;
+        let render_height = (self.height as f64 * self.render_scale).round() as u32;
+
         let mut document = Document::new()
-            .set("viewbox", (0, 0, self.width, self.height))
-            .set("width", self.width)
-            .set("height", self.height);
+            .set("viewbox", (0, 0, render_width, render_height))
+            .set("width", render_width)
+            .set("height", render_height);
 
         if let Some((bg_r, bg_g, bg_b)) = self.background {
             let background = Rectangle::new()
@@ -143,8 +155,14 @@ impl Blueprint {
 
         for (peg_a, peg_b) in pbar.wrap_iter(self.zip()) {
             let data = Data::new()
-                .move_to((peg_a.x, peg_a.y))
-                .line_to((peg_b.x, peg_b.y));
+                .move_to((
+                    (peg_a.x as f64 * self.render_scale) as u32,
+                    (peg_a.y as f64 * self.render_scale) as u32,
+                ))
+                .line_to((
+                    (peg_b.x as f64 * self.render_scale) as u32,
+                    (peg_b.y as f64 * self.render_scale) as u32,
+                ));
             let path = PathSVG::new()
                 .set("fill", "none")
                 .set("stroke", format!("rgb({r}, {g}, {b})"))
@@ -222,6 +240,7 @@ mod test {
             64,
             64,
             Some((0, 0, 0)),
+            1.,
         );
         let bp_file = PathBuf::from(TEST_DIR).join("bp.json");
         assert!(bp.to_file(&bp_file).is_ok());
@@ -243,6 +262,7 @@ mod test {
             64,
             64,
             Some((255, 255, 255)),
+            1.,
         );
         assert_eq!(bp.zip().len(), 1);
     }

@@ -215,6 +215,7 @@ impl Pather {
             self.image.width(),
             self.image.height(),
             Some((255, 255, 255)),
+            1.,
         )
     }
 }
