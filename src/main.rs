@@ -9,11 +9,11 @@ use clap::Parser;
 use image::imageops;
 use log::{debug, info};
 
-use stringart::blueprint;
-use stringart::cli;
-use stringart::pather;
-use stringart::peg;
-use stringart::utils;
+use strandify::blueprint;
+use strandify::cli;
+use strandify::pather;
+use strandify::peg;
+use strandify::utils;
 
 fn main() -> Result<(), Box<dyn Error>> {
     let args = cli::Arguments::parse();

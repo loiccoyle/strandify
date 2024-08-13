@@ -60,12 +60,12 @@ jobs:
           cd target/${{ matrix.target }}/release
           cp $GITHUB_WORKSPACE/README.md README.md
           cp $GITHUB_WORKSPACE/LICENSE LICENSE
-          tar czvf stringart-${{ steps.extract_tag.outputs.tag }}-${{ matrix.prefix }}.tar.gz stringart README.md LICENSE
-          shasum -a 256 stringart-${{ steps.extract_tag.outputs.tag }}-${{ matrix.prefix }}.tar.gz > stringart-${{ steps.extract_tag.outputs.tag }}-${{ matrix.prefix }}.sha256
+          tar czvf strandify-${{ steps.extract_tag.outputs.tag }}-${{ matrix.prefix }}.tar.gz strandify README.md LICENSE
+          shasum -a 256 strandify-${{ steps.extract_tag.outputs.tag }}-${{ matrix.prefix }}.tar.gz > strandify-${{ steps.extract_tag.outputs.tag }}-${{ matrix.prefix }}.sha256
 
       - name: Releasing assets
         uses: softprops/action-gh-release@v1
         with:
-          files: target/${{ matrix.target }}/release/stringart-*
+          files: target/${{ matrix.target }}/release/strandify-*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

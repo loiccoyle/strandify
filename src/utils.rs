@@ -44,7 +44,7 @@ pub fn square_coords(
     rectangle_coords(length, length, (center_x, center_y), n_pegs)
 }
 
-/// Compute the coords of evenly spaced points around a rectangle
+/// Compute the coords of evenly spaced points around a rectangle.
 ///
 /// # Arguments
 ///

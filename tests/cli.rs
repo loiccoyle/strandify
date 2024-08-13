@@ -7,8 +7,8 @@ use assert_fs::prelude::*;
 use image::{self, GenericImageView};
 use predicates::prelude::*;
 
-use stringart::blueprint::Blueprint;
-use stringart::peg::Peg;
+use strandify::blueprint::Blueprint;
+use strandify::peg::Peg;
 
 fn input_file() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR"))
@@ -18,7 +18,7 @@ fn input_file() -> PathBuf {
 
 #[test]
 fn help() -> Result<(), Box<dyn Error>> {
-    let mut cmd = assert_cmd::Command::cargo_bin("stringart")?;
+    let mut cmd = assert_cmd::Command::cargo_bin("strandify")?;
     cmd.arg("--help");
 
     cmd.assert().success();
@@ -32,7 +32,7 @@ fn save_load_pegs() -> Result<(), Box<dyn Error>> {
     let peg_file_str = peg_file.path().to_str().unwrap();
 
     // write the pegs to file
-    let mut cmd = assert_cmd::Command::cargo_bin("stringart")?;
+    let mut cmd = assert_cmd::Command::cargo_bin("strandify")?;
     cmd.arg(input_file().to_str().unwrap());
     cmd.arg("--save-pegs");
     cmd.arg(peg_file_str);
@@ -49,7 +49,7 @@ fn save_load_pegs() -> Result<(), Box<dyn Error>> {
     // read the pegs from file
     let output_file = assert_fs::NamedTempFile::new("output.jpg").unwrap();
 
-    let mut cmd = assert_cmd::Command::cargo_bin("stringart")?;
+    let mut cmd = assert_cmd::Command::cargo_bin("strandify")?;
     cmd.arg(input_file().to_str().unwrap());
     cmd.arg("--load-pegs");
     cmd.arg(peg_file_str);
@@ -68,7 +68,7 @@ fn save_load_pegs() -> Result<(), Box<dyn Error>> {
 fn string_art_img() -> Result<(), Box<dyn Error>> {
     let output_file = assert_fs::NamedTempFile::new("output.jpg").unwrap();
 
-    let mut cmd = assert_cmd::Command::cargo_bin("stringart")?;
+    let mut cmd = assert_cmd::Command::cargo_bin("strandify")?;
     cmd.arg(input_file().to_str().unwrap());
     cmd.arg(output_file.to_str().unwrap());
     cmd.arg("-i");
@@ -87,7 +87,7 @@ fn string_art_img() -> Result<(), Box<dyn Error>> {
 fn string_art_svg() -> Result<(), Box<dyn Error>> {
     let output_file = assert_fs::NamedTempFile::new("output.svg").unwrap();
 
-    let mut cmd = assert_cmd::Command::cargo_bin("stringart")?;
+    let mut cmd = assert_cmd::Command::cargo_bin("strandify")?;
     cmd.arg(input_file().to_str().unwrap());
     cmd.arg(output_file.to_str().unwrap());
     cmd.arg("-i");
@@ -105,7 +105,7 @@ fn save_render_string_art_blueprint() -> Result<(), Box<dyn Error>> {
     let blueprint_file = assert_fs::NamedTempFile::new("bp.json").unwrap();
 
     // write blueprint file
-    let mut cmd = assert_cmd::Command::cargo_bin("stringart")?;
+    let mut cmd = assert_cmd::Command::cargo_bin("strandify")?;
     cmd.arg(input_file().to_str().unwrap());
     cmd.arg("-i");
     cmd.arg(n_lines.to_string());
@@ -123,7 +123,7 @@ fn save_render_string_art_blueprint() -> Result<(), Box<dyn Error>> {
 
     // load blueprint file and render img
     let img_file = assert_fs::NamedTempFile::new("bp.jpg").unwrap();
-    let mut cmd = assert_cmd::Command::cargo_bin("stringart")?;
+    let mut cmd = assert_cmd::Command::cargo_bin("strandify")?;
     cmd.arg(blueprint_file.to_str().unwrap());
     cmd.arg(img_file.to_str().unwrap());
     cmd.arg("-q");

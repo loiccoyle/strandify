@@ -103,7 +103,7 @@ impl Peg {
     /// # Examples
     ///
     /// ```
-    /// use stringart::peg::Peg;
+    /// use strandify::peg::Peg;
     /// let peg = Peg::new(10, 10, 0);
     /// let peg_jitter = peg.with_jitter(2);
     /// assert_eq!(peg_jitter.id, peg.id);
@@ -178,7 +178,7 @@ impl Line {
     /// # Examples
     ///
     /// ```
-    /// use stringart::peg::Line;
+    /// use strandify::peg::Line;
     /// let line = Line::new(vec![0, 1], vec![0, 0], 1);
     /// for (x, y) in line.zip() {
     ///     println!("x: {x:?}, y: {y:?}");

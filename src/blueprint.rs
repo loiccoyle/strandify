@@ -84,8 +84,8 @@ impl Blueprint {
     /// # Examples
     ///
     ///```
-    /// use stringart::blueprint::Blueprint;
-    /// use stringart::peg::Peg;
+    /// use strandify::blueprint::Blueprint;
+    /// use strandify::peg::Peg;
     /// let bp = Blueprint::new(vec![Peg::new(0, 0, 0), Peg::new(3, 3, 1)], 4, 4, Some((255, 255, 255)), 1.);
     /// for (peg_a, peg_b) in bp.zip() {
     ///     assert_eq!(peg_a.id, 0);
