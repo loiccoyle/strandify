@@ -74,15 +74,13 @@ impl Pather {
     /// Creates a new [`Pather`].
     pub fn new(img: GrayImage, pegs: Vec<Peg>, yarn: Yarn, config: PatherConfig) -> Self {
         let line_cache = HashMap::new();
-        let mut out = Self {
+        Self {
             image: img,
             pegs,
             yarn,
             config,
             line_cache,
-        };
-        out.populate_line_cache();
-        out
+        }
     }
 
     /// Creates a nes [`Pather`] from an image file.
@@ -100,8 +98,8 @@ impl Pather {
         Ok(Self::new(img, pegs, yarn, config))
     }
 
-    /// Populate the `line_cache` with the pixel coords of all the line between the [`Peg`] pairs.
-    fn populate_line_cache(&mut self) {
+    /// Populate the `line_cache` with the pixel coords of all the lines between the [`Peg`] pairs.
+    pub fn populate_line_cache(&mut self) -> Result<(), Box<dyn Error>> {
         info!("Populating line cache");
 
         let peg_combinations = self
@@ -111,7 +109,7 @@ impl Pather {
             .filter(|(peg_a, peg_b)| peg_a.dist_to(peg_b) >= self.config.skip_peg_within)
             .collect_vec();
 
-        let pbar = utils::pbar(peg_combinations.len() as u64, !self.config.progress_bar)
+        let pbar = utils::pbar(peg_combinations.len() as u64, !self.config.progress_bar)?
             .with_message("Populating line cache");
 
         let key_line_pixels = peg_combinations
@@ -125,7 +123,8 @@ impl Pather {
         for (key, line) in key_line_pixels {
             self.line_cache.insert(key, line);
         }
-        debug!("# line cache entries: {:?}", self.line_cache.len());
+        debug!("# line cache entries: {}", self.line_cache.len());
+        Ok(())
     }
 
     /// Get starting peg by taking the [`Peg`] located on the darkest pixel.
@@ -148,12 +147,14 @@ impl Pather {
             })
             .collect();
         debug!("peg_avgs: {peg_avgs:?}");
-        let min_index = peg_avgs.iter().position_min().unwrap();
+
+        let min_index = peg_avgs.iter().position_min().unwrap_or(0);
+
         &self.pegs[min_index]
     }
 
     /// Compute the [`Blueprint`].
-    pub fn compute(&self) -> Blueprint {
+    pub fn compute(&self) -> Result<Blueprint, Box<dyn Error>> {
         let layer_delta = 255. * self.config.lighten_factor;
 
         let max_dist = self
@@ -169,7 +170,7 @@ impl Pather {
         let mut peg_order = vec![start_peg];
         let mut work_img = self.image.clone();
 
-        let pbar = utils::pbar(self.config.iterations as u64, !self.config.progress_bar)
+        let pbar = utils::pbar(self.config.iterations as u64, !self.config.progress_bar)?
             .with_message("Computing blueprint");
 
         let mut last_peg = start_peg;
@@ -211,12 +212,12 @@ impl Pather {
             }
         });
 
-        Blueprint::from_refs(
+        Ok(Blueprint::from_refs(
             peg_order,
             self.image.width(),
             self.image.height(),
             Some((255, 255, 255)),
             1.,
-        )
+        ))
     }
 }

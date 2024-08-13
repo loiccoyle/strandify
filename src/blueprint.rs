@@ -4,7 +4,6 @@ use resvg::render;
 use resvg::tiny_skia;
 use resvg::usvg;
 use serde::{Deserialize, Serialize};
-use serde_json::Result as Result_serde;
 use std::error::Error;
 use std::fs::File;
 use std::io::BufReader;
@@ -74,10 +73,9 @@ impl Blueprint {
     }
 
     /// Write a [`Blueprint`] to a json file.
-    pub fn to_file<P: AsRef<Path>>(&self, file_path: P) -> Result_serde<()> {
-        let file = File::create(file_path).unwrap();
+    pub fn to_file<P: AsRef<Path>>(&self, file_path: P) -> Result<(), Box<dyn Error>> {
+        let file = File::create(file_path)?;
         serde_json::to_writer(&file, &self)?;
-
         Ok(())
     }
 
@@ -107,8 +105,12 @@ impl Blueprint {
     ///
     /// * `yarn`: The [`Yarn`] to use to render the [`Blueprint`].
     /// * `progress_bar`: Show progress bar.
-    pub fn render_img(&self, yarn: &Yarn, progress_bar: bool) -> image::RgbaImage {
-        let document = self.render_svg(yarn, progress_bar);
+    pub fn render_img(
+        &self,
+        yarn: &Yarn,
+        progress_bar: bool,
+    ) -> Result<image::RgbaImage, Box<dyn Error>> {
+        let document = self.render_svg(yarn, progress_bar)?;
         let svg_data = document.to_string();
         let svg_tree = usvg::Tree::from_str(&svg_data, &usvg::Options::default()).unwrap();
 
@@ -122,7 +124,7 @@ impl Blueprint {
         let img = image::ImageBuffer::from_vec(render_width, render_height, pixmap.data().to_vec())
             .unwrap();
 
-        img
+        Ok(img)
     }
 
     /// Render the [`Blueprint`] as a svg.
@@ -131,7 +133,7 @@ impl Blueprint {
     ///
     /// * `yarn`: The [`Yarn`] to use to render the [`Blueprint`].
     /// * `progress_bar`: Show progress bar.
-    pub fn render_svg(&self, yarn: &Yarn, progress_bar: bool) -> Document {
+    pub fn render_svg(&self, yarn: &Yarn, progress_bar: bool) -> Result<Document, Box<dyn Error>> {
         let (r, g, b) = yarn.color;
         let render_width = (self.width as f64 * self.render_scale).round() as u32;
         let render_height = (self.height as f64 * self.render_scale).round() as u32;
@@ -152,7 +154,7 @@ impl Blueprint {
             document.append(background);
         }
 
-        let pbar = utils::pbar(self.peg_order.len() as u64 - 1, !progress_bar)
+        let pbar = utils::pbar(self.peg_order.len() as u64 - 1, !progress_bar)?
             .with_message("Rendering svg");
 
         for (peg_a, peg_b) in pbar.wrap_iter(self.zip()) {
@@ -174,36 +176,33 @@ impl Blueprint {
                 .set("d", data);
             document.append(path);
         }
-        document
+        Ok(document)
     }
 
     /// Render the [`Blueprint`].
     ///
     /// # Arguments:
     ///
-    /// * `output_file`: Output file path, image format or svg.
+    /// * `path`: Output file path, image format or svg.
     /// * `yarn`: The [`Yarn`] to use to render the [`Blueprint`].
     /// * `progress_bar`: Show progress bar.
     pub fn render(
         &self,
-        output_file: &Path,
+        path: &Path,
         yarn: &Yarn,
         progress_bar: bool,
     ) -> Result<(), Box<dyn Error>> {
-        let extension = match output_file.extension() {
-            Some(ext) => ext,
-            None => return Err("Could not determine file extension".into()),
-        };
+        let extension = path.extension().ok_or("Could not detemine extension.")?;
         if extension == "svg" {
-            let svg_img = self.render_svg(yarn, progress_bar);
-            svg::save(output_file, &svg_img)?;
+            let svg_img = self.render_svg(yarn, progress_bar)?;
+            svg::save(path, &svg_img)?;
         } else {
-            let img = self.render_img(yarn, progress_bar);
-            if output_file.extension().unwrap() != "png" {
+            let img = self.render_img(yarn, progress_bar)?;
+            if path.extension().unwrap() != "png" {
                 let out = DynamicImage::from(img).to_rgb8();
-                out.save(output_file)?;
+                out.save(path)?;
             } else {
-                img.save(output_file)?;
+                img.save(path)?;
             }
         }
 

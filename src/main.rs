@@ -23,23 +23,42 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     debug!("cli args: {:?}", args);
     let input_file = PathBuf::from(&args.input);
+    let output_file = args.output.as_ref().map(PathBuf::from);
+    let output_file_extension = match &output_file {
+        Some(output) => Some(
+            output
+                .extension()
+                .ok_or("Could not determine OUTPUT extension.")?
+                .to_owned(),
+        ),
+        None => None,
+    };
+
     // Handle blueprint json as input
-    if input_file.extension().unwrap() == "json" {
+    if input_file
+        .extension()
+        .ok_or("Could not determine INPUT extension.")?
+        == "json"
+    {
         info!("Loading blueprint from file '{input_file:?}'");
-        let output_file = PathBuf::from(args.output.as_ref().ok_or("No OUTPUT provided.")?);
 
         let bp = blueprint::Blueprint::from_file(input_file)?;
 
-        return if output_file.extension().unwrap() == "json" {
+        let output_file = output_file
+            .as_ref()
+            .ok_or("Output file required to render output image.")?;
+
+        return if output_file_extension.unwrap() == "json" {
             // This case is probably useless, read the json then write the json...
             info!("Writing blueprint to {output_file:?}.");
-            bp.to_file(&output_file).map_err(|err| err.into())
+            bp.to_file(output_file)
         } else {
             info!("Rendering blueprint to {output_file:?}.");
             let yarn = peg::Yarn::new(args.yarn_width, args.yarn_opacity, (0, 0, 0));
-            bp.render(&output_file, &yarn, !args.verbose.is_silent())
+            bp.render(output_file, &yarn, !args.verbose.is_silent())
         };
     }
+
     let img_rgb = utils::open_img_transparency_to_white(PathBuf::from(args.input));
 
     let img = if args.project_to_yarn_color
@@ -127,7 +146,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 args.peg_number,
             )
         } else {
-            return Err(format!("Unrecognized SHAPE '{:?}'", args.peg_shape).into());
+            return Err(format!("Unrecognized SHAPE '{}'", args.peg_shape).into());
         };
 
         pegs = vec![];
@@ -149,7 +168,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         serde_json::to_writer(File::create(peg_path)?, &pegs)?
     }
 
-    if let Some(output_file) = args.output {
+    if let Some(output_file) = output_file {
         let skip_peg_within = args.peg_skip_within.unwrap_or(min_dim / 8);
         info!("Skip peg within: {skip_peg_within:?}px");
 
@@ -162,9 +181,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         );
         debug!("config: {config:?}");
 
-        let out_file = PathBuf::from(output_file.clone());
-
-        let string_pather = pather::Pather::new(
+        let mut string_pather = pather::Pather::new(
             img.clone(),
             pegs.clone(),
             peg::Yarn::new(
@@ -174,19 +191,21 @@ fn main() -> Result<(), Box<dyn Error>> {
             ),
             config.clone(),
         );
-        let mut bp = string_pather.compute();
+        string_pather.populate_line_cache()?;
+
+        let mut bp = string_pather.compute()?;
         if args.transparent {
             bp.background = None;
         }
         bp.render_scale = args.output_scale;
 
-        if out_file.extension().unwrap() == "json" {
-            info!("Writing blueprint to {out_file:?}.");
-            bp.to_file(&out_file)?;
+        if output_file_extension.unwrap() == "json" {
+            info!("Writing blueprint to {output_file:?}.");
+            bp.to_file(&output_file)?;
         } else {
-            info!("Rendering blueprint to {out_file:?}.");
+            info!("Rendering blueprint to {output_file:?}.");
             bp.render(
-                &out_file,
+                &output_file,
                 &string_pather.yarn,
                 string_pather.config.progress_bar,
             )?;

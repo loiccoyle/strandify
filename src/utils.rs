@@ -1,4 +1,4 @@
-use std::{f64::consts::PI, path::Path};
+use std::{error::Error, f64::consts::PI, path::Path};
 
 use crate::peg::Peg;
 use image::ImageBuffer;
@@ -126,17 +126,20 @@ pub fn pixels_around((center_x, center_y): (u32, u32), radius: u32) -> (Vec<u32>
     (x_coords, y_coords)
 }
 
-pub fn progress_style() -> ProgressStyle {
-    ProgressStyle::with_template("{msg}: {wide_bar} {elapsed_precise} {pos}/{len}").unwrap()
+pub fn progress_style() -> Result<ProgressStyle, Box<dyn Error>> {
+    Ok(ProgressStyle::with_template(
+        "{msg}: {wide_bar} {elapsed_precise} {pos}/{len}",
+    )?)
 }
 
-pub fn pbar(len: u64, hidden: bool) -> ProgressBar {
-    if hidden {
+pub fn pbar(len: u64, hidden: bool) -> Result<ProgressBar, Box<dyn Error>> {
+    let style = progress_style()?;
+    Ok(if hidden {
         ProgressBar::hidden()
     } else {
         ProgressBar::new(len)
     }
-    .with_style(progress_style())
+    .with_style(style))
 }
 
 pub fn spinner(hidden: bool) -> ProgressBar {
