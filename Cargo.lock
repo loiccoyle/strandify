@@ -1525,6 +1525,7 @@ dependencies = [
  "log",
  "predicates 3.1.2",
  "rand",
+ "rayon",
  "resvg",
  "serde",
  "serde_json",

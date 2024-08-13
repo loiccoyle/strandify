@@ -5,6 +5,8 @@ use std::path::PathBuf;
 
 use image::GrayImage;
 use itertools::Itertools;
+use rayon::prelude::*;
+use rayon::ThreadPoolBuilder;
 
 use crate::blueprint::Blueprint;
 use crate::peg::{Line, Peg, Yarn};
@@ -112,9 +114,16 @@ impl Pather {
         let pbar = utils::pbar(peg_combinations.len() as u64, !self.config.progress_bar)
             .with_message("Populating line cache");
 
-        for (peg_a, peg_b) in pbar.wrap_iter(peg_combinations.iter()) {
-            self.line_cache
-                .insert(utils::hash_key(peg_a, peg_b), peg_a.line_to(peg_b, 1.));
+        let key_line_pixels = peg_combinations
+            .par_iter()
+            .map(|(peg_a, peg_b)| {
+                pbar.tick();
+                (utils::hash_key(peg_a, peg_b), peg_a.line_to(peg_b, 1.))
+            })
+            .collect::<Vec<((u16, u16), Line)>>();
+
+        for (key, line) in key_line_pixels {
+            self.line_cache.insert(key, line);
         }
         debug!("# line cache entries: {:?}", self.line_cache.len());
     }
@@ -160,55 +169,47 @@ impl Pather {
         let mut peg_order = vec![start_peg];
         let mut work_img = self.image.clone();
 
-        let mut min_loss: f64;
-        let mut min_line: Option<&Line>;
-        let mut min_peg: Option<&Peg>;
-
         let pbar = utils::pbar(self.config.iterations as u64, !self.config.progress_bar)
             .with_message("Computing blueprint");
 
         let mut last_peg = start_peg;
         let mut last_last_peg = last_peg;
 
-        for _ in pbar.wrap_iter(0..self.config.iterations) {
-            min_loss = f64::MAX;
-            min_peg = None;
-            min_line = None;
+        // Use a threadPool to reduce overhead
+        let pool = ThreadPoolBuilder::new().build().unwrap();
 
-            for peg in &self.pegs {
-                // don't connect to same peg or the previous one
-                if peg.id == last_peg.id || peg.id == last_last_peg.id {
-                    continue;
-                }
-                let line = match self.line_cache.get(&utils::hash_key(last_peg, peg)) {
-                    None => continue,
-                    Some(line) => line,
-                };
+        pool.install(|| {
+            for _ in pbar.wrap_iter(0..self.config.iterations) {
+                let (_, min_peg, min_line) = self
+                    .pegs
+                    .par_iter()
+                    .filter(|peg| peg.id != last_peg.id && peg.id != last_last_peg.id)
+                    .filter_map(|peg| {
+                        let line = self.line_cache.get(&utils::hash_key(last_peg, peg))?;
+                        let loss = line
+                            .zip()
+                            .map(|(x, y)| work_img.get_pixel(*x, *y))
+                            .fold(0.0, |acc, &pixel| acc + (pixel.0[0] as f64))
+                            / (255. * line.len() as f64);
+                        Some((loss, peg, line))
+                    })
+                    .min_by(|(loss1, _, _), (loss2, _, _)| {
+                        loss1
+                            .partial_cmp(loss2)
+                            .unwrap_or(std::cmp::Ordering::Equal)
+                    })
+                    .unwrap();
 
-                let loss = line
-                    .zip()
-                    .map(|(x, y)| work_img.get_pixel(*x, *y))
-                    .fold(0.0, |acc, &pixel| acc + (pixel.0[0] as f64))
-                    / (255. * line.len() as f64);
-                // - ALPHA * f64::from(line.dist / max_dist);
-                // debug!("loss {:?}", loss);
-                if loss < min_loss {
-                    min_loss = loss;
-                    min_line = Some(line);
-                    min_peg = Some(peg);
-                }
+                peg_order.push(min_peg);
+                last_last_peg = last_peg;
+                last_peg = min_peg;
+
+                min_line.zip().for_each(|(x, y)| {
+                    let pixel = work_img.get_pixel_mut(*x, *y);
+                    pixel.0[0] = (pixel.0[0] as f64 + layer_delta).min(255.) as u8;
+                });
             }
-            // debug!("loss {min_loss:?}");
-            peg_order.push(min_peg.unwrap());
-            last_last_peg = last_peg;
-            last_peg = min_peg.unwrap();
-            // Update the work img to reflect the added line
-            // https://docs.rs/image/latest/image/struct.ImageBuffer.html
-            min_line.unwrap().zip().for_each(|(x, y)| {
-                let pixel = work_img.get_pixel_mut(*x, *y);
-                pixel.0[0] = (pixel.0[0] as f64 + layer_delta).min(255.) as u8;
-            });
-        }
+        });
 
         Blueprint::from_refs(
             peg_order,
