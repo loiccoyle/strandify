@@ -14,7 +14,7 @@ strandify lincoln.jpg lincoln_out.jpg -o 0.3 -l 0.2 -j 3
 ## Mona Lisa
 
 ```sh
-strandify mona_lisa.jpg mona_lisa_out.jpg -o 0.15 -l 0.08 -S square
+strandify mona_lisa.jpg mona_lisa_out.jpg -S square -o 0.1
 ```
 
 ![Mona Lisa input](./mona_lisa.jpg)
@@ -23,7 +23,7 @@ strandify mona_lisa.jpg mona_lisa_out.jpg -o 0.15 -l 0.08 -S square
 ## Einstein
 
 ```sh
-strandify einstein.jpg einstein_out.svg -w 2 -o 0.1 -l 0.1 -j 3 -i 2000 -n 200
+strandify einstein.jpg einstein_out.svg -w 2 -o 0.1 -l 0.2 -j 3 -i 2000 -n 200
 ```
 
 ![Einstein input](./einstein.jpg)
@@ -32,8 +32,8 @@ strandify einstein.jpg einstein_out.svg -w 2 -o 0.1 -l 0.1 -j 3 -i 2000 -n 200
 ## Golden Gate Bridge
 
 ```sh
-strandify golden_gate.jpeg golden_gate_out_red.png -S border -j 2 -C "255 0 0" --project-to-yarn-color -m 0.01 -n 500 -t -w 0.4 -i 1000 -o 0.3 -l 0.1
-strandify golden_gate.jpeg golden_gate_out.jpg -S border -j 2 -m 0.01 -n 500 -w 0.3 -i 3000 -l 0.1
+strandify golden_gate.jpeg golden_gate_out_red.png -S border -j 2 -C "255 0 0" --project-to-yarn-color -m 0.01 -t -o 0.1 -i 500
+strandify golden_gate.jpeg golden_gate_out.jpg -S border -j 2 -m 0.01 -o 0.08 -l 0.1
 magick composite golden_gate_out_red.png golden_gate_out.jpg golden_gate_composite_out.png
 ```
 

@@ -18,7 +18,7 @@ pub struct PatherConfig {
     pub iterations: u32,
     /// How much to lighten the the pixels at each pass, between 0 and 1.
     /// Low values encourage line overlap.
-    pub lighten_factor: f64,
+    pub line_opacity: f64,
     /// Radius around [`Pegs`](Peg), in pixels, to use to determine the starting [`Peg`].
     pub start_peg_radius: u32,
     /// Don't connect [`Pegs`](Peg) within distance, in pixels.
@@ -31,14 +31,14 @@ impl PatherConfig {
     /// Creates a new [`PatherConfig`].
     pub fn new(
         iterations: u32,
-        lighten_factor: f64,
+        line_opacity: f64,
         start_peg_radius: u32,
         skip_peg_within: u32,
         progress_bar: bool,
     ) -> Self {
         Self {
             iterations,
-            lighten_factor,
+            line_opacity,
             start_peg_radius,
             skip_peg_within,
             progress_bar,
@@ -48,7 +48,7 @@ impl PatherConfig {
     pub fn with_defaults() -> Self {
         Self {
             iterations: 4000,
-            lighten_factor: 0.4,
+            line_opacity: 0.4,
             start_peg_radius: 5,
             skip_peg_within: 0,
             progress_bar: false,
@@ -155,16 +155,6 @@ impl Pather {
 
     /// Compute the [`Blueprint`].
     pub fn compute(&self) -> Result<Blueprint, Box<dyn Error>> {
-        let layer_delta = 255. * self.config.lighten_factor;
-
-        let max_dist = self
-            .line_cache
-            .values()
-            .map(|line| line.dist)
-            .max()
-            .unwrap();
-        debug!("max_dist: {max_dist:?}");
-
         let start_peg = self.get_start_peg(self.config.start_peg_radius);
         info!("starting peg: {start_peg:?}");
         let mut peg_order = vec![start_peg];
@@ -172,6 +162,9 @@ impl Pather {
 
         let pbar = utils::pbar(self.config.iterations as u64, !self.config.progress_bar)?
             .with_message("Computing blueprint");
+
+        let line_color = 255. * self.config.line_opacity;
+        let opacity_factor = 1. - self.config.line_opacity;
 
         let mut last_peg = start_peg;
         let mut last_last_peg = last_peg;
@@ -181,7 +174,7 @@ impl Pather {
 
         pool.install(|| {
             for _ in pbar.wrap_iter(0..self.config.iterations) {
-                let (_, min_peg, min_line) = self
+                let (min_loss, min_peg, min_line) = self
                     .pegs
                     .par_iter()
                     .filter(|peg| peg.id != last_peg.id && peg.id != last_last_peg.id)
@@ -201,13 +194,16 @@ impl Pather {
                     })
                     .unwrap();
 
+                debug!("line {:?} -> {:?}: {min_loss:?}", last_peg.id, min_peg.id);
                 peg_order.push(min_peg);
                 last_last_peg = last_peg;
                 last_peg = min_peg;
 
                 min_line.zip().for_each(|(x, y)| {
                     let pixel = work_img.get_pixel_mut(*x, *y);
-                    pixel.0[0] = (pixel.0[0] as f64 + layer_delta).min(255.) as u8;
+                    pixel.0[0] = ((opacity_factor) * pixel.0[0] as f64 + line_color)
+                        .round()
+                        .min(255.0) as u8;
                 });
             }
         });

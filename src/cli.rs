@@ -93,15 +93,15 @@ pub struct Arguments {
     /// Don't connect pegs within pixel distance
     #[clap(short = 's', value_parser, long)]
     pub peg_skip_within: Option<u32>,
-    /// Yarn opacity [0, 1]
+    /// Yarn opacity to use to render the image [0, 1]
     #[clap(short = 'o', long, value_parser=number_between_0_and_1, default_value_t = 0.2)]
     pub yarn_opacity: f64,
-    /// Yarn width
+    /// Yarn width to use to render the image
     #[clap(short = 'w', long, value_parser, default_value_t = 1.)]
     pub yarn_width: f32,
-    /// How much to lighten the pixels at each line pass, low values encourage line overlap [0, 1]
-    #[clap(short, long, value_parser=number_between_0_and_1, default_value_t = 0.2)]
-    pub lighten_factor: f64,
+    /// Line opacity, controls how much to lighten the pixels at each line pass, low values encourage more line overlap [0, 1]
+    #[clap(short, long, value_parser=number_between_0_and_1, default_value_t = 0.1)]
+    pub line_opacity: f64,
     /// Output scale
     #[clap(long, value_parser, default_value_t = 1.)]
     pub output_scale: f64,

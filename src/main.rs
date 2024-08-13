@@ -174,7 +174,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
         let config = pather::PatherConfig::new(
             args.iterations,
-            args.lighten_factor,
+            args.line_opacity,
             5,
             skip_peg_within,
             !args.verbose.is_silent(),
