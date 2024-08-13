@@ -2,6 +2,15 @@
 
 This folder contains some examples of the images produced by this program and the commands used to generate them.
 
+## Strandify
+
+```sh
+strandify strandify.jpg strandify_out.jpg -S border -o 0.2 -j 2 -l 0.3 -i 2000
+```
+
+![strandify input](./strandify.jpg)
+![strandify output](./strandify_out.jpg)
+
 ## Lincoln
 
 ```sh
