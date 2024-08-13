@@ -114,7 +114,6 @@ impl Blueprint {
 
         let render_width = (self.width as f64 * self.render_scale).round() as u32;
         let render_height = (self.height as f64 * self.render_scale).round() as u32;
-        info!("Render resolution: {render_width}x{render_height}");
 
         let mut pixmap = tiny_skia::Pixmap::new(render_width, render_height).unwrap();
         let mut pixmap_mut = pixmap.as_mut();
