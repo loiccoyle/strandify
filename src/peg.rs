@@ -129,6 +129,16 @@ pub struct Yarn {
     pub color: (u8, u8, u8),
 }
 
+impl Default for Yarn {
+    fn default() -> Self {
+        Self {
+            width: 1.,
+            opacity: 0.2,
+            color: (0, 0, 0),
+        }
+    }
+}
+
 impl Yarn {
     /// Creates a new [`Yarn`].
     pub fn new(width: f32, opacity: f64, color: (u8, u8, u8)) -> Self {
