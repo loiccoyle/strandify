@@ -1,6 +1,7 @@
 use clap::Parser;
 use clap_verbosity_flag::Verbosity;
 use image::ImageReader;
+
 use std::path::PathBuf;
 use std::str::FromStr;
 

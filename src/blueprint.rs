@@ -16,16 +16,17 @@ use crate::peg::{Peg, Yarn};
 use crate::utils;
 
 #[derive(Debug, Serialize, Deserialize)]
+/// A string art [`Blueprint`]. Holds the result of the [`crate::pather::Pather`]'s pathing algorithm and renders it to file.
 pub struct Blueprint {
     /// The order with which to connect the [`Pegs`](Peg).
     pub peg_order: Vec<Peg>,
-    /// Width of the [`Blueprint`].
+    /// Width of the [`Blueprint`], should be the same dimensions as the image used.
     pub width: u32,
-    /// Height of the [`blueprint`].
+    /// Height of the [`Blueprint`], should be the same dimensions as the image used.
     pub height: u32,
     /// Background
     pub background: Option<(u8, u8, u8)>,
-
+    /// Render scale, how much to up/down scale the render.
     pub render_scale: f64,
 }
 
@@ -199,6 +200,7 @@ impl Blueprint {
         } else {
             let img = self.render_img(yarn, progress_bar)?;
             if path.extension().unwrap() != "png" {
+                // drop alpha channel
                 let out = DynamicImage::from(img).to_rgb8();
                 out.save(path)?;
             } else {

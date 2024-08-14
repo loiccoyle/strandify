@@ -61,6 +61,7 @@ impl Default for PatherConfig {
 }
 
 #[derive(Debug)]
+/// The line pathing algorithm.
 pub struct Pather {
     /// Input grayscale image.
     pub image: GrayImage,
@@ -155,7 +156,7 @@ impl Pather {
         &self.pegs[min_index]
     }
 
-    /// Compute the [`Blueprint`].
+    /// Run the line pathing algorithm and contruct a [`Blueprint`].
     pub fn compute(&self) -> Result<Blueprint, Box<dyn Error>> {
         let start_peg = self.get_start_peg(self.config.start_peg_radius);
         info!("starting peg: {start_peg:?}");

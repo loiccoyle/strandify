@@ -8,6 +8,7 @@ use crate::line::Line;
 use crate::utils;
 
 #[derive(Debug, Clone, Copy, Deserialize, Serialize)]
+/// The [`Peg`] around which the [`Yarn`] weaved.
 pub struct Peg {
     /// Horizontal coordinate of the [`Peg`], (0, 0) is the top left corner of the image.
     pub x: u32,
@@ -82,7 +83,7 @@ impl Peg {
     ///
     /// # Arguments
     ///
-    /// *`radius`: Pixel radius around [`Peg`].
+    /// * `radius`: Pixel radius around [`Peg`].
     pub fn around(&self, radius: u32) -> (Vec<u32>, Vec<u32>) {
         utils::pixels_around((self.x, self.y), radius)
     }

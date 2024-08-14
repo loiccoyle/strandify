@@ -54,11 +54,13 @@ impl Line {
 
     /// Compute the loss of this [`Line`] over the provided single channel [`image::ImageBuffer`].
     ///
-    /// # Args:
-    /// - `image`: The [`image::ImageBuffer`] to compute the loss over.
+    /// # Arguments:
+    ///
+    /// * `image`: The [`image::ImageBuffer`] to compute the loss over.
     ///
     /// # Returns:
-    /// - `f64`: The loss of this [`Line`].
+    ///
+    /// * `f64`: The loss of this [`Line`].
     pub fn loss(&self, image: &image::ImageBuffer<image::Luma<u8>, Vec<u8>>) -> f64 {
         self.zip()
             .map(|(x, y)| image.get_pixel(*x, *y))
