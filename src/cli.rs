@@ -64,7 +64,7 @@ pub struct Arguments {
     /// Input image or blueprint json file
     #[clap(value_parser=check_file_exists)]
     pub input: String,
-    /// Output file, either image format or json
+    /// Output file, either image format, svg or json
     pub output: Option<String>,
     /// Number of iterations
     #[clap(short, long, value_parser, default_value_t = 4000)]
