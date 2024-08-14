@@ -80,4 +80,4 @@ Options:
 
 ## 👓 Examples
 
-See the [examples](./examples) folder.
+See the [examples](https://github.com/loiccoyle/strandify/tree/main/examples) folder.
