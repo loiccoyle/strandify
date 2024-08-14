@@ -4,12 +4,14 @@ use std::error::Error;
 use std::path::PathBuf;
 
 use image::GrayImage;
+use indicatif::ParallelProgressIterator;
 use itertools::Itertools;
 use rayon::prelude::*;
 use rayon::ThreadPoolBuilder;
 
 use crate::blueprint::Blueprint;
-use crate::peg::{Line, Peg, Yarn};
+use crate::line::Line;
+use crate::peg::{Peg, Yarn};
 use crate::utils;
 
 #[derive(Debug, Clone)]
@@ -44,8 +46,10 @@ impl PatherConfig {
             progress_bar,
         }
     }
+}
 
-    pub fn with_defaults() -> Self {
+impl Default for PatherConfig {
+    fn default() -> Self {
         Self {
             iterations: 4000,
             line_opacity: 0.4,
@@ -114,10 +118,8 @@ impl Pather {
 
         let key_line_pixels = peg_combinations
             .par_iter()
-            .map(|(peg_a, peg_b)| {
-                pbar.tick();
-                (utils::hash_key(peg_a, peg_b), peg_a.line_to(peg_b, 1.))
-            })
+            .progress_with(pbar)
+            .map(|(peg_a, peg_b)| (utils::hash_key(peg_a, peg_b), peg_a.line_to(peg_b, 1.)))
             .collect::<Vec<((u16, u16), Line)>>();
 
         for (key, line) in key_line_pixels {
@@ -169,7 +171,7 @@ impl Pather {
         let mut last_peg = start_peg;
         let mut last_last_peg = last_peg;
 
-        // Use a threadPool to reduce overhead
+        // Use a ThreadPool to reduce overhead
         let pool = ThreadPoolBuilder::new().build().unwrap();
 
         pool.install(|| {
@@ -180,11 +182,7 @@ impl Pather {
                     .filter(|peg| peg.id != last_peg.id && peg.id != last_last_peg.id)
                     .filter_map(|peg| {
                         let line = self.line_cache.get(&utils::hash_key(last_peg, peg))?;
-                        let loss = line
-                            .zip()
-                            .map(|(x, y)| work_img.get_pixel(*x, *y))
-                            .fold(0.0, |acc, &pixel| acc + (pixel.0[0] as f64))
-                            / (255. * line.len() as f64);
+                        let loss = line.loss(&work_img);
                         Some((loss, peg, line))
                     })
                     .min_by(|(loss1, _, _), (loss2, _, _)| {

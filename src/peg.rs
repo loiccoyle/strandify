@@ -1,15 +1,15 @@
 use std::collections::HashSet;
-use std::iter::zip;
 
 use itertools::Itertools;
 use rand::{thread_rng, Rng};
 use serde::{Deserialize, Serialize};
 
+use crate::line::Line;
 use crate::utils;
 
 #[derive(Debug, Clone, Copy, Deserialize, Serialize)]
 pub struct Peg {
-    /// Horizontal coordinate of the [`Peg`], (0,0) is the top left corner of the image.
+    /// Horizontal coordinate of the [`Peg`], (0, 0) is the top left corner of the image.
     pub x: u32,
     /// Vertical coordinate of the [`Peg`], (0, 0) is the top left corner of the image.
     pub y: u32,
@@ -23,7 +23,7 @@ impl Peg {
         Self { x, y, id }
     }
 
-    /// Get the pixel coords connecting 2 [`Pegs`](Peg).
+    /// Get the pixel coords connecting 2 [`Pegs`](Peg) using the Bresenham line algorithm and contruct a [`Line`].
     pub fn line_to(&self, other: &Peg, width: f32) -> Line {
         let mut pixels = HashSet::new();
 
@@ -94,7 +94,7 @@ impl Peg {
         ((delta_x * delta_x + delta_y * delta_y) as f64).sqrt() as u32
     }
 
-    /// Add 2d jitter to the [`Peg`] returns a new [`Peg`] with added jitter.
+    /// Add 2d jitter to the [`Peg`] returns a new one with added jitter.
     ///
     /// # Arguments
     ///
@@ -118,88 +118,12 @@ impl Peg {
     }
 }
 
-#[derive(Debug)]
-pub struct Line {
-    pub x: Vec<u32>,
-    pub y: Vec<u32>,
-    pub dist: u32,
-}
-
-impl Line {
-    /// Creates a new [`Line`].
-    pub fn new(x: Vec<u32>, y: Vec<u32>, dist: u32) -> Self {
-        assert_eq!(x.len(), y.len(), "`x` and `y` should have the same length");
-        Self { x, y, dist }
-    }
-
-    /// Construct a new [`Line`] with a width.
-    ///
-    /// # Arguments
-    ///
-    /// `width`: Width of the line in pixels.
-    pub fn with_width(&self, width: u32) -> Self {
-        if width == 1 {
-            return self.copy();
-        }
-
-        let radius = width / 2;
-        let mut pixels: HashSet<(u32, u32)> = HashSet::new();
-        for (x, y) in self.zip() {
-            let (around_x, around_y) = utils::pixels_around((*x, *y), radius);
-            for pixel in around_x.into_iter().zip(around_y) {
-                pixels.insert(pixel);
-            }
-        }
-
-        let mut x_coords = vec![];
-        let mut y_coords = vec![];
-        for (x_pixel, y_pixel) in pixels {
-            x_coords.push(x_pixel);
-            y_coords.push(y_pixel);
-        }
-
-        Self::new(x_coords, y_coords, self.dist)
-    }
-
-    /// Returns the length of this [`Line`].
-    pub fn len(&self) -> usize {
-        self.x.len()
-    }
-
-    /// Returns the is empty of this [`Line`].
-    pub fn is_empty(&self) -> bool {
-        self.x.is_empty()
-    }
-
-    /// Returns the zip of this [`Line`].
-    ///
-    /// Zips over both coordinates.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use strandify::peg::Line;
-    /// let line = Line::new(vec![0, 1], vec![0, 0], 1);
-    /// for (x, y) in line.zip() {
-    ///     println!("x: {x:?}, y: {y:?}");
-    /// }
-    /// assert_eq!(line.zip().len(), 2);
-    /// ```
-    pub fn zip(&self) -> std::iter::Zip<std::slice::Iter<u32>, std::slice::Iter<u32>> {
-        zip(&self.x, &self.y)
-    }
-
-    /// Returns the copy of this [`Line`].
-    pub fn copy(&self) -> Self {
-        Self::new(self.x.clone(), self.y.clone(), self.dist)
-    }
-}
-
 #[derive(Debug, Clone)]
+/// The [`Yarn`] to use when rendering a [`Blueprint`](crate::blueprint::Blueprint).
 pub struct Yarn {
     /// Width of the [`Yarn`], in pixels.
     pub width: f32,
-    /// [`Yarn`] opacity, used when rendering a [`Blueprint`](crate::blueprint::Blueprint).
+    /// [`Yarn`] opacity.
     pub opacity: f64,
     /// [`Yarn`] color.
     pub color: (u8, u8, u8),
@@ -274,15 +198,5 @@ mod test {
         assert!(peg_jitter.x <= (peg.x as i64 + jitter) as u32);
         assert!(peg_jitter.x >= (peg.x as i64 - jitter) as u32);
         assert_eq!(peg_jitter.id, peg.id);
-    }
-
-    #[test]
-    fn line_with_width() {
-        let line = Line::new(vec![10, 10], vec![10, 11], 1);
-        let mut line_wide = line.with_width(2);
-        line_wide.x.sort();
-        line_wide.y.sort();
-        assert_eq!(line_wide.x, vec![9, 9, 10, 10, 10, 10, 11, 11]);
-        assert_eq!(line_wide.y, vec![9, 10, 10, 10, 11, 11, 11, 12]);
     }
 }
