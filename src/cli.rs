@@ -109,6 +109,13 @@ pub struct Arguments {
     /// Beam search width, a value of 1 results in a purely greedy algorithm.
     #[clap(short, long, default_value_t = 1)]
     pub beam_width: usize,
+    /// If provided, early stop pathing when consecutive path losses are greater than threshold.
+    #[clap(short = 'e', long, value_parser=number_between_0_and_1)]
+    pub early_stop_threshold: Option<f64>,
+    /// Number of consecutive iterations with path losses above threshold to allow.
+    #[clap(short = 'E', long, value_parser, default_value_t = 100)]
+    pub early_stop_count: u32,
+
     /// Output scale
     #[clap(long, value_parser, default_value_t = 1.)]
     pub output_scale: f64,

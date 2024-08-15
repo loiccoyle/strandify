@@ -180,6 +180,10 @@ fn main() -> Result<(), Box<dyn Error>> {
         let config = pather::PatherConfig::new(
             args.iterations,
             peg::Yarn::new(args.line_width as f32, args.line_opacity, (0, 0, 0)),
+            pather::EarlyStopConfig {
+                loss_threshold: args.early_stop_threshold,
+                max_count: args.early_stop_count,
+            },
             5,
             skip_peg_within,
             args.beam_width,

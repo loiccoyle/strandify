@@ -15,11 +15,28 @@ use crate::peg::{Peg, Yarn};
 use crate::utils;
 
 #[derive(Debug, Clone)]
+pub struct EarlyStopConfig {
+    pub loss_threshold: Option<f64>,
+    pub max_count: u32,
+}
+
+impl Default for EarlyStopConfig {
+    fn default() -> Self {
+        Self {
+            loss_threshold: None,
+            max_count: 100,
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
 pub struct PatherConfig {
     /// Number of [`Peg`] connections.
     pub iterations: u32,
     /// The [`Yarn`] to use when computing the path.
     pub yarn: Yarn,
+    /// [`EarlyStopConfig`].
+    pub early_stop: EarlyStopConfig,
     /// Radius around [`Pegs`](Peg), in pixels, to use to determine the starting [`Peg`].
     pub start_peg_radius: u32,
     /// Don't connect [`Pegs`](Peg) within distance, in pixels.
@@ -35,6 +52,7 @@ impl PatherConfig {
     pub fn new(
         iterations: u32,
         yarn: Yarn,
+        early_stop: EarlyStopConfig,
         start_peg_radius: u32,
         skip_peg_within: u32,
         beam_width: usize,
@@ -43,6 +61,7 @@ impl PatherConfig {
         Self {
             iterations,
             yarn,
+            early_stop,
             start_peg_radius,
             skip_peg_within,
             progress_bar,
@@ -56,6 +75,7 @@ impl Default for PatherConfig {
         Self {
             iterations: 4000,
             yarn: Yarn::default(),
+            early_stop: EarlyStopConfig::default(),
             start_peg_radius: 5,
             skip_peg_within: 0,
             progress_bar: false,
@@ -69,6 +89,30 @@ struct BeamState {
     peg_order: Vec<usize>,
     loss: f64,
     image: image::ImageBuffer<image::Luma<u8>, Vec<u8>>,
+}
+
+impl Eq for BeamState {}
+
+impl PartialEq for BeamState {
+    fn eq(&self, other: &Self) -> bool {
+        self.loss == other.loss
+    }
+}
+
+impl PartialOrd for BeamState {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for BeamState {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        // We want the lowest loss to be considered "greater" for purposes of sorting
+        // so that the smallest loss comes first.
+        self.loss
+            .partial_cmp(&other.loss)
+            .unwrap_or(std::cmp::Ordering::Equal)
+    }
 }
 
 #[derive(Debug)]
@@ -166,6 +210,25 @@ impl Pather {
         peg_avgs.iter().position_min().unwrap_or(0)
     }
 
+    fn early_stop(&self, count: &mut u32, loss: f64) -> bool {
+        match self.config.early_stop.loss_threshold {
+            Some(early_stop_count) => {
+                if loss > early_stop_count {
+                    *count += 1;
+                    debug!(
+                        "Early stop count to {}/{}",
+                        count, self.config.early_stop.max_count
+                    );
+                    *count >= self.config.early_stop.max_count
+                } else {
+                    *count = 0;
+                    false
+                }
+            }
+            None => false,
+        }
+    }
+
     /// Run the line pathing algorithm and contruct a [`Blueprint`].
     pub fn compute_greedy(&self) -> Result<Blueprint, Box<dyn Error>> {
         let start_peg = &self.pegs[self.get_start_peg(self.config.start_peg_radius)];
@@ -185,8 +248,11 @@ impl Pather {
         // Use a ThreadPool to reduce overhead
         let pool = ThreadPoolBuilder::new().build().unwrap();
 
+        // early stop
+        let mut early_stop_count: u32 = 0;
+
         pool.install(|| {
-            for _ in pbar.wrap_iter(0..self.config.iterations) {
+            'iter: for iter_i in pbar.wrap_iter(0..self.config.iterations) {
                 let (min_loss, min_peg, min_line) = self
                     .pegs
                     .par_iter()
@@ -202,6 +268,11 @@ impl Pather {
                             .unwrap_or(std::cmp::Ordering::Equal)
                     })
                     .unwrap();
+
+                if self.early_stop(&mut early_stop_count, min_loss) {
+                    info!("Early stopping at iteration {iter_i}");
+                    break 'iter;
+                }
 
                 debug!("line {:?} -> {:?}: {min_loss:?}", last_peg.id, min_peg.id);
                 peg_order.push(min_peg);
@@ -238,16 +309,20 @@ impl Pather {
         let opacity_factor = 1. - self.config.yarn.opacity;
 
         let mut beam: Vec<BeamState> = vec![BeamState {
-            peg_order: vec![self.get_start_peg(self.config.start_peg_radius)],
+            peg_order: vec![start_peg],
             loss: 0.,
             image: self.image.clone(),
         }];
 
         // Use a ThreadPool to reduce overhead
         let pool = ThreadPoolBuilder::new().build().unwrap();
+        let beam_width_index = self.config.beam_width - 1;
+
+        // early stop
+        let mut early_stop_count: u32 = 0;
 
         pool.install(|| {
-            for _ in pbar.wrap_iter(0..self.config.iterations) {
+            'iter: for iter_i in pbar.wrap_iter(0..self.config.iterations) {
                 let mut new_beam: Vec<BeamState> = vec![];
                 for beam_state in &beam {
                     let last_peg = &self.pegs[*beam_state.peg_order.last().unwrap()];
@@ -256,7 +331,7 @@ impl Pather {
                         .get(beam_state.peg_order.len() - 2)
                         .unwrap_or(beam_state.peg_order.last().unwrap())];
 
-                    let mut candidates: Vec<_> = self
+                    let mut candidates = self
                         .pegs
                         .par_iter()
                         .enumerate()
@@ -266,13 +341,35 @@ impl Pather {
                             let loss = line.loss(&beam_state.image);
                             Some((loss, i, line))
                         })
-                        .collect();
-                    candidates.sort_by(|(loss1, _, _), (loss2, _, _)| {
-                        loss1
-                            .partial_cmp(loss2)
-                            .unwrap_or(std::cmp::Ordering::Equal)
-                    });
-                    let top_candidates = candidates[0..self.config.beam_width].to_vec();
+                        .collect::<Vec<_>>();
+
+                    // Sort candidates partially to get the top beam_width candidates
+                    candidates.select_nth_unstable_by(
+                        beam_width_index,
+                        |(loss1, _, _), (loss2, _, _)| {
+                            loss1
+                                .partial_cmp(loss2)
+                                .unwrap_or(std::cmp::Ordering::Equal)
+                        },
+                    );
+                    let top_candidates = &candidates[0..self.config.beam_width];
+
+                    if self.early_stop(
+                        &mut early_stop_count,
+                        top_candidates
+                            .iter()
+                            .min_by(|(loss1, _, _), (loss2, _, _)| {
+                                loss1
+                                    .partial_cmp(loss2)
+                                    .unwrap_or(std::cmp::Ordering::Equal)
+                            })
+                            .unwrap()
+                            .0,
+                    ) {
+                        info!("Early stopping at iteration {iter_i}");
+                        break 'iter;
+                    }
+
                     let new_states: Vec<BeamState> = top_candidates
                         .iter()
                         .map(|(loss, peg_i, line)| {
@@ -294,17 +391,13 @@ impl Pather {
                     new_beam.extend(new_states);
                 }
 
-                new_beam.sort_by(|beam_state1, beam_state2| {
-                    beam_state1
-                        .loss
-                        .partial_cmp(&beam_state2.loss)
-                        .unwrap_or(std::cmp::Ordering::Equal)
-                });
+                // Sort the beam by the cumulative loss and keep the top beam_width states
+                new_beam.select_nth_unstable(beam_width_index);
                 beam = new_beam[0..self.config.beam_width].to_vec();
             }
         });
 
-        let best_state = &beam[0];
+        let best_state = beam.into_iter().min().unwrap();
 
         Ok(Blueprint::new(
             best_state
