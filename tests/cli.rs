@@ -134,6 +134,10 @@ fn save_render_string_art_blueprint() -> Result<(), Box<dyn Error>> {
     let mut cmd = assert_cmd::Command::cargo_bin("strandify")?;
     cmd.arg(blueprint_file.to_str().unwrap());
     cmd.arg(img_file.to_str().unwrap());
+    cmd.arg("-i");
+    cmd.arg("100");
+    cmd.arg("-w");
+    cmd.arg("1");
     cmd.arg("-q");
 
     cmd.assert().success();
