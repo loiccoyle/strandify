@@ -171,29 +171,26 @@ fn main() -> Result<(), Box<dyn Error>> {
     if let Some(output_file) = output_file {
         let skip_peg_within = args.peg_skip_within.unwrap_or(min_dim / 8);
         info!("Skip peg within: {skip_peg_within:?}px");
+        let render_yarn = peg::Yarn::new(
+            args.yarn_width,
+            args.yarn_opacity,
+            (args.yarn_color.r, args.yarn_color.g, args.yarn_color.b),
+        );
 
         let config = pather::PatherConfig::new(
             args.iterations,
-            args.line_opacity,
+            peg::Yarn::new(args.line_width as f32, args.line_opacity, (0, 0, 0)),
             5,
             skip_peg_within,
+            args.beam_width,
             !args.verbose.is_silent(),
         );
         debug!("config: {config:?}");
 
-        let mut string_pather = pather::Pather::new(
-            img.clone(),
-            pegs.clone(),
-            peg::Yarn::new(
-                args.yarn_width,
-                args.yarn_opacity,
-                (args.yarn_color.r, args.yarn_color.g, args.yarn_color.b),
-            ),
-            config.clone(),
-        );
+        let mut string_pather = pather::Pather::new(img, pegs, config);
         string_pather.populate_line_cache()?;
 
-        let mut bp = string_pather.compute(5)?;
+        let mut bp = string_pather.compute()?;
         if args.transparent {
             bp.background = None;
         }
@@ -206,7 +203,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             info!("Rendering blueprint to {output_file:?}.");
             bp.render(
                 &output_file,
-                &string_pather.yarn,
+                &render_yarn,
                 string_pather.config.progress_bar,
             )?;
         }

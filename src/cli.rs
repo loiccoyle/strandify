@@ -74,7 +74,7 @@ pub struct Arguments {
     #[clap(short = 't', action, default_value_t = false)]
     pub transparent: bool,
     /// Yarn color
-    #[clap(short = 'C', long, value_parser, default_value = "0 0 0")]
+    #[clap(short = 'c', long, value_parser, default_value = "0 0 0")]
     pub yarn_color: Rgb,
     /// Project image to yarn color.
     #[clap(long, value_parser, default_value_t = false)]
@@ -95,14 +95,20 @@ pub struct Arguments {
     #[clap(short = 's', value_parser, long)]
     pub peg_skip_within: Option<u32>,
     /// Yarn opacity to use to render the image [0, 1]
-    #[clap(short = 'o', long, value_parser=number_between_0_and_1, default_value_t = 0.2)]
+    #[clap(short = 'O', long, value_parser=number_between_0_and_1, default_value_t = 0.2)]
     pub yarn_opacity: f64,
     /// Yarn width to use to render the image
-    #[clap(short = 'w', long, value_parser, default_value_t = 1.)]
+    #[clap(short = 'W', long, value_parser, default_value_t = 1.)]
     pub yarn_width: f32,
-    /// Line opacity, controls how much to lighten the pixels at each line pass, low values encourage more line overlap [0, 1]
-    #[clap(short, long, value_parser=number_between_0_and_1, default_value_t = 0.1)]
+    /// Line opacity to use when computing the path, controls how much to lighten the pixels at each line pass, low values encourage more line overlap [0, 1]
+    #[clap(short = 'o', long, value_parser=number_between_0_and_1, default_value_t = 0.1)]
     pub line_opacity: f64,
+    /// Line width to use when computing the path.
+    #[clap(short = 'w', long, value_parser, default_value_t = 2)]
+    pub line_width: u32,
+    /// Beam search width, a value of 1 results in a purely greedy algorithm.
+    #[clap(short, long, default_value_t = 1)]
+    pub beam_width: usize,
     /// Output scale
     #[clap(long, value_parser, default_value_t = 1.)]
     pub output_scale: f64,

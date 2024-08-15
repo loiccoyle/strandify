@@ -42,7 +42,7 @@ Options:
           Number of iterations [default: 4000]
   -t
           Transparent background
-  -C, --yarn-color <YARN_COLOR>
+  -c, --yarn-color <YARN_COLOR>
           Yarn color [default: "0 0 0"]
       --project-to-yarn-color
           Project image to yarn color
@@ -56,12 +56,16 @@ Options:
           Add jitter to the peg position
   -s, --peg-skip-within <PEG_SKIP_WITHIN>
           Don't connect pegs within pixel distance
-  -o, --yarn-opacity <YARN_OPACITY>
+  -O, --yarn-opacity <YARN_OPACITY>
           Yarn opacity to use to render the image [0, 1] [default: 0.2]
-  -w, --yarn-width <YARN_WIDTH>
+  -W, --yarn-width <YARN_WIDTH>
           Yarn width to use to render the image [default: 1]
-  -l, --line-opacity <LINE_OPACITY>
-          Line opacity, controls how much to lighten the pixels at each line pass, low values encourage more line overlap [0, 1] [default: 0.1]
+  -o, --line-opacity <LINE_OPACITY>
+          Line opacity to use when computing the path, controls how much to lighten the pixels at each line pass, low values encourage more line overlap [0, 1] [default: 0.1]
+  -w, --line-width <LINE_WIDTH>
+          Line width to use when computing the path [default: 2]
+  -b, --beam-width <BEAM_WIDTH>
+          Beam search width, a value of 1 results in a purely greedy algorithm [default: 1]
       --output-scale <OUTPUT_SCALE>
           Output scale [default: 1]
       --save-pegs <PEG_SAVE_FILE>
