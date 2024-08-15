@@ -66,6 +66,10 @@ Options:
           Line width to use when computing the path [default: 2]
   -b, --beam-width <BEAM_WIDTH>
           Beam search width, a value of 1 results in a purely greedy algorithm [default: 1]
+  -e, --early-stop-threshold <EARLY_STOP_THRESHOLD>
+          If provided, early stop pathing when consecutive path losses are greater than threshold
+  -E, --early-stop-count <EARLY_STOP_COUNT>
+          Number of consecutive iterations with path losses above threshold to allow [default: 100]
       --output-scale <OUTPUT_SCALE>
           Output scale [default: 1]
       --save-pegs <PEG_SAVE_FILE>
