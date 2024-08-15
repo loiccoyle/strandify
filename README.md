@@ -2,7 +2,7 @@
 <p align="center"><b>A CLI utility to create string art.</b></p>
 
 <p align="center">
-  <a href="https://github.com/loiccoyle/strandify/actions"><img src="https://github.com/loiccoyle/strandify/actions/workflows/build.yml/badge.svg"></a>
+  <a href="https://github.com/loiccoyle/strandify/actions"><img src="https://github.com/loiccoyle/strandify/actions/workflows/ci.yml/badge.svg"></a>
   <a href="./LICENSE.md"><img src="https://img.shields.io/badge/license-MIT-blue.svg"></a>
   <img src="https://img.shields.io/badge/platform-linux%20%7C%20macOS%20%7C%20windows-informational">
 </p>

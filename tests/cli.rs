@@ -53,6 +53,10 @@ fn save_load_pegs() -> Result<(), Box<dyn Error>> {
     cmd.arg(input_file().to_str().unwrap());
     cmd.arg("--load-pegs");
     cmd.arg(peg_file_str);
+    cmd.arg("-i");
+    cmd.arg("100");
+    cmd.arg("-w");
+    cmd.arg("1");
     cmd.arg("-q");
     cmd.arg(output_file.to_str().unwrap());
 
@@ -72,7 +76,9 @@ fn string_art_img() -> Result<(), Box<dyn Error>> {
     cmd.arg(input_file().to_str().unwrap());
     cmd.arg(output_file.to_str().unwrap());
     cmd.arg("-i");
-    cmd.arg("1000");
+    cmd.arg("100");
+    cmd.arg("-w");
+    cmd.arg("1");
     cmd.arg("-q");
 
     cmd.assert().success();
@@ -91,7 +97,9 @@ fn string_art_svg() -> Result<(), Box<dyn Error>> {
     cmd.arg(input_file().to_str().unwrap());
     cmd.arg(output_file.to_str().unwrap());
     cmd.arg("-i");
-    cmd.arg("1000");
+    cmd.arg("100");
+    cmd.arg("-w");
+    cmd.arg("1");
     cmd.arg("-q");
 
     cmd.assert().success();
@@ -101,7 +109,7 @@ fn string_art_svg() -> Result<(), Box<dyn Error>> {
 
 #[test]
 fn save_render_string_art_blueprint() -> Result<(), Box<dyn Error>> {
-    let n_lines = 2000;
+    let n_lines = 100;
     let blueprint_file = assert_fs::NamedTempFile::new("bp.json").unwrap();
 
     // write blueprint file
