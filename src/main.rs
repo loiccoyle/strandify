@@ -193,7 +193,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         );
         string_pather.populate_line_cache()?;
 
-        let mut bp = string_pather.compute()?;
+        let mut bp = string_pather.compute(5)?;
         if args.transparent {
             bp.background = None;
         }

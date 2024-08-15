@@ -60,6 +60,13 @@ impl Default for PatherConfig {
     }
 }
 
+#[derive(Debug, Clone)]
+struct BeamState {
+    peg_order: Vec<usize>,
+    loss: f64,
+    image: image::ImageBuffer<image::Luma<u8>, Vec<u8>>,
+}
+
 #[derive(Debug)]
 /// The line pathing algorithm.
 pub struct Pather {
@@ -157,11 +164,9 @@ impl Pather {
     }
 
     /// Run the line pathing algorithm and contruct a [`Blueprint`].
-    pub fn compute(&self) -> Result<Blueprint, Box<dyn Error>> {
+    pub fn compute(&self, beam_width: usize) -> Result<Blueprint, Box<dyn Error>> {
         let start_peg = self.get_start_peg(self.config.start_peg_radius);
         info!("starting peg: {start_peg:?}");
-        let mut peg_order = vec![start_peg];
-        let mut work_img = self.image.clone();
 
         let pbar = utils::pbar(self.config.iterations as u64, !self.config.progress_bar)?
             .with_message("Computing blueprint");
@@ -169,46 +174,84 @@ impl Pather {
         let line_color = 255. * self.config.line_opacity;
         let opacity_factor = 1. - self.config.line_opacity;
 
-        let mut last_peg = start_peg;
-        let mut last_last_peg = last_peg;
+        // let mut last_peg = start_peg;
+        // let mut last_last_peg = last_peg;
+
+        let mut beam: Vec<BeamState> = vec![BeamState {
+            peg_order: vec![0],
+            loss: 0.,
+            image: self.image.clone(),
+        }];
 
         // Use a ThreadPool to reduce overhead
         let pool = ThreadPoolBuilder::new().build().unwrap();
 
         pool.install(|| {
             for _ in pbar.wrap_iter(0..self.config.iterations) {
-                let (min_loss, min_peg, min_line) = self
-                    .pegs
-                    .par_iter()
-                    .filter(|peg| peg.id != last_peg.id && peg.id != last_last_peg.id)
-                    .filter_map(|peg| {
-                        let line = self.line_cache.get(&utils::hash_key(last_peg, peg))?;
-                        let loss = line.loss(&work_img);
-                        Some((loss, peg, line))
-                    })
-                    .min_by(|(loss1, _, _), (loss2, _, _)| {
+                let mut new_beam: Vec<BeamState> = vec![];
+                for beam_state in &beam {
+                    let last_peg = &self.pegs[*beam_state.peg_order.last().unwrap()];
+                    let last_last_peg = &self.pegs[*beam_state
+                        .peg_order
+                        .get(beam_state.peg_order.len() - 2)
+                        .unwrap_or(beam_state.peg_order.last().unwrap())];
+
+                    let mut candidates: Vec<_> = self
+                        .pegs
+                        .par_iter()
+                        .enumerate()
+                        .filter(|(_, peg)| peg.id != last_peg.id && peg.id != last_last_peg.id)
+                        .filter_map(|(i, peg)| {
+                            let line = self.line_cache.get(&utils::hash_key(last_peg, peg))?;
+                            let loss = line.loss(&beam_state.image);
+                            Some((loss, i, line))
+                        })
+                        .collect();
+                    candidates.sort_by(|(loss1, _, _), (loss2, _, _)| {
                         loss1
                             .partial_cmp(loss2)
                             .unwrap_or(std::cmp::Ordering::Equal)
-                    })
-                    .unwrap();
+                    });
+                    let top_candidates = candidates[0..beam_width].to_vec();
+                    let new_states: Vec<BeamState> = top_candidates
+                        .iter()
+                        .map(|(loss, peg_i, line)| {
+                            let mut new_image = beam_state.image.clone();
+                            line.zip().for_each(|(x, y)| {
+                                let pixel = new_image.get_pixel_mut(*x, *y);
+                                pixel.0[0] = ((opacity_factor) * pixel.0[0] as f64 + line_color)
+                                    .round()
+                                    .min(255.0) as u8;
+                            });
 
-                debug!("line {:?} -> {:?}: {min_loss:?}", last_peg.id, min_peg.id);
-                peg_order.push(min_peg);
-                last_last_peg = last_peg;
-                last_peg = min_peg;
+                            BeamState {
+                                peg_order: [beam_state.peg_order.clone(), vec![*peg_i]].concat(),
+                                loss: beam_state.loss + loss,
+                                image: new_image,
+                            }
+                        })
+                        .collect();
+                    new_beam.extend(new_states);
+                }
 
-                min_line.zip().for_each(|(x, y)| {
-                    let pixel = work_img.get_pixel_mut(*x, *y);
-                    pixel.0[0] = ((opacity_factor) * pixel.0[0] as f64 + line_color)
-                        .round()
-                        .min(255.0) as u8;
+                new_beam.sort_by(|beam_state1, beam_state2| {
+                    beam_state1
+                        .loss
+                        .partial_cmp(&beam_state2.loss)
+                        .unwrap_or(std::cmp::Ordering::Equal)
                 });
+                beam = new_beam[0..beam_width].to_vec();
             }
         });
 
-        Ok(Blueprint::from_refs(
-            peg_order,
+        let best_state = &beam[0];
+
+        Ok(Blueprint::new(
+            best_state
+                .peg_order
+                .iter()
+                .map(|index| self.pegs[*index])
+                .collect(),
             self.image.width(),
             self.image.height(),
             Some((255, 255, 255)),
