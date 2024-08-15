@@ -27,6 +27,7 @@ impl Peg {
     /// Get the pixel coords connecting 2 [`Pegs`](Peg) using the Bresenham line algorithm and contruct a [`Line`].
     pub fn line_to(&self, other: &Peg, width: f32) -> Line {
         let mut pixels = HashSet::new();
+        let half_width = width as i32 / 2;
 
         // Bresenham's line algorithm
         let dx: i32 = utils::abs_diff(other.x, self.x) as i32;
@@ -40,8 +41,8 @@ impl Peg {
 
         loop {
             // Add pixels for the current position and its surrounding area based on width
-            for ox in -(width as i32 / 2)..=(width as i32 / 2) {
-                for oy in -(width as i32 / 2)..=(width as i32 / 2) {
+            for ox in -(half_width)..=(half_width) {
+                for oy in -(half_width)..=(half_width) {
                     pixels.insert((x + ox, y + oy));
                 }
             }
@@ -61,8 +62,8 @@ impl Peg {
             }
         }
 
-        let mut x_coords = Vec::new();
-        let mut y_coords = Vec::new();
+        let mut x_coords = Vec::with_capacity(pixels.len());
+        let mut y_coords = Vec::with_capacity(pixels.len());
         pixels
             .iter()
             .sorted_by(|(x_a, y_a), (x_b, y_b)| {
