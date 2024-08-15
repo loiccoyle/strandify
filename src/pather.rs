@@ -354,18 +354,17 @@ impl Pather {
                     );
                     let top_candidates = &candidates[0..self.config.beam_width];
 
-                    if self.early_stop(
-                        &mut early_stop_count,
-                        top_candidates
-                            .iter()
-                            .min_by(|(loss1, _, _), (loss2, _, _)| {
-                                loss1
-                                    .partial_cmp(loss2)
-                                    .unwrap_or(std::cmp::Ordering::Equal)
-                            })
-                            .unwrap()
-                            .0,
-                    ) {
+                    let min_loss = top_candidates
+                        .iter()
+                        .min_by(|(loss1, _, _), (loss2, _, _)| {
+                            loss1
+                                .partial_cmp(loss2)
+                                .unwrap_or(std::cmp::Ordering::Equal)
+                        })
+                        .unwrap()
+                        .0;
+
+                    if self.early_stop(&mut early_stop_count, min_loss) {
                         info!("Early stopping at iteration {iter_i}");
                         break 'iter;
                     }
