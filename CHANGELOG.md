@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.2.1](https://github.com/loiccoyle/strandify/compare/strandify-v0.2.0...strandify-v0.2.1) (2024-08-16)
+
+
+### Bug Fixes
+
+* better handling of empty line cache ([c927fb5](https://github.com/loiccoyle/strandify/commit/c927fb5fde5373f672fc5f6a6031463a786f15f0))
+
+
+### Performance Improvements
+
+* beam search optimization ([43d3525](https://github.com/loiccoyle/strandify/commit/43d3525d208922c9a41b1057b207ba65abe31301))
+
 ## [0.2.0](https://github.com/loiccoyle/strandify/compare/strandify-v0.1.0...strandify-v0.2.0) (2024-08-15)
 
 
