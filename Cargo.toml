@@ -33,6 +33,12 @@ ctor = "0.2.8"
 assert_cmd = "2.0.4"
 predicates = "3.1.2"
 assert_fs = "1.0.7"
+criterion = "0.5.1"
+
+
+[[bench]]
+name = "pather"
+harness = false
 
 [profile.release]
 lto = true        # Enable link-time optimization
