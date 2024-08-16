@@ -16,6 +16,7 @@ use crate::peg::{Peg, Yarn};
 use crate::utils;
 
 #[derive(Debug, Clone)]
+/// Pathing algorithm early stopping configuration.
 pub struct EarlyStopConfig {
     pub loss_threshold: Option<f64>,
     pub max_count: u32,
@@ -31,10 +32,12 @@ impl Default for EarlyStopConfig {
 }
 
 #[derive(Debug, Clone)]
+/// Pathing algorithm configuration.
 pub struct PatherConfig {
     /// Number of [`Peg`] connections.
     pub iterations: u32,
-    /// The [`Yarn`] to use when computing the path.
+    /// The [`Yarn`] to use when computing the path. When using a high [`Yarn::opacity`] the lines
+    /// will overlap less.
     pub yarn: Yarn,
     /// [`EarlyStopConfig`].
     pub early_stop: EarlyStopConfig,
@@ -42,7 +45,8 @@ pub struct PatherConfig {
     pub start_peg_radius: u32,
     /// Don't connect [`Pegs`](Peg) within distance, in pixels.
     pub skip_peg_within: u32,
-    /// Beam search width.
+    /// Beam search width, larger values will be lead to more accurate paths at the expense of
+    /// compute time.
     pub beam_width: usize,
     /// Display progress bar.
     pub progress_bar: bool,
@@ -121,12 +125,13 @@ impl Ord for BeamState {
 pub struct Pather {
     /// Input grayscale image.
     pub image: GrayImage,
-    /// [`Peg`] vector.
+    /// Array of [`Pegs`](Peg) to use to compute the path.
     pub pegs: Vec<Peg>,
-    /// [`PatherConfig`], algorithm config.
+    /// Pathing algorithm configuration.
     pub config: PatherConfig,
-    /// Holds the pixel coords of all the lines
-    line_cache: HashMap<(u16, u16), Line>,
+    /// Holds the pixel coords of all the lines, run [Pather::populate_line_cache] to populate the
+    /// cache.
+    pub line_cache: HashMap<(u16, u16), Line>,
 }
 
 impl Pather {
@@ -155,7 +160,7 @@ impl Pather {
         Ok(Self::new(img, pegs, config))
     }
 
-    /// Populate the `line_cache` with the pixel coords of all the lines between the [`Peg`] pairs.
+    /// Populate the [Pather::line_cache] with the pixel coords of all the lines between the [`Peg`] pairs.
     pub fn populate_line_cache(&mut self) -> Result<(), Box<dyn Error>> {
         info!("Populating line cache");
 
@@ -230,7 +235,7 @@ impl Pather {
         }
     }
 
-    /// Run the line pathing algorithm and contruct a [`Blueprint`].
+    /// Run a greedy line pathing algorithm and construct a [`Blueprint`].
     pub fn compute_greedy(&self) -> Result<Blueprint, Box<dyn Error>> {
         if self.line_cache.is_empty() {
             return Err("Line cache is empty, run 'populate_line_cache'.".into());
@@ -300,7 +305,7 @@ impl Pather {
         ))
     }
 
-    /// Run a beam search based line pathing algorithm and contruct a [`Blueprint`].
+    /// Run a beam search based line pathing algorithm and construct a [`Blueprint`].
     pub fn compute_beam(&self) -> Result<Blueprint, Box<dyn Error>> {
         if self.line_cache.is_empty() {
             return Err("Line cache is empty, run 'populate_line_cache'.".into());
@@ -415,6 +420,11 @@ impl Pather {
         ))
     }
 
+    /// Run the pathing algorithm. Will use the [greedy](Pather::compute_greedy) algorithm when
+    /// [`PatherConfig::beam_width`] equals 1 and the [beam search](Pather::compute_beam) algorithm
+    /// otherwise.
+    ///
+    /// If [`Pather::line_cache`] is empty, will [populate](Pather::populate_line_cache) it.
     pub fn compute(&mut self) -> Result<Blueprint, Box<dyn Error>> {
         if self.line_cache.is_empty() {
             warn!("Line cache is empty, populating it.");
