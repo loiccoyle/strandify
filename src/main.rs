@@ -78,9 +78,9 @@ fn main() -> Result<(), Box<dyn Error>> {
             + (yarn_color_float.2).powi(2))
         .sqrt();
 
-        info!("projecting along {yarn_color_float:?}");
+        debug!("projecting along {yarn_color_float:?}");
         let mut img = image::GrayImage::new(img_rgb.width(), img_rgb.height());
-        info!("norm: {color_norm}");
+        debug!("norm: {color_norm}");
         // project the color space onto the yarn color vector
         let mut value_min = 255;
         let mut value_max = 0;
@@ -120,48 +120,45 @@ fn main() -> Result<(), Box<dyn Error>> {
     let margin = (min_dim as f64 * args.peg_margin).round() as u32;
     info!("Peg margin: {margin}px");
 
-    let mut pegs: Vec<peg::Peg>;
-    // Handle the generation of pegs and computation of blueprint
-    if let Some(peg_path) = args.load_pegs {
-        // Load pegs from file
-        info!("Reading {peg_path:?}");
-        let reader = BufReader::new(File::open(peg_path)?);
-        pegs = serde_json::from_reader(reader)?;
-    } else {
-        info!("Generating pegs");
-        let center = (width / 2, height / 2);
-        // Generate pegs from scratch
-        let (peg_coords_x, peg_coords_y) = if args.peg_shape == "circle" {
-            info!("Using circle peg distribution");
-            utils::circle_coords((min_dim - 2 * margin) / 2, center, args.peg_number)
-        } else if args.peg_shape == "square" {
-            info!("Using square peg distribution");
-            utils::square_coords(min_dim - 2 * margin, center, args.peg_number)
-        } else if args.peg_shape == "border" {
-            info!("Using border peg distribution");
-            utils::rectangle_coords(
-                width - 2 * margin,
-                height - 2 * margin,
-                center,
-                args.peg_number,
-            )
-        } else {
-            return Err(format!("Unrecognized SHAPE '{}'", args.peg_shape).into());
-        };
-
-        pegs = vec![];
-        for (id, (peg_x, peg_y)) in zip(peg_coords_x, peg_coords_y).enumerate() {
-            pegs.push(peg::Peg::new(peg_x, peg_y, id as u16));
+    // Handle the generation of pegs
+    let pegs: Vec<peg::Peg> = match args.load_pegs {
+        // A json file containing the pegs was given, load it.
+        Some(peg_path) => {
+            // Load pegs from file
+            info!("Reading {peg_path:?}");
+            let reader = BufReader::new(File::open(peg_path)?);
+            serde_json::from_reader(reader)?
         }
-
-        // Add jitter to pegs
-        if let Some(jitter) = args.peg_jitter {
-            pegs = pegs
-                .iter()
-                .map(|peg| peg.with_jitter(jitter as i64))
-                .collect();
+        // Generate from scratch
+        None => {
+            let center = (width / 2, height / 2);
+            let (pegs_x, pegs_y) = match args.peg_shape.as_str() {
+                "circle" => {
+                    utils::circle_coords((min_dim - 2 * margin) / 2, center, args.peg_number)
+                }
+                "square" => utils::square_coords(min_dim - 2 * margin, center, args.peg_number),
+                "border" => utils::rectangle_coords(
+                    width - 2 * margin,
+                    height - 2 * margin,
+                    center,
+                    args.peg_number,
+                ),
+                _ => {
+                    return Err(format!("Unrecognized SHAPE '{}'", args.peg_shape).into());
+                }
+            };
+            zip(pegs_x, pegs_y)
+                .enumerate()
+                .map(|(i, (x, y))| {
+                    let peg = peg::Peg::new(x, y, i as u16);
+                    if let Some(jitter) = args.peg_jitter {
+                        peg.with_jitter(jitter as i64);
+                    }
+                    peg
+                })
+                .collect::<Vec<_>>()
         }
-    }
+    };
 
     if let Some(peg_path) = args.save_pegs {
         info!("Saving pegs to {peg_path:?}");
@@ -170,7 +167,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     if let Some(output_file) = output_file {
         let skip_peg_within = args.peg_skip_within.unwrap_or(min_dim / 8);
-        info!("Skip peg within: {skip_peg_within:?}px");
+        info!("Skipping pegs within: {skip_peg_within:?}px");
         let render_yarn = peg::Yarn::new(
             args.yarn_width,
             args.yarn_opacity,
