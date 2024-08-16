@@ -308,91 +308,87 @@ impl Pather {
         let line_color = 255. * self.config.yarn.opacity;
         let opacity_factor = 1. - self.config.yarn.opacity;
 
-        let mut beam: Vec<BeamState> = vec![BeamState {
+        let mut beam = vec![BeamState {
             peg_order: vec![start_peg],
             loss: 0.,
             image: self.image.clone(),
         }];
 
-        // Use a ThreadPool to reduce overhead
         let pool = ThreadPoolBuilder::new().build().unwrap();
         let beam_width_index = self.config.beam_width - 1;
-
-        // early stop
-        let mut early_stop_count: u32 = 0;
+        let mut early_stop_count = 0;
 
         pool.install(|| {
             'iter: for iter_i in pbar.wrap_iter(0..self.config.iterations) {
-                let mut new_beam: Vec<BeamState> = vec![];
-                for beam_state in &beam {
-                    let last_peg = &self.pegs[*beam_state.peg_order.last().unwrap()];
-                    let last_last_peg = &self.pegs[*beam_state
-                        .peg_order
-                        .get(beam_state.peg_order.len() - 2)
-                        .unwrap_or(beam_state.peg_order.last().unwrap())];
+                let mut candidates: Vec<_> = beam
+                    .par_iter()
+                    .flat_map(|beam_state| {
+                        let last_peg = &self.pegs[*beam_state.peg_order.last().unwrap()];
+                        let last_last_peg = &self.pegs[*beam_state
+                            .peg_order
+                            .get(beam_state.peg_order.len().saturating_sub(2))
+                            .unwrap_or(beam_state.peg_order.last().unwrap())];
 
-                    let mut candidates = self
-                        .pegs
-                        .par_iter()
-                        .enumerate()
-                        .filter(|(_, peg)| peg.id != last_peg.id && peg.id != last_last_peg.id)
-                        .filter_map(|(i, peg)| {
-                            let line = self.line_cache.get(&utils::hash_key(last_peg, peg))?;
-                            let loss = line.loss(&beam_state.image);
-                            Some((loss, i, line))
-                        })
-                        .collect::<Vec<_>>();
+                        self.pegs
+                            .par_iter()
+                            .enumerate()
+                            .filter(|(_, peg)| peg.id != last_peg.id && peg.id != last_last_peg.id)
+                            .filter_map(|(i, peg)| {
+                                let line = self.line_cache.get(&utils::hash_key(last_peg, peg))?;
+                                let loss = line.loss(&beam_state.image);
+                                Some((loss, i, line, beam_state))
+                            })
+                            .collect::<Vec<_>>()
+                    })
+                    .collect::<Vec<_>>();
 
-                    // Sort candidates partially to get the top beam_width candidates
-                    candidates.select_nth_unstable_by(
-                        beam_width_index,
-                        |(loss1, _, _), (loss2, _, _)| {
-                            loss1
-                                .partial_cmp(loss2)
-                                .unwrap_or(std::cmp::Ordering::Equal)
-                        },
-                    );
-                    let top_candidates = &candidates[0..self.config.beam_width];
+                // partial sort up to beam width
+                candidates.select_nth_unstable_by(beam_width_index, |(loss1, ..), (loss2, ..)| {
+                    loss1
+                        .partial_cmp(loss2)
+                        .unwrap_or(std::cmp::Ordering::Equal)
+                });
 
-                    let min_loss = top_candidates
-                        .iter()
-                        .min_by(|(loss1, _, _), (loss2, _, _)| {
-                            loss1
-                                .partial_cmp(loss2)
-                                .unwrap_or(std::cmp::Ordering::Equal)
-                        })
-                        .unwrap()
-                        .0;
+                let min_loss = candidates
+                    .iter()
+                    .take(self.config.beam_width)
+                    .min_by(|(loss1, _, _, _), (loss2, _, _, _)| {
+                        loss1
+                            .partial_cmp(loss2)
+                            .unwrap_or(std::cmp::Ordering::Equal)
+                    })
+                    .unwrap()
+                    .0;
 
-                    if self.early_stop(&mut early_stop_count, min_loss) {
-                        info!("Early stopping at iteration {iter_i}");
-                        break 'iter;
-                    }
-
-                    let new_states: Vec<BeamState> = top_candidates
-                        .iter()
-                        .map(|(loss, peg_i, line)| {
-                            let mut new_image = beam_state.image.clone();
-                            line.zip().for_each(|(x, y)| {
-                                let pixel = new_image.get_pixel_mut(*x, *y);
-                                pixel.0[0] = ((opacity_factor) * pixel.0[0] as f64 + line_color)
-                                    .round()
-                                    .min(255.0) as u8;
-                            });
-
-                            BeamState {
-                                peg_order: [beam_state.peg_order.clone(), vec![*peg_i]].concat(),
-                                loss: beam_state.loss + loss,
-                                image: new_image,
-                            }
-                        })
-                        .collect();
-                    new_beam.extend(new_states);
+                if self.early_stop(&mut early_stop_count, min_loss) {
+                    info!("Early stopping at iteration {iter_i}");
+                    break 'iter;
                 }
 
-                // Sort the beam by the cumulative loss and keep the top beam_width states
-                new_beam.select_nth_unstable(beam_width_index);
-                beam = new_beam[0..self.config.beam_width].to_vec();
+                beam = candidates
+                    .into_iter()
+                    .take(self.config.beam_width)
+                    .map(|(loss, peg_i, line, beam_state)| {
+                        let mut new_image = beam_state.image.clone();
+                        line.zip().for_each(|(x, y)| {
+                            let pixel = new_image.get_pixel_mut(*x, *y);
+                            pixel.0[0] = ((opacity_factor) * pixel.0[0] as f64 + line_color)
+                                .round()
+                                .min(255.0) as u8;
+                        });
+
+                        BeamState {
+                            peg_order: beam_state
+                                .peg_order
+                                .iter()
+                                .copied()
+                                .chain(std::iter::once(peg_i))
+                                .collect(),
+                            loss: beam_state.loss + loss,
+                            image: new_image,
+                        }
+                    })
+                    .collect();
             }
         });
 
@@ -402,7 +398,7 @@ impl Pather {
             best_state
                 .peg_order
                 .iter()
-                .map(|index| self.pegs[*index])
+                .map(|&index| self.pegs[index])
                 .collect(),
             self.image.width(),
             self.image.height(),
