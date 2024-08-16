@@ -1,3 +1,4 @@
+use log::warn;
 use log::{debug, info};
 use std::collections::HashMap;
 use std::error::Error;
@@ -231,6 +232,10 @@ impl Pather {
 
     /// Run the line pathing algorithm and contruct a [`Blueprint`].
     pub fn compute_greedy(&self) -> Result<Blueprint, Box<dyn Error>> {
+        if self.line_cache.is_empty() {
+            return Err("Line cache is empty, run 'populate_line_cache'.".into());
+        };
+
         let start_peg = &self.pegs[self.get_start_peg(self.config.start_peg_radius)];
         info!("starting peg: {start_peg:?}");
         let mut peg_order = vec![start_peg];
@@ -245,10 +250,8 @@ impl Pather {
         let mut last_peg = start_peg;
         let mut last_last_peg = last_peg;
 
-        // Use a ThreadPool to reduce overhead
+        // use a ThreadPool to reduce overhead
         let pool = ThreadPoolBuilder::new().build().unwrap();
-
-        // early stop
         let mut early_stop_count: u32 = 0;
 
         pool.install(|| {
@@ -299,6 +302,10 @@ impl Pather {
 
     /// Run a beam search based line pathing algorithm and contruct a [`Blueprint`].
     pub fn compute_beam(&self) -> Result<Blueprint, Box<dyn Error>> {
+        if self.line_cache.is_empty() {
+            return Err("Line cache is empty, run 'populate_line_cache'.".into());
+        };
+
         let start_peg = self.get_start_peg(self.config.start_peg_radius);
         info!("starting peg: {start_peg:?}");
 
@@ -314,6 +321,7 @@ impl Pather {
             image: self.image.clone(),
         }];
 
+        // use a ThreadPool to reduce overhead
         let pool = ThreadPoolBuilder::new().build().unwrap();
         let beam_width_index = self.config.beam_width - 1;
         let mut early_stop_count = 0;
@@ -352,7 +360,7 @@ impl Pather {
                 let min_loss = candidates
                     .iter()
                     .take(self.config.beam_width)
-                    .min_by(|(loss1, _, _, _), (loss2, _, _, _)| {
+                    .min_by(|(loss1, ..), (loss2, ..)| {
                         loss1
                             .partial_cmp(loss2)
                             .unwrap_or(std::cmp::Ordering::Equal)
@@ -407,7 +415,11 @@ impl Pather {
         ))
     }
 
-    pub fn compute(&self) -> Result<Blueprint, Box<dyn Error>> {
+    pub fn compute(&mut self) -> Result<Blueprint, Box<dyn Error>> {
+        if self.line_cache.is_empty() {
+            warn!("Line cache is empty, populating it.");
+            self.populate_line_cache()?;
+        }
         if self.config.beam_width > 1 {
             info!("Using beam search algorithm.");
             self.compute_beam()
