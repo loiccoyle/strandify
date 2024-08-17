@@ -8,6 +8,7 @@ use std::error::Error;
 use std::fs::File;
 use std::io::BufReader;
 use std::path::Path;
+use std::time::Duration;
 use svg::node::element::path::Data;
 use svg::node::element::{Path as PathSVG, Rectangle};
 use svg::{Document, Node};
@@ -112,6 +113,7 @@ impl Blueprint {
         progress_bar: bool,
     ) -> Result<image::RgbaImage, Box<dyn Error>> {
         let document = self.render_svg(yarn, progress_bar)?;
+
         let svg_data = document.to_string();
         let svg_tree = usvg::Tree::from_str(&svg_data, &usvg::Options::default()).unwrap();
 
@@ -121,9 +123,12 @@ impl Blueprint {
         let mut pixmap = tiny_skia::Pixmap::new(render_width, render_height).unwrap();
         let mut pixmap_mut = pixmap.as_mut();
 
+        let pbar = utils::spinner(!progress_bar).with_message("Rendering image");
+        pbar.enable_steady_tick(Duration::from_millis(100));
         render(&svg_tree, tiny_skia::Transform::identity(), &mut pixmap_mut);
         let img = image::ImageBuffer::from_vec(render_width, render_height, pixmap.data().to_vec())
             .unwrap();
+        pbar.finish_and_clear();
 
         Ok(img)
     }
