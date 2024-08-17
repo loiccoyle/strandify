@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.2.2](https://github.com/loiccoyle/strandify/compare/strandify-v0.2.1...strandify-v0.2.2) (2024-08-17)
+
+
+### Bug Fixes
+
+* add spinner to render_img ([9fd4448](https://github.com/loiccoyle/strandify/commit/9fd444818010da0abbe403014e33328bd4420ff6))
+* cleanup peg shapes by adding and using `line_coords` ([b551ee6](https://github.com/loiccoyle/strandify/commit/b551ee6d0ed1c4c3f23e3ee51c5ad8ac73e0e032))
+* error handling ([067d651](https://github.com/loiccoyle/strandify/commit/067d651c2659472344e7bfdffd1f450b3abec29f))
+* peg jitter not being applied ([f2d04aa](https://github.com/loiccoyle/strandify/commit/f2d04aa6bfeda765fd1a0a67c55ad7e7d62308ac))
+
 ## [0.2.1](https://github.com/loiccoyle/strandify/compare/strandify-v0.2.0...strandify-v0.2.1) (2024-08-16)
 
 
