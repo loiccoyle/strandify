@@ -150,9 +150,9 @@ fn main() -> Result<(), Box<dyn Error>> {
             zip(pegs_x, pegs_y)
                 .enumerate()
                 .map(|(i, (x, y))| {
-                    let peg = peg::Peg::new(x, y, i as u16);
+                    let mut peg = peg::Peg::new(x, y, i as u16);
                     if let Some(jitter) = args.peg_jitter {
-                        peg.with_jitter(jitter as i64);
+                        peg = peg.with_jitter(jitter as i64);
                     }
                     peg
                 })
