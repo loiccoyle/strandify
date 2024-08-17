@@ -4,7 +4,7 @@ version = "0.2.2"
 edition = "2021"
 authors = ["Loic Coyle <loic.coyle@hotmail.fr>"]
 description = "A stringart generation library."
-keywords = ["stringart", "generative", "art"]
+keywords = ["string-art", "generative-art", "art"]
 repository = "https://github.com/loiccoyle/stringart"
 license = "MIT"
 
