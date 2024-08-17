@@ -59,7 +59,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         };
     }
 
-    let img_rgb = utils::open_img_transparency_to_white(PathBuf::from(args.input));
+    let img_rgb = utils::open_img_transparency_to_white(PathBuf::from(args.input))?;
 
     let img = if args.project_to_yarn_color
         && (args.yarn_color.r != args.yarn_color.g || args.yarn_color.g != args.yarn_color.b)

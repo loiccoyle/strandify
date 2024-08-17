@@ -180,15 +180,15 @@ pub fn hash_key(peg_a: &Peg, peg_b: &Peg) -> (u16, u16) {
 /// Open an image and set all fully transparent pixels to white.
 pub fn open_img_transparency_to_white<P: AsRef<Path>>(
     image_file: P,
-) -> image::ImageBuffer<image::Rgb<u8>, Vec<u8>> {
-    let mut img_rgba = image::open(image_file).unwrap().into_rgba8();
+) -> Result<image::ImageBuffer<image::Rgb<u8>, Vec<u8>>, Box<dyn Error>> {
+    let mut img_rgba = image::open(image_file)?.into_rgba8();
     for pixel in img_rgba.pixels_mut() {
         // replace fully transparent pixel with white
         if pixel.0[3] == 0 {
             pixel.0 = [255, 255, 255, 255]
         }
     }
-    image::DynamicImage::ImageRgba8(img_rgba).to_rgb8()
+    Ok(image::DynamicImage::ImageRgba8(img_rgba).to_rgb8())
 }
 
 type RgbImage = image::ImageBuffer<image::Rgb<u8>, Vec<u8>>;
@@ -227,7 +227,10 @@ mod test {
 
     #[test]
     fn test_line_coords() {
-        let n_points = 10;
+        // 5 points between 0 and 10
+        // 0 1 2 3 4 5 6 7 8 9 10
+        // *   *   *   *   *
+        let n_points = 5;
         let (x1, y1) = (0, 0);
         let (x2, y2) = (10, 0);
         let (x, y) = line_coords((x1, y1), (x2, y2), n_points);
@@ -236,7 +239,7 @@ mod test {
         assert_eq!(x.first(), Some(&x1));
         assert_eq!(y.first(), Some(&y1));
 
-        let (x_end, y_end) = (9, 0);
+        let (x_end, y_end) = (8, 0);
         assert_eq!(x.last(), Some(&x_end));
         assert_eq!(y.last(), Some(&y_end));
     }
