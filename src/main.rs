@@ -110,7 +110,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         }
         img
     } else {
-        info!("converting to grayscale");
+        info!("Converting to grayscale");
         // if yarn is grey scale, just convert the img to black and white
         imageops::grayscale(&img_rgb)
     };
@@ -136,11 +136,21 @@ fn main() -> Result<(), Box<dyn Error>> {
                 "circle" => {
                     utils::circle_coords((min_dim - 2 * margin) / 2, center, args.peg_number)
                 }
-                "square" => utils::square_coords(min_dim - 2 * margin, center, args.peg_number),
+                "square" => {
+                    let length = min_dim - 2 * margin;
+                    utils::square_coords(
+                        (
+                            center.0.saturating_sub(length / 2),
+                            center.1.saturating_sub(length / 2),
+                        ),
+                        length,
+                        args.peg_number,
+                    )
+                }
                 "border" => utils::rectangle_coords(
+                    (margin, margin),
                     width - 2 * margin,
                     height - 2 * margin,
-                    center,
                     args.peg_number,
                 ),
                 _ => {
@@ -159,6 +169,8 @@ fn main() -> Result<(), Box<dyn Error>> {
                 .collect::<Vec<_>>()
         }
     };
+
+    info!("Number of pegs: {}", pegs.len());
 
     if let Some(peg_path) = args.save_pegs {
         info!("Saving pegs to {peg_path:?}");

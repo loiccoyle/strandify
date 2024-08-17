@@ -69,7 +69,7 @@ pub struct Arguments {
     pub output: Option<String>,
     /// Number of iterations
     #[clap(short, long, value_parser, default_value_t = 4000)]
-    pub iterations: u32,
+    pub iterations: usize,
     /// Transparent background
     #[clap(short = 't', action, default_value_t = false)]
     pub transparent: bool,
@@ -82,9 +82,9 @@ pub struct Arguments {
     /// Peg distribution shape
     #[clap(short = 'S', long, value_parser=["circle", "square", "border"], default_value = "circle", name="SHAPE")]
     pub peg_shape: String,
-    /// Number of pegs
+    /// Number of pegs. Depending on the shape, can be slightly off.
     #[clap(short = 'n', long, value_parser, default_value_t = 288)]
-    pub peg_number: u32,
+    pub peg_number: usize,
     /// Margin between pegs and image edge [0, 1]
     #[clap(short = 'm', long, value_parser=number_between_0_and_1, default_value_t = 0.05)]
     pub peg_margin: f64,

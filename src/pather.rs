@@ -35,7 +35,7 @@ impl Default for EarlyStopConfig {
 /// Pathing algorithm configuration.
 pub struct PatherConfig {
     /// Number of [`Peg`] connections.
-    pub iterations: u32,
+    pub iterations: usize,
     /// The [`Yarn`] to use when computing the path. When using a high [`Yarn::opacity`] the lines
     /// will overlap less.
     pub yarn: Yarn,
@@ -55,7 +55,7 @@ pub struct PatherConfig {
 impl PatherConfig {
     /// Creates a new [`PatherConfig`].
     pub fn new(
-        iterations: u32,
+        iterations: usize,
         yarn: Yarn,
         early_stop: EarlyStopConfig,
         start_peg_radius: u32,
@@ -242,7 +242,7 @@ impl Pather {
         };
 
         let start_peg = &self.pegs[self.get_start_peg(self.config.start_peg_radius)];
-        info!("starting peg: {start_peg:?}");
+        debug!("Starting peg: {start_peg:?}");
         let mut peg_order = vec![start_peg];
         let mut work_img = self.image.clone();
 
@@ -312,7 +312,7 @@ impl Pather {
         };
 
         let start_peg = self.get_start_peg(self.config.start_peg_radius);
-        info!("starting peg: {start_peg:?}");
+        debug!("Starting peg: {start_peg:?}");
 
         let pbar = utils::pbar(self.config.iterations as u64, !self.config.progress_bar)?
             .with_message("Computing blueprint");

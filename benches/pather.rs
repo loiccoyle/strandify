@@ -17,12 +17,8 @@ fn create_pather() -> Pather {
     let image = image::open(input_file()).unwrap();
     let image_gray = image.to_luma8();
 
-    let (pegs_x, pegs_y) = utils::rectangle_coords(
-        image.width() - 12,
-        image.height() - 12,
-        (image.width() / 2, image.height() / 2),
-        288,
-    );
+    let (pegs_x, pegs_y) =
+        utils::rectangle_coords((6, 6), image.width() - 12, image.height() / 2, 288);
     let pegs = zip(pegs_x, pegs_y)
         .enumerate()
         .map(|(i, (x, y))| Peg::new(x, y, i as u16))

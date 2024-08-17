@@ -25,7 +25,8 @@ pub struct Blueprint {
     pub width: u32,
     /// Height of the [`Blueprint`], should be the same dimensions as the image used.
     pub height: u32,
-    /// Background
+    /// Background color, if None no background is added. It will be transparent for svg and alpha
+    /// compatible image formats.
     pub background: Option<(u8, u8, u8)>,
     /// Render scale, how much to up/down scale the render.
     pub render_scale: f64,
