@@ -51,7 +51,7 @@ Options:
   -S, --peg-shape <SHAPE>
           Peg distribution shape [default: circle] [possible values: circle, square, border]
   -n, --peg-number <PEG_NUMBER>
-          Number of pegs [default: 288]
+          Number of pegs. Depending on the shape, can be slightly off [default: 288]
   -m, --peg-margin <PEG_MARGIN>
           Margin between pegs and image edge [0, 1] [default: 0.05]
   -j, --peg-jitter <PEG_JITTER>
