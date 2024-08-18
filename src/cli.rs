@@ -35,6 +35,7 @@ fn number_between_0_and_1(value: &str) -> Result<f64, String> {
 }
 
 #[derive(Debug, Clone)]
+/// Helper struct to parse RGB command line input.
 pub struct Rgb {
     pub r: u8,
     pub g: u8,
