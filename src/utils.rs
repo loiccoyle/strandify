@@ -1,7 +1,6 @@
 use std::{error::Error, f64::consts::PI, path::Path};
 
 use crate::peg::Peg;
-use image::ImageBuffer;
 use indicatif::{ProgressBar, ProgressStyle};
 use log::debug;
 
@@ -111,7 +110,7 @@ pub fn rectangle_coords(
     )
 }
 
-/// Get the pixels around a peg within `radius`.
+/// Get the pixels around a point within `radius`.
 ///
 /// # Arguments
 ///
@@ -134,13 +133,13 @@ pub fn pixels_around((center_x, center_y): (u32, u32), radius: u32) -> (Vec<u32>
     (x_coords, y_coords)
 }
 
-pub fn progress_style() -> Result<ProgressStyle, Box<dyn Error>> {
+pub(crate) fn progress_style() -> Result<ProgressStyle, Box<dyn Error>> {
     Ok(ProgressStyle::with_template(
         "{msg}: {wide_bar} {elapsed_precise} {pos}/{len}",
     )?)
 }
 
-pub fn pbar(len: u64, hidden: bool) -> Result<ProgressBar, Box<dyn Error>> {
+pub(crate) fn pbar(len: u64, hidden: bool) -> Result<ProgressBar, Box<dyn Error>> {
     let style = progress_style()?;
     Ok(if hidden {
         ProgressBar::hidden()
@@ -150,7 +149,7 @@ pub fn pbar(len: u64, hidden: bool) -> Result<ProgressBar, Box<dyn Error>> {
     .with_style(style))
 }
 
-pub fn spinner(hidden: bool) -> ProgressBar {
+pub(crate) fn spinner(hidden: bool) -> ProgressBar {
     if hidden {
         ProgressBar::hidden()
     } else {
@@ -158,7 +157,7 @@ pub fn spinner(hidden: bool) -> ProgressBar {
     }
 }
 
-pub fn abs_diff<T>(a: T, b: T) -> T
+pub(crate) fn abs_diff<T>(a: T, b: T) -> T
 where
     T: std::cmp::PartialOrd + std::ops::Sub<Output = T>,
 {
@@ -169,6 +168,7 @@ where
     }
 }
 
+/// Create a hash key from two pegs. Used to construct the [`Pather::line_cache`](crate::pather::Pather::line_cache).
 pub fn hash_key(peg_a: &Peg, peg_b: &Peg) -> (u16, u16) {
     if peg_a.id < peg_b.id {
         (peg_a.id, peg_b.id)
@@ -189,28 +189,6 @@ pub fn open_img_transparency_to_white<P: AsRef<Path>>(
         }
     }
     Ok(image::DynamicImage::ImageRgba8(img_rgba).to_rgb8())
-}
-
-type RgbImage = image::ImageBuffer<image::Rgb<u8>, Vec<u8>>;
-pub fn split_channels(
-    img: &image::ImageBuffer<image::Rgb<u8>, Vec<u8>>,
-) -> (RgbImage, RgbImage, RgbImage) {
-    let (width, height) = img.dimensions();
-
-    // Create buffers for each channel
-    let mut red: image::ImageBuffer<image::Rgb<u8>, Vec<u8>> = ImageBuffer::new(width, height);
-    let mut green: image::ImageBuffer<image::Rgb<u8>, Vec<u8>> = ImageBuffer::new(width, height);
-    let mut blue: image::ImageBuffer<image::Rgb<u8>, Vec<u8>> = ImageBuffer::new(width, height);
-
-    // Iterate over the pixels and split the channels
-    for (x, y, pixel) in img.enumerate_pixels() {
-        let image::Rgb([r, g, b]) = *pixel;
-        red.put_pixel(x, y, image::Rgb([r, 0, 0]));
-        green.put_pixel(x, y, image::Rgb([0, g, 0]));
-        blue.put_pixel(x, y, image::Rgb([0, 0, b]));
-    }
-
-    (red, green, blue)
 }
 
 #[cfg(test)]
