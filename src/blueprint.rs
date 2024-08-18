@@ -1,5 +1,6 @@
 use image::DynamicImage;
 use log::info;
+use rayon::prelude::*;
 use resvg::render;
 use resvg::tiny_skia;
 use resvg::usvg;
@@ -114,22 +115,56 @@ impl Blueprint {
         progress_bar: bool,
     ) -> Result<image::RgbaImage, Box<dyn Error>> {
         let document = self.render_svg(yarn, progress_bar)?;
-
         let svg_data = document.to_string();
         let svg_tree = usvg::Tree::from_str(&svg_data, &usvg::Options::default()).unwrap();
 
         let render_width = (self.width as f64 * self.render_scale).round() as u32;
         let render_height = (self.height as f64 * self.render_scale).round() as u32;
 
-        let mut pixmap = tiny_skia::Pixmap::new(render_width, render_height).unwrap();
-        let mut pixmap_mut = pixmap.as_mut();
+        // divide the height into chunks to be processed in parallel
+        let num_chunks = rayon::current_num_threads();
+        let chunk_height = (render_height + num_chunks as u32 - 1) / num_chunks as u32;
 
         let pbar = utils::spinner(!progress_bar).with_message("Rendering image");
         pbar.enable_steady_tick(Duration::from_millis(100));
-        render(&svg_tree, tiny_skia::Transform::identity(), &mut pixmap_mut);
-        let img = image::ImageBuffer::from_vec(render_width, render_height, pixmap.data().to_vec())
-            .unwrap();
+
+        // render each chunk in parallel
+        let chunks: Vec<tiny_skia::Pixmap> = (0..num_chunks)
+            .into_par_iter()
+            .map(|i| {
+                let start_y = i as u32 * chunk_height;
+                let end_y = ((i + 1) as u32 * chunk_height).min(render_height);
+
+                let mut pixmap = tiny_skia::Pixmap::new(render_width, end_y - start_y).unwrap();
+
+                let transform = tiny_skia::Transform::from_translate(0.0, -(start_y as f32));
+                render(&svg_tree, transform, &mut pixmap.as_mut());
+                pixmap
+            })
+            .collect();
+
         pbar.finish_and_clear();
+
+        // create the final image buffer
+        let mut final_pixmap = tiny_skia::Pixmap::new(render_width, render_height).unwrap();
+
+        // combine the chunks back into the final image
+        for (i, pixmap) in chunks.into_iter().enumerate() {
+            let start_y = i as u32 * chunk_height;
+            final_pixmap.draw_pixmap(
+                0,
+                start_y as i32,
+                pixmap.as_ref(),
+                &tiny_skia::PixmapPaint::default(),
+                tiny_skia::Transform::identity(),
+                None,
+            );
+        }
+
+        // convert the final pixmap to an image::RgbaImage
+        let img =
+            image::ImageBuffer::from_vec(render_width, render_height, final_pixmap.data().to_vec())
+                .unwrap();
 
         Ok(img)
     }
