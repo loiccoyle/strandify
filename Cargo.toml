@@ -1,6 +1,6 @@
 [package]
 name = "strandify"
-version = "0.2.2"
+version = "0.2.3"
 edition = "2021"
 authors = ["Loic Coyle <loic.coyle@hotmail.fr>"]
 description = "A stringart generation library."
