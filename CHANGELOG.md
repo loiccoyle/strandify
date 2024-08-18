@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.2.3](https://github.com/loiccoyle/strandify/compare/strandify-v0.2.2...strandify-v0.2.3) (2024-08-18)
+
+
+### Bug Fixes
+
+* improve `line_to` width and rm sorting ([737e345](https://github.com/loiccoyle/strandify/commit/737e345ee3353e67db808329f78740ed9dec4812))
+
+
+### Performance Improvements
+
+* **render_img:** render svg to image in parallel chunks ([714b204](https://github.com/loiccoyle/strandify/commit/714b2047d422aaf73778949778e334b89835a784))
+
 ## [0.2.2](https://github.com/loiccoyle/strandify/compare/strandify-v0.2.1...strandify-v0.2.2) (2024-08-17)
 
 
