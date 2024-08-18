@@ -12,7 +12,12 @@ fn check_file_exists(input: &str) -> Result<String, String> {
             .unwrap()
             .with_guessed_format()
             .unwrap();
-        if input_file.extension().unwrap() == "json" || reader.format().is_some() {
+        if input_file
+            .extension()
+            .ok_or("Could not determine file extension.")?
+            == "json"
+            || reader.format().is_some()
+        {
             Ok(input.into())
         } else {
             Err(format!("File {:?} format not supported.", input_file))
