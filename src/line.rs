@@ -67,4 +67,25 @@ impl Line {
             .fold(0.0, |acc, &pixel| acc + (pixel.0[0] as f64))
             / (255. * self.len() as f64)
     }
+
+    /// Draw the [`Line`] on the image, with alpha compositing.
+    ///
+    /// # Arguments:
+    ///
+    /// * `image`: the [`image::ImageBuffer`] to draw the line on, should be single channel.
+    /// * `line_opacity`: the opacity of the line.
+    /// * `line_color`: the grey scale color of the line.
+    pub fn draw(
+        &self,
+        image: &mut image::ImageBuffer<image::Luma<u8>, Vec<u8>>,
+        line_opacity: f64,
+        line_color: f64,
+    ) {
+        self.zip().for_each(|(x, y)| {
+            let pixel = image.get_pixel_mut(*x, *y);
+            pixel.0[0] = ((1. - line_opacity) * pixel.0[0] as f64 + line_color)
+                .round()
+                .min(255.0) as u8;
+        });
+    }
 }

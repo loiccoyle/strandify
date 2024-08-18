@@ -250,7 +250,6 @@ impl Pather {
             .with_message("Computing blueprint");
 
         let line_color = 255. * self.config.yarn.opacity;
-        let opacity_factor = 1. - self.config.yarn.opacity;
 
         let mut last_peg = start_peg;
         let mut last_last_peg = last_peg;
@@ -287,12 +286,7 @@ impl Pather {
                 last_last_peg = last_peg;
                 last_peg = min_peg;
 
-                min_line.zip().for_each(|(x, y)| {
-                    let pixel = work_img.get_pixel_mut(*x, *y);
-                    pixel.0[0] = ((opacity_factor) * pixel.0[0] as f64 + line_color)
-                        .round()
-                        .min(255.0) as u8;
-                });
+                min_line.draw(&mut work_img, self.config.yarn.opacity, line_color);
             }
         });
 
@@ -318,7 +312,6 @@ impl Pather {
             .with_message("Computing blueprint");
 
         let line_color = 255. * self.config.yarn.opacity;
-        let opacity_factor = 1. - self.config.yarn.opacity;
 
         let mut beam = vec![BeamState {
             peg_order: vec![start_peg],
@@ -382,13 +375,8 @@ impl Pather {
                     .into_iter()
                     .take(self.config.beam_width)
                     .map(|(loss, peg_i, line, beam_state)| {
-                        let mut new_image = beam_state.image.clone();
-                        line.zip().for_each(|(x, y)| {
-                            let pixel = new_image.get_pixel_mut(*x, *y);
-                            pixel.0[0] = ((opacity_factor) * pixel.0[0] as f64 + line_color)
-                                .round()
-                                .min(255.0) as u8;
-                        });
+                        let mut new_img = beam_state.image.clone();
+                        line.draw(&mut new_img, self.config.yarn.opacity, line_color);
 
                         BeamState {
                             peg_order: beam_state
@@ -398,7 +386,7 @@ impl Pather {
                                 .chain(std::iter::once(peg_i))
                                 .collect(),
                             loss: beam_state.loss + loss,
-                            image: new_image,
+                            image: new_img,
                         }
                     })
                     .collect();
