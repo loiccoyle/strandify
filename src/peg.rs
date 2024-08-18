@@ -1,6 +1,5 @@
 use std::collections::HashSet;
 
-use itertools::Itertools;
 use rand::{thread_rng, Rng};
 use serde::{Deserialize, Serialize};
 
@@ -25,15 +24,27 @@ impl Peg {
     }
 
     /// Get the pixel coords connecting 2 [`Pegs`](Peg) using the Bresenham line algorithm and contruct a [`Line`].
-    pub fn line_to(&self, other: &Peg, width: f32) -> Line {
+    ///
+    /// # Arguments:
+    ///
+    /// * `other`: the other [`Peg`] to draw the line to.
+    /// * `width`: the width of the line. The line resulting line width can only be odd, which
+    /// leads to unintuitive behaviours:
+    ///     * `width=0` -> 1 pixel wide
+    ///     * `width=1` -> 1 pixel wide
+    ///     * `width=2` -> 3 pixels wide
+    ///     * `width=3` -> 3 pixels wide
+    ///     * `width=4` -> 5 pixels wide
+    ///     * and so on
+    pub fn line_to(&self, other: &Peg, width: i32) -> Line {
         let mut pixels = HashSet::new();
-        let half_width = width as i32 / 2;
+        let half_width = width / 2;
 
         // Bresenham's line algorithm
         let dx: i32 = utils::abs_diff(other.x, self.x) as i32;
         let dy: i32 = -(utils::abs_diff(other.y, self.y) as i32);
-        let sx: i32 = if self.x < other.x { 1 } else { -1 };
-        let sy: i32 = if self.y < other.y { 1 } else { -1 };
+        let sx: i32 = if self.x <= other.x { 1 } else { -1 };
+        let sy: i32 = if self.y <= other.y { 1 } else { -1 };
         let mut err = dx + dy;
 
         let mut x = self.x as i32;
@@ -43,7 +54,7 @@ impl Peg {
             // Add pixels for the current position and its surrounding area based on width
             for ox in -(half_width)..=(half_width) {
                 for oy in -(half_width)..=(half_width) {
-                    pixels.insert((x + ox, y + oy));
+                    pixels.insert(((x + ox).max(0), (y + oy).max(0)));
                 }
             }
 
@@ -54,30 +65,19 @@ impl Peg {
             let e2 = 2 * err;
             if e2 >= dy {
                 err += dy;
-                x += sx;
+                x = (x + sx).max(0);
             }
             if e2 <= dx {
                 err += dx;
-                y += sy;
+                y = (y + sy).max(0);
             }
         }
 
-        let mut x_coords = Vec::with_capacity(pixels.len());
-        let mut y_coords = Vec::with_capacity(pixels.len());
-        pixels
-            .iter()
-            .sorted_by(|(x_a, y_a), (x_b, y_b)| {
-                if x_a + y_a > x_b + y_b {
-                    std::cmp::Ordering::Greater
-                } else {
-                    std::cmp::Ordering::Less
-                }
-            })
-            .for_each(|(x, y)| {
-                x_coords.push(*x as u32);
-                y_coords.push(*y as u32);
-            });
-        Line::new(x_coords, y_coords, self.dist_to(other))
+        let (x, y): (Vec<u32>, Vec<u32>) = pixels
+            .into_iter()
+            .map(|(x, y)| (x as u32, y as u32))
+            .unzip();
+        Line::new(x, y, self.dist_to(other))
     }
 
     /// Get the pixels around a [`Peg`] within radius.
@@ -164,14 +164,19 @@ mod test {
     fn peg_line_to() {
         let peg_a = Peg::new(0, 0, 0);
         let peg_b = Peg::new(1, 1, 1);
-        let line = peg_a.line_to(&peg_b, 1.);
+        let mut line = peg_a.line_to(&peg_b, 1);
+        line.x.sort();
+        line.y.sort();
+
         assert_eq!(line.x, vec![0, 1]);
         assert_eq!(line.y, vec![0, 1]);
         assert_eq!(line.dist, f32::sqrt(2.0) as u32);
 
         let peg_a = Peg::new(1, 1, 0);
         let peg_b = Peg::new(0, 0, 1);
-        let line = peg_a.line_to(&peg_b, 1.);
+        let mut line = peg_a.line_to(&peg_b, 1);
+        line.x.sort();
+        line.y.sort();
         assert_eq!(line.x, vec![0, 1]);
         assert_eq!(line.y, vec![0, 1]);
         assert_eq!(line.dist, f32::sqrt(2.0) as u32);
@@ -179,7 +184,9 @@ mod test {
         // horizontal line
         let peg_a = Peg::new(0, 1, 0);
         let peg_b = Peg::new(3, 1, 1);
-        let line = peg_a.line_to(&peg_b, 1.);
+        let mut line = peg_a.line_to(&peg_b, 1);
+        line.x.sort();
+        line.y.sort();
         assert_eq!(line.x, vec![0, 1, 2, 3]);
         assert_eq!(line.y, vec![1, 1, 1, 1]);
         assert_eq!(line.dist, 3);
@@ -187,11 +194,47 @@ mod test {
         // vertical line
         let peg_a = Peg::new(0, 0, 0);
         let peg_b = Peg::new(0, 1, 1);
-        let line = peg_a.line_to(&peg_b, 1.);
+        let mut line = peg_a.line_to(&peg_b, 1);
+        line.x.sort();
+        line.y.sort();
         assert_eq!(line.x, vec![0, 0]);
         assert_eq!(line.y, vec![0, 1]);
         assert_eq!(line.dist, 1);
         assert_eq!(line.zip().len(), 2);
+    }
+
+    #[test]
+    fn peg_line_to_width() {
+        let peg_a = Peg::new(5, 5, 0);
+        let peg_b = Peg::new(5, 5, 1);
+        let line = peg_a.line_to(&peg_b, 0);
+        assert_eq!(line.x, vec![5]);
+        assert_eq!(line.y, vec![5]);
+        let line = peg_a.line_to(&peg_b, 1);
+        assert_eq!(line.x, vec![5]);
+        assert_eq!(line.y, vec![5]);
+        assert_eq!(line.dist, 0);
+        let line = peg_a.line_to(&peg_b, 2);
+        // we go +1 in all directions
+        assert_eq!(*line.x.iter().max().unwrap(), 6);
+        assert_eq!(*line.x.iter().min().unwrap(), 4);
+        assert_eq!(*line.y.iter().max().unwrap(), 6);
+        assert_eq!(*line.y.iter().min().unwrap(), 4);
+        assert_eq!(line.dist, 0);
+        let line = peg_a.line_to(&peg_b, 3);
+        // we go +1 in all directions
+        assert_eq!(*line.x.iter().max().unwrap(), 6);
+        assert_eq!(*line.x.iter().min().unwrap(), 4);
+        assert_eq!(*line.y.iter().max().unwrap(), 6);
+        assert_eq!(*line.y.iter().min().unwrap(), 4);
+        assert_eq!(line.dist, 0);
+        let line = peg_a.line_to(&peg_b, 4);
+        // we go +2 in all directions
+        assert_eq!(*line.x.iter().max().unwrap(), 7);
+        assert_eq!(*line.x.iter().min().unwrap(), 3);
+        assert_eq!(*line.y.iter().max().unwrap(), 7);
+        assert_eq!(*line.y.iter().min().unwrap(), 3);
+        assert_eq!(line.dist, 0);
     }
 
     #[test]

@@ -180,7 +180,7 @@ impl Pather {
             .map(|(peg_a, peg_b)| {
                 (
                     utils::hash_key(peg_a, peg_b),
-                    peg_a.line_to(peg_b, self.config.yarn.width),
+                    peg_a.line_to(peg_b, self.config.yarn.width as i32),
                 )
             })
             .collect::<Vec<((u16, u16), Line)>>();
