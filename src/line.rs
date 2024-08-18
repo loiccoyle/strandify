@@ -2,6 +2,7 @@ use image;
 use std::iter::zip;
 
 #[derive(Debug)]
+/// Helper struct that represents a line between 2 [`Pegs`](crate::peg::Peg). Holds the vectors of the pixel coordinates of the line.
 pub struct Line {
     /// X coordinates of the pixels in the line.
     pub x: Vec<u32>,
@@ -11,7 +12,6 @@ pub struct Line {
     pub dist: u32,
 }
 
-/// Helper struct that represents a line between 2 [`Pegs`](crate::peg::Peg). Holds the vectors of the pixel coordinates of the line.
 impl Line {
     /// Creates a new [`Line`].
     pub fn new(x: Vec<u32>, y: Vec<u32>, dist: u32) -> Self {
