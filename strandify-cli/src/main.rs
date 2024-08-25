@@ -10,11 +10,11 @@ use image::imageops;
 use log::{debug, info};
 
 use strandify::blueprint;
-use strandify::cli;
 use strandify::pather;
 use strandify::peg;
 use strandify::utils;
 
+mod cli;
 fn main() -> Result<(), Box<dyn Error>> {
     let args = cli::Arguments::parse();
     env_logger::Builder::new()

@@ -1,14 +1,19 @@
 {
   "packages": {
-    ".": {
-      "changelog-path": "CHANGELOG.md",
+    "strandify": {
+      "path": "strandify",
+      "changelog-path": "strandify/CHANGELOG.md",
       "release-type": "rust",
-      "bump-minor-pre-major": false,
-      "bump-patch-for-minor-pre-major": false,
-      "draft": false,
-      "prerelease": false
+      "bump-minor-pre-major": true,
+      "monorepo-tags": true
+    },
+    "strandify-cli": {
+      "path": "strandify-cli",
+      "changelog-path": "strandify-cli/CHANGELOG.md",
+      "release-type": "rust",
+      "bump-minor-pre-major": true,
+      "monorepo-tags": true
     }
   },
   "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json"
 }
-

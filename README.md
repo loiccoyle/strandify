@@ -12,7 +12,7 @@
 ## 📦 Installation
 
 ```sh
-cargo install strandify
+cargo install strandify-cli
 ```
 
 ## 📋 Usage

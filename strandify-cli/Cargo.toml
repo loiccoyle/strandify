@@ -1,0 +1,31 @@
+[package]
+name = "strandify-cli"
+version = "0.2.3"
+edition = "2021"
+authors = ["Loic Coyle <loic.coyle@hotmail.fr>"]
+description = "CLI utility to generate stringart."
+keywords = ["cli", "string-art", "generative-art", "art"]
+repository = "https://github.com/loiccoyle/stringart"
+license = "MIT"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[[bin]]
+name = "strandify"
+path = "src/main.rs"
+
+[dependencies]
+strandify = { path = "../strandify" }
+
+image = { workspace = true }
+log = { workspace = true }
+env_logger = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+clap = { version = "4.5.14", features = ["derive"] }
+clap-verbosity-flag = "2.2.1"
+
+[dev-dependencies]
+assert_cmd = "2.0.4"
+predicates = "3.1.2"
+assert_fs = "1.0.7"
