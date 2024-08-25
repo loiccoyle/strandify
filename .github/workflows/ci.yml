@@ -29,7 +29,8 @@ jobs:
     needs:
       - test
     outputs:
-      release_created: ${{ steps.release.outputs.release_created }}
+      strandify--release_created: ${{ steps.release.outputs.strandify--release_created }}
+      strandify-cli--release_created: ${{ steps.release.outputs.strandify-cli--release_created }}
     runs-on: ubuntu-latest
     steps:
       - uses: googleapis/release-please-action@v4
@@ -42,7 +43,7 @@ jobs:
     name: Publish to crates.io
     needs:
       - release
-    if: needs.release.outputs.release_created
+    if: needs.release.outputs.strandify--release_created || needs.release.outputs.strandify-cli--release_created
     runs-on: ubuntu-latest
     steps:
       - name: Checkout sources
@@ -53,8 +54,17 @@ jobs:
 
       - uses: Swatinem/rust-cache@v2
 
-      - name: Publish crate
-        run: cargo publish --token ${{ secrets.CARGO_TOKEN }}
+      - name: Publish lib crate
+        if: needs.release.outputs.strandify--release_created
+        run: |
+          cd strandify
+          cargo publish --token ${{ secrets.CARGO_TOKEN }}
+
+      - name: Publish cli crate
+        if: needs.release.outputs.strandify-cli--release_created
+        run: |
+          cd strandify-cli
+          cargo publish --token ${{ secrets.CARGO_TOKEN }}
 
   readme:
     runs-on: ubuntu-latest
