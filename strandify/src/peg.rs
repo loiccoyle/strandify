@@ -121,7 +121,8 @@ impl Peg {
 }
 
 #[derive(Debug, Clone)]
-/// The [`Yarn`] to use when rendering a [`Blueprint`](crate::blueprint::Blueprint).
+/// A [`Yarn`], used to control how to render a [`Blueprint`](crate::blueprint::Blueprint) and can
+/// influence the [`Pather`](crate::pather::Pather)'s pathing algorithm.
 pub struct Yarn {
     /// Width of the [`Yarn`], in pixels.
     pub width: f32,
