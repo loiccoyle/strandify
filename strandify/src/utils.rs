@@ -36,7 +36,7 @@ pub fn circle_coords(
 /// * `start`: the start point
 /// * `end`: the end point
 /// * `n_points`: the number of points
-fn line_coords(start: (u32, u32), end: (u32, u32), num_points: usize) -> (Vec<u32>, Vec<u32>) {
+pub fn line_coords(start: (u32, u32), end: (u32, u32), num_points: usize) -> (Vec<u32>, Vec<u32>) {
     let (x1, y1): (f64, f64) = (start.0 as f64, start.1 as f64);
     let (x2, y2): (f64, f64) = (end.0 as f64, end.1 as f64);
     let dx = (x2 - x1) / num_points as f64;
