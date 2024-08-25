@@ -3,6 +3,7 @@
 
 <p align="center">
   <a href="https://crates.io/crates/strandify"><img src="https://img.shields.io/crates/v/strandify"></a>
+  <a href="https://crates.io/crates/strandify-cli"><img src="https://img.shields.io/crates/v/strandify-cli"></a>
   <a href="https://docs.rs/strandify/latest/strandify/"><img src="https://img.shields.io/docsrs/strandify"></a>
   <a href="https://github.com/loiccoyle/strandify/actions"><img src="https://github.com/loiccoyle/strandify/actions/workflows/ci.yml/badge.svg"></a>
   <a href="./LICENSE.md"><img src="https://img.shields.io/badge/license-MIT-blue.svg"></a>
@@ -10,6 +11,18 @@
 </p>
 
 ## 📦 Installation
+
+## Library
+
+Add the `strandify` library as a dependency to your project:
+
+```sh
+cargo add strandify
+```
+
+See the [docs](https://docs.rs/strandify) for usage.
+
+## Command line
 
 ```sh
 cargo install strandify-cli
