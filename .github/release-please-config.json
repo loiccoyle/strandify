@@ -2,14 +2,12 @@
   "packages": {
     "strandify": {
       "path": "strandify",
-      "changelog-path": "strandify/CHANGELOG.md",
       "release-type": "rust",
       "bump-minor-pre-major": true,
       "monorepo-tags": true
     },
     "strandify-cli": {
       "path": "strandify-cli",
-      "changelog-path": "strandify-cli/CHANGELOG.md",
       "release-type": "rust",
       "bump-minor-pre-major": true,
       "monorepo-tags": true
