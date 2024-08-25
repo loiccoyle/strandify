@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.4](https://github.com/loiccoyle/strandify/compare/strandify-v0.2.3...strandify-v0.2.4) (2024-08-25)
+
+
+### Bug Fixes
+
+* error handling ([95b9ae9](https://github.com/loiccoyle/strandify/commit/95b9ae92139ea5de8160026dc684390c93ca22e1))
+
 ## [0.2.3](https://github.com/loiccoyle/strandify/compare/strandify-v0.2.2...strandify-v0.2.3) (2024-08-18)
 
 
