@@ -228,12 +228,13 @@ impl Blueprint {
     /// * `path`: Output file path, image format or svg.
     /// * `yarn`: The [`Yarn`] to use to render the [`Blueprint`].
     /// * `progress_bar`: Show progress bar.
-    pub fn render(
+    pub fn render<P: AsRef<Path>>(
         &self,
-        path: &Path,
+        path: P,
         yarn: &Yarn,
         progress_bar: bool,
     ) -> Result<(), Box<dyn Error>> {
+        let path = path.as_ref();
         let extension = path.extension().ok_or("Could not detemine extension.")?;
         if extension == "svg" {
             let svg_img = self.render_svg(yarn, progress_bar)?;
