@@ -12,9 +12,11 @@
 
 ## 📦 Installation
 
+There are two crates, the `strandify` crate contains the library and the `strandify-cli` crate contains the CLI.
+
 ## Library
 
-Add the `strandify` library as a dependency to your project:
+To use the library as a dependency in your project, add the `strandify` crate:
 
 ```sh
 cargo add strandify
@@ -23,6 +25,8 @@ cargo add strandify
 See the [docs](https://docs.rs/strandify) for usage.
 
 ## Command line
+
+To use the `strandify` binary to generate string art, install the `strandify-cli` crate:
 
 ```sh
 cargo install strandify-cli
