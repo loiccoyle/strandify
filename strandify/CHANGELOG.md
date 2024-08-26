@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.4.0](https://github.com/loiccoyle/strandify/compare/strandify-v0.3.0...strandify-v0.4.0) (2024-08-26)
+
+
+### Features
+
+* **peg:** add `shape` mod to help with creating the `Peg` vecs ([8c473e8](https://github.com/loiccoyle/strandify/commit/8c473e8e71a5be31ce9cbecfddca077a8a7beacd))
+
+
+### Bug Fixes
+
+* **peg:** add missing round ([c7875f6](https://github.com/loiccoyle/strandify/commit/c7875f6fb6368e5afa505751e611433d47631a39))
+* **peg:** use `usize` for id and auto increment ([8028dff](https://github.com/loiccoyle/strandify/commit/8028dff6db4d70a58d161421a25bc660d22e80ad))
+
 ## [0.3.0](https://github.com/loiccoyle/strandify/compare/strandify-v0.2.3...strandify-v0.3.0) (2024-08-26)
 
 
