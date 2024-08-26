@@ -97,7 +97,7 @@ impl Blueprint {
     ///```
     /// use strandify::blueprint::Blueprint;
     /// use strandify::peg::Peg;
-    /// let bp = Blueprint::new(vec![Peg::new(0, 0, 0), Peg::new(3, 3, 1)], 4, 4, Some((255, 255, 255)), 1., false);
+    /// let bp = Blueprint::new(vec![Peg::new(0, 0), Peg::new(3, 3)], 4, 4, Some((255, 255, 255)), 1., false);
     /// for (peg_a, peg_b) in bp.zip() {
     ///     assert_eq!(peg_a.id, 0);
     ///     assert_eq!(peg_b.id, 1);
@@ -277,7 +277,7 @@ mod test {
     #[test]
     fn blueprint_to_from_file() {
         let bp = Blueprint::new(
-            vec![Peg::new(0, 0, 0), Peg::new(63, 63, 1)],
+            vec![Peg::new(0, 0), Peg::new(63, 63)],
             64,
             64,
             Some((0, 0, 0)),
@@ -300,7 +300,7 @@ mod test {
     #[test]
     fn zip() {
         let bp = Blueprint::new(
-            vec![Peg::new(0, 0, 0), Peg::new(63, 63, 1)],
+            vec![Peg::new(0, 0), Peg::new(63, 63)],
             64,
             64,
             Some((255, 255, 255)),

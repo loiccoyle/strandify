@@ -1,10 +1,13 @@
 use std::collections::HashSet;
+use std::sync::atomic::{AtomicUsize, Ordering};
 
 use rand::{thread_rng, Rng};
 use serde::{Deserialize, Serialize};
 
 use crate::line::Line;
 use crate::utils;
+
+static COUNTER: AtomicUsize = AtomicUsize::new(0);
 
 #[derive(Debug, Clone, Copy, Deserialize, Serialize)]
 /// The [`Peg`] around which the [`Yarn`] is weaved.
@@ -14,12 +17,13 @@ pub struct Peg {
     /// Vertical coordinate of the [`Peg`], (0, 0) is the top left corner of the image.
     pub y: u32,
     /// [`Peg`] id, should be unique among [`Peg`] instances.
-    pub id: u16,
+    pub id: usize,
 }
 
 impl Peg {
     /// Creates a new [`Peg`].
-    pub fn new(x: u32, y: u32, id: u16) -> Self {
+    pub fn new(x: u32, y: u32) -> Self {
+        let id = COUNTER.fetch_add(1, Ordering::SeqCst);
         Self { x, y, id }
     }
 
@@ -106,17 +110,17 @@ impl Peg {
     ///
     /// ```
     /// use strandify::peg::Peg;
-    /// let peg = Peg::new(10, 10, 0);
+    /// let peg = Peg::new(10, 10);
     /// let peg_jitter = peg.with_jitter(2);
     /// assert_eq!(peg_jitter.id, peg.id);
     /// ```
     pub fn with_jitter(&self, jitter: i64) -> Self {
         let mut rng = thread_rng();
-        Self::new(
-            (self.x as i64 + rng.gen_range(-jitter..jitter)) as u32,
-            (self.y as i64 + rng.gen_range(-jitter..jitter)) as u32,
-            self.id,
-        )
+        Self {
+            x: (self.x as i64 + rng.gen_range(-jitter..jitter)) as u32,
+            y: (self.y as i64 + rng.gen_range(-jitter..jitter)) as u32,
+            id: self.id,
+        }
     }
 }
 
@@ -163,8 +167,8 @@ mod test {
 
     #[test]
     fn peg_line_to() {
-        let peg_a = Peg::new(0, 0, 0);
-        let peg_b = Peg::new(1, 1, 1);
+        let peg_a = Peg::new(0, 0);
+        let peg_b = Peg::new(1, 1);
         let mut line = peg_a.line_to(&peg_b, 1);
         line.x.sort();
         line.y.sort();
@@ -173,8 +177,8 @@ mod test {
         assert_eq!(line.y, vec![0, 1]);
         assert_eq!(line.dist, f32::sqrt(2.0) as u32);
 
-        let peg_a = Peg::new(1, 1, 0);
-        let peg_b = Peg::new(0, 0, 1);
+        let peg_a = Peg::new(1, 1);
+        let peg_b = Peg::new(0, 0);
         let mut line = peg_a.line_to(&peg_b, 1);
         line.x.sort();
         line.y.sort();
@@ -183,8 +187,8 @@ mod test {
         assert_eq!(line.dist, f32::sqrt(2.0) as u32);
 
         // horizontal line
-        let peg_a = Peg::new(0, 1, 0);
-        let peg_b = Peg::new(3, 1, 1);
+        let peg_a = Peg::new(0, 1);
+        let peg_b = Peg::new(3, 1);
         let mut line = peg_a.line_to(&peg_b, 1);
         line.x.sort();
         line.y.sort();
@@ -193,8 +197,8 @@ mod test {
         assert_eq!(line.dist, 3);
 
         // vertical line
-        let peg_a = Peg::new(0, 0, 0);
-        let peg_b = Peg::new(0, 1, 1);
+        let peg_a = Peg::new(0, 0);
+        let peg_b = Peg::new(0, 1);
         let mut line = peg_a.line_to(&peg_b, 1);
         line.x.sort();
         line.y.sort();
@@ -206,8 +210,8 @@ mod test {
 
     #[test]
     fn peg_line_to_width() {
-        let peg_a = Peg::new(5, 5, 0);
-        let peg_b = Peg::new(5, 5, 1);
+        let peg_a = Peg::new(5, 5);
+        let peg_b = Peg::new(5, 5);
         let line = peg_a.line_to(&peg_b, 0);
         assert_eq!(line.x, vec![5]);
         assert_eq!(line.y, vec![5]);
@@ -240,7 +244,7 @@ mod test {
 
     #[test]
     fn peg_around() {
-        let peg = Peg::new(10, 10, 0);
+        let peg = Peg::new(10, 10);
         let (x_coords, y_coords) = peg.around(1);
         assert_eq!(x_coords, vec![9, 10, 10, 10, 11]);
         assert_eq!(y_coords, vec![10, 9, 10, 11, 10]);
@@ -248,7 +252,7 @@ mod test {
 
     #[test]
     fn peg_jitter() {
-        let peg = Peg::new(10, 10, 0);
+        let peg = Peg::new(10, 10);
         let jitter = 2;
         let peg_jitter = peg.with_jitter(jitter);
         assert!(peg_jitter.x <= (peg.x as i64 + jitter) as u32);

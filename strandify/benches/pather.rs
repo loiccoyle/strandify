@@ -20,8 +20,7 @@ fn create_pather() -> Pather {
     let (pegs_x, pegs_y) =
         utils::rectangle_coords((6, 6), image.width() - 12, image.height() / 2, 288);
     let pegs = zip(pegs_x, pegs_y)
-        .enumerate()
-        .map(|(i, (x, y))| Peg::new(x, y, i as u16))
+        .map(|(x, y)| Peg::new(x, y))
         .collect::<Vec<_>>();
 
     let config = PatherConfig {

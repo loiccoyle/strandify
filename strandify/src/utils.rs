@@ -169,7 +169,7 @@ where
 }
 
 /// Create a hash key from two pegs. Used to construct the [`Pather::line_cache`](crate::pather::Pather::line_cache).
-pub fn hash_key(peg_a: &Peg, peg_b: &Peg) -> (u16, u16) {
+pub fn hash_key(peg_a: &Peg, peg_b: &Peg) -> (usize, usize) {
     if peg_a.id < peg_b.id {
         (peg_a.id, peg_b.id)
     } else {

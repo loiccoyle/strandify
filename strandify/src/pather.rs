@@ -131,7 +131,7 @@ pub struct Pather {
     pub config: PatherConfig,
     /// Holds the pixel coords of all the lines, run [Pather::populate_line_cache] to populate the
     /// cache.
-    pub line_cache: HashMap<(u16, u16), Line>,
+    pub line_cache: HashMap<(usize, usize), Line>,
 }
 
 impl Pather {
@@ -183,7 +183,7 @@ impl Pather {
                     peg_a.line_to(peg_b, self.config.yarn.width as i32),
                 )
             })
-            .collect::<Vec<((u16, u16), Line)>>();
+            .collect::<Vec<((usize, usize), Line)>>();
 
         for (key, line) in key_line_pixels {
             self.line_cache.insert(key, line);

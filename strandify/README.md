@@ -72,8 +72,7 @@ let pegs: Vec<peg::Peg> = {
   );
   pegs_x.into_iter()
     .zip(pegs_y)
-    .enumerate()
-    .map(|(i, (x, y))| peg::Peg::new(x, y, i as u16))
+    .map(|(x, y)| peg::Peg::new(x, y))
     .collect()
 };
 
