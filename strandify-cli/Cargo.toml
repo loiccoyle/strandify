@@ -15,7 +15,7 @@ name = "strandify"
 path = "src/main.rs"
 
 [dependencies]
-strandify = { path = "../strandify" }
+strandify = { path = "../strandify", version = "0.3.0" }
 
 image = { workspace = true }
 log = { workspace = true }
