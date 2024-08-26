@@ -33,12 +33,12 @@ To help with handling alpha channels use [`open_img_transparency_to_white`](crat
 
 ## Peg shapes
 
-`strandify` provides a few helpful function to help position [`Pegs`](crate::peg::Peg):
+`strandify` provides a few helpful function to help position [`Pegs`](crate::peg::Peg) in various shapes:
 
-- [`circle`](crate::utils::circle_coords)
-- [`rectangle`](crate::utils::rectangle_coords)
-- [`square`](crate::utils::square_coords)
-- [`line`](crate::utils::line_coords)
+- [`circle`](crate::peg::shape::circle)
+- [`rectangle`](crate::peg::shape::rectangle)
+- [`square`](crate::peg::shape::square)
+- [`line`](<crate::peg::shape::line()>)
 
 # Usage
 
@@ -61,20 +61,10 @@ let img = image::imageops::grayscale(&img_rgb);
 let (width, height) = img_rgb.dimensions();
 let min_dim = std::cmp::min(width, height);
 let margin = (min_dim as f64 * 0.02).round() as u32; // 2% margin
+let center = (width / 2, height / 2);
 
 // We'll be using a circle
-let pegs: Vec<peg::Peg> = {
-  let center = (width / 2, height / 2);
-  let (pegs_x, pegs_y) = utils::circle_coords(
-    (min_dim - 2 * margin) / 2,
-    center,
-    100 // Number of pegs
-  );
-  pegs_x.into_iter()
-    .zip(pegs_y)
-    .map(|(x, y)| peg::Peg::new(x, y))
-    .collect()
-};
+let pegs = peg::shape::circle(center, (min_dim - 2 * margin) / 2, 100);
 
 // Set up the configuration for the Pather
 let config = pather::PatherConfig::default();

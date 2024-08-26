@@ -8,12 +8,12 @@ use log::debug;
 ///
 /// # Arguments
 ///
-/// * `radius`: the radius of the circle
 /// * (`center_x`,` center_y`): the coords of the center point
+/// * `radius`: the radius of the circle
 /// * `n_points`: the number of points
 pub fn circle_coords(
-    radius: u32,
     (center_x, center_y): (u32, u32),
+    radius: u32,
     n_points: usize,
 ) -> (Vec<u32>, Vec<u32>) {
     let radius = radius as f64;
@@ -36,13 +36,13 @@ pub fn circle_coords(
 /// * `start`: the start point
 /// * `end`: the end point
 /// * `n_points`: the number of points
-pub fn line_coords(start: (u32, u32), end: (u32, u32), num_points: usize) -> (Vec<u32>, Vec<u32>) {
+pub fn line_coords(start: (u32, u32), end: (u32, u32), n_points: usize) -> (Vec<u32>, Vec<u32>) {
     let (x1, y1): (f64, f64) = (start.0 as f64, start.1 as f64);
     let (x2, y2): (f64, f64) = (end.0 as f64, end.1 as f64);
-    let dx = (x2 - x1) / num_points as f64;
-    let dy = (y2 - y1) / num_points as f64;
+    let dx = (x2 - x1) / n_points as f64;
+    let dy = (y2 - y1) / n_points as f64;
 
-    (0..num_points)
+    (0..n_points)
         .map(|i| {
             let t = i as f64;
             ((x1 + t * dx).round() as u32, (y1 + t * dy).round() as u32)
@@ -54,8 +54,8 @@ pub fn line_coords(start: (u32, u32), end: (u32, u32), num_points: usize) -> (Ve
 ///
 /// # Arguments
 ///
+/// * `top_left`: the coordinate of the top left corner.
 /// * `length`: the legnth of the side of the square
-/// * (`center_x`,` center_y`): the coords of the center point
 /// * `n_points`: the number of points
 pub fn square_coords(top_left: (u32, u32), length: u32, n_points: usize) -> (Vec<u32>, Vec<u32>) {
     let (x0, y0) = top_left;
@@ -79,9 +79,9 @@ pub fn square_coords(top_left: (u32, u32), length: u32, n_points: usize) -> (Vec
 ///
 /// # Arguments
 ///
+/// * `top_left`: the coordinate of the top left corner.
 /// * `width`: the width of the side of the rectangle.
 /// * `height`: the height of the side of the rectangle.
-/// * (`center_x`,` center_y`): the coords of the center point
 /// * `n_points`: the number of points
 pub fn rectangle_coords(
     top_left: (u32, u32),

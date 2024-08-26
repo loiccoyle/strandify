@@ -126,8 +126,67 @@ impl Peg {
     }
 }
 
+/// Helper functions to generate [`Pegs`](Peg) based on different shapes.
+pub mod shape {
+    use super::*;
+
+    fn coords_to_pegs(coords: (Vec<u32>, Vec<u32>)) -> Vec<Peg> {
+        coords
+            .0
+            .into_iter()
+            .zip(coords.1)
+            .map(|(x, y)| Peg::new(x, y))
+            .collect()
+    }
+
+    /// Generate [`Pegs`](Peg) in a square.
+    ///
+    /// # Arguments
+    ///
+    /// * `top_left`: Top left corner of the square.
+    /// * `length`: Length of the side of the square.
+    /// * `n_pegs`: Number of pegs.
+    pub fn square(top_left: (u32, u32), length: u32, n_pegs: usize) -> Vec<Peg> {
+        coords_to_pegs(utils::square_coords(top_left, length, n_pegs))
+    }
+
+    /// Generate [`Pegs`](Peg) in a rectangle.
+    ///
+    /// # Arguments
+    ///
+    /// * `top_left`: Top left corner of the square.
+    /// * `width`: Width of the rectangle.
+    /// * `height`: height of the rectangle.
+    /// * `n_pegs`: Number of pegs.
+    pub fn rectangle(top_left: (u32, u32), width: u32, height: u32, n_pegs: usize) -> Vec<Peg> {
+        coords_to_pegs(utils::rectangle_coords(top_left, width, height, n_pegs))
+    }
+
+    /// Generate [`Pegs`](Peg) in a circle.
+    ///
+    /// # Arguments
+    ///
+    /// * `center`: The center of the circle.
+    /// * `radius`: Radius of the circle.
+    /// * `n_pegs`: Number of pegs.
+    pub fn circle(center: (u32, u32), radius: u32, n_pegs: usize) -> Vec<Peg> {
+        coords_to_pegs(utils::circle_coords(center, radius, n_pegs))
+    }
+
+    /// Generate [`Pegs`](Peg) on a line.
+    ///
+    /// # Arguments
+    ///
+    /// * `start`: Start point of the line.
+    /// * `end`: End point of the line.
+    /// * `n_pegs`: Number of pegs.
+    pub fn line(start: (u32, u32), end: (u32, u32), n_pegs: usize) -> Vec<Peg> {
+        coords_to_pegs(utils::line_coords(start, end, n_pegs))
+    }
+}
+
 #[derive(Debug, Clone)]
-/// A [`Yarn`], used to control how to render a [`Blueprint`](crate::blueprint::Blueprint) and can
+/// A [`Yarn`], used to control how to render a [`Blueprint`](crate::blueprint::Blueprint) and to
 /// influence the [`Pather`](crate::pather::Pather)'s pathing algorithm.
 pub struct Yarn {
     /// Width of the [`Yarn`], in pixels.

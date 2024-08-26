@@ -132,13 +132,11 @@ fn main() -> Result<(), Box<dyn Error>> {
         // Generate from scratch
         None => {
             let center = (width / 2, height / 2);
-            let (pegs_x, pegs_y) = match args.peg_shape.as_str() {
-                "circle" => {
-                    utils::circle_coords((min_dim - 2 * margin) / 2, center, args.peg_number)
-                }
+            match args.peg_shape.as_str() {
+                "circle" => peg::shape::circle(center, (min_dim - 2 * margin) / 2, args.peg_number),
                 "square" => {
                     let length = min_dim - 2 * margin;
-                    utils::square_coords(
+                    peg::shape::square(
                         (
                             center.0.saturating_sub(length / 2),
                             center.1.saturating_sub(length / 2),
@@ -147,7 +145,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                         args.peg_number,
                     )
                 }
-                "border" => utils::rectangle_coords(
+                "border" => peg::shape::rectangle(
                     (margin, margin),
                     width - 2 * margin,
                     height - 2 * margin,
@@ -156,16 +154,16 @@ fn main() -> Result<(), Box<dyn Error>> {
                 _ => {
                     return Err(format!("Unrecognized SHAPE '{}'", args.peg_shape).into());
                 }
-            };
-            zip(pegs_x, pegs_y)
-                .map(|(x, y)| {
-                    let mut peg = peg::Peg::new(x, y);
-                    if let Some(jitter) = args.peg_jitter {
-                        peg = peg.with_jitter(jitter as i64);
-                    }
+            }
+            .into_iter()
+            .map(|peg| {
+                if let Some(jitter) = args.peg_jitter {
+                    peg.with_jitter(jitter as i64)
+                } else {
                     peg
-                })
-                .collect::<Vec<_>>()
+                }
+            })
+            .collect::<Vec<_>>()
         }
     };
 

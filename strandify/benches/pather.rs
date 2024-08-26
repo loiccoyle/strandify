@@ -1,11 +1,9 @@
-use std::iter::zip;
 use std::path::PathBuf;
 
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 
 use strandify::pather::{Pather, PatherConfig};
-use strandify::peg::Peg;
-use strandify::utils;
+use strandify::peg;
 
 fn input_file() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR"))
@@ -17,11 +15,7 @@ fn create_pather() -> Pather {
     let image = image::open(input_file()).unwrap();
     let image_gray = image.to_luma8();
 
-    let (pegs_x, pegs_y) =
-        utils::rectangle_coords((6, 6), image.width() - 12, image.height() / 2, 288);
-    let pegs = zip(pegs_x, pegs_y)
-        .map(|(x, y)| Peg::new(x, y))
-        .collect::<Vec<_>>();
+    let pegs = peg::shape::rectangle((6, 6), image.width() - 12, image.height() - 12, 288);
 
     let config = PatherConfig {
         iterations: 100,
