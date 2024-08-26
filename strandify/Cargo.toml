@@ -1,12 +1,13 @@
 [package]
+repository.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+
 name = "strandify"
 version = "0.4.0"
-edition = "2021"
-authors = ["Loic Coyle <loic.coyle@hotmail.fr>"]
 description = "A stringart generation library."
 keywords = ["string-art", "generative-art", "art"]
-repository = "https://github.com/loiccoyle/stringart"
-license = "MIT"
 
 [dependencies]
 image = { workspace = true }
