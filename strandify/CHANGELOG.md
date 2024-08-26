@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.3.0](https://github.com/loiccoyle/strandify/compare/strandify-v0.2.3...strandify-v0.3.0) (2024-08-26)
+
+
+### ⚠ BREAKING CHANGES
+
+* **blueprint:** move progress bar control to struct field
+
+### Bug Fixes
+
+* **blueprint:** use propper path type ([935876c](https://github.com/loiccoyle/strandify/commit/935876c8c34bce7c9fdfd9ca65489a2a52bfd57d))
+
+
+### Code Refactoring
+
+* **blueprint:** move progress bar control to struct field ([9fa8c08](https://github.com/loiccoyle/strandify/commit/9fa8c08f14b7b75dbf6e866a2ebbc0775f814aa1))
+
 ## [0.2.3](https://github.com/loiccoyle/strandify/compare/strandify-v0.2.2...strandify-v0.2.3) (2024-08-18)
 
 
