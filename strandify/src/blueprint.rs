@@ -31,6 +31,9 @@ pub struct Blueprint {
     pub background: Option<(u8, u8, u8)>,
     /// Render scale, how much to up/down scale the render.
     pub render_scale: f64,
+    /// Display progress bar.
+    #[serde(skip)]
+    pub progress_bar: bool,
 }
 
 impl Blueprint {
@@ -41,6 +44,7 @@ impl Blueprint {
         height: u32,
         background: Option<(u8, u8, u8)>,
         render_scale: f64,
+        progress_bar: bool,
     ) -> Self {
         Self {
             peg_order,
@@ -48,6 +52,7 @@ impl Blueprint {
             height,
             background,
             render_scale,
+            progress_bar,
         }
     }
 
@@ -58,6 +63,7 @@ impl Blueprint {
         height: u32,
         background: Option<(u8, u8, u8)>,
         render_scale: f64,
+        progress_bar: bool,
     ) -> Self {
         Self {
             peg_order: peg_order.into_iter().copied().collect(),
@@ -65,6 +71,7 @@ impl Blueprint {
             height,
             background,
             render_scale,
+            progress_bar,
         }
     }
 
@@ -90,7 +97,7 @@ impl Blueprint {
     ///```
     /// use strandify::blueprint::Blueprint;
     /// use strandify::peg::Peg;
-    /// let bp = Blueprint::new(vec![Peg::new(0, 0, 0), Peg::new(3, 3, 1)], 4, 4, Some((255, 255, 255)), 1.);
+    /// let bp = Blueprint::new(vec![Peg::new(0, 0, 0), Peg::new(3, 3, 1)], 4, 4, Some((255, 255, 255)), 1., false);
     /// for (peg_a, peg_b) in bp.zip() {
     ///     assert_eq!(peg_a.id, 0);
     ///     assert_eq!(peg_b.id, 1);
@@ -108,13 +115,8 @@ impl Blueprint {
     /// # Arguments
     ///
     /// * `yarn`: The [`Yarn`] to use to render the [`Blueprint`].
-    /// * `progress_bar`: Show progress bar.
-    pub fn render_img(
-        &self,
-        yarn: &Yarn,
-        progress_bar: bool,
-    ) -> Result<image::RgbaImage, Box<dyn Error>> {
-        let document = self.render_svg(yarn, progress_bar)?;
+    pub fn render_img(&self, yarn: &Yarn) -> Result<image::RgbaImage, Box<dyn Error>> {
+        let document = self.render_svg(yarn)?;
         let svg_data = document.to_string();
         let svg_tree = usvg::Tree::from_str(&svg_data, &usvg::Options::default()).unwrap();
 
@@ -125,7 +127,7 @@ impl Blueprint {
         let num_chunks = rayon::current_num_threads();
         let chunk_height = (render_height + num_chunks as u32 - 1) / num_chunks as u32;
 
-        let pbar = utils::spinner(!progress_bar).with_message("Rendering image");
+        let pbar = utils::spinner(!self.progress_bar).with_message("Rendering image");
         pbar.enable_steady_tick(Duration::from_millis(100));
 
         // render each chunk in parallel
@@ -174,8 +176,7 @@ impl Blueprint {
     /// # Arguments
     ///
     /// * `yarn`: The [`Yarn`] to use to render the [`Blueprint`].
-    /// * `progress_bar`: Show progress bar.
-    pub fn render_svg(&self, yarn: &Yarn, progress_bar: bool) -> Result<Document, Box<dyn Error>> {
+    pub fn render_svg(&self, yarn: &Yarn) -> Result<Document, Box<dyn Error>> {
         let (r, g, b) = yarn.color;
         let render_width = (self.width as f64 * self.render_scale).round() as u32;
         let render_height = (self.height as f64 * self.render_scale).round() as u32;
@@ -196,7 +197,7 @@ impl Blueprint {
             document.append(background);
         }
 
-        let pbar = utils::pbar(self.peg_order.len() as u64 - 1, !progress_bar)?
+        let pbar = utils::pbar(self.peg_order.len() as u64 - 1, !self.progress_bar)?
             .with_message("Rendering svg");
 
         for (peg_a, peg_b) in pbar.wrap_iter(self.zip()) {
@@ -228,19 +229,14 @@ impl Blueprint {
     /// * `path`: Output file path, image format or svg.
     /// * `yarn`: The [`Yarn`] to use to render the [`Blueprint`].
     /// * `progress_bar`: Show progress bar.
-    pub fn render<P: AsRef<Path>>(
-        &self,
-        path: P,
-        yarn: &Yarn,
-        progress_bar: bool,
-    ) -> Result<(), Box<dyn Error>> {
+    pub fn render<P: AsRef<Path>>(&self, path: P, yarn: &Yarn) -> Result<(), Box<dyn Error>> {
         let path = path.as_ref();
         let extension = path.extension().ok_or("Could not detemine extension.")?;
         if extension == "svg" {
-            let svg_img = self.render_svg(yarn, progress_bar)?;
+            let svg_img = self.render_svg(yarn)?;
             svg::save(path, &svg_img)?;
         } else {
-            let img = self.render_img(yarn, progress_bar)?;
+            let img = self.render_img(yarn)?;
             if path.extension().unwrap() != "png" {
                 // drop alpha channel
                 let out = DynamicImage::from(img).to_rgb8();
@@ -286,6 +282,7 @@ mod test {
             64,
             Some((0, 0, 0)),
             1.,
+            true,
         );
         let bp_file = PathBuf::from(TEST_DIR).join("bp.json");
         assert!(bp.to_file(&bp_file).is_ok());
@@ -308,6 +305,7 @@ mod test {
             64,
             Some((255, 255, 255)),
             1.,
+            true,
         );
         assert_eq!(bp.zip().len(), 1);
     }

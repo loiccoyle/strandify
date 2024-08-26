@@ -85,5 +85,5 @@ let mut string_pather = pather::Pather::new(img, pegs, config);
 let bp = string_pather.compute().unwrap();
 
 // Save the generated blueprint
-bp.render(&output_file, &peg::Yarn::default(), true).unwrap();
+bp.render(&output_file, &peg::Yarn::default()).unwrap();
 ```

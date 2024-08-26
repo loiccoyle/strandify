@@ -55,7 +55,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         } else {
             info!("Rendering blueprint to {output_file:?}.");
             let yarn = peg::Yarn::new(args.yarn_width, args.yarn_opacity, (0, 0, 0));
-            bp.render(output_file, &yarn, !args.verbose.is_silent())
+            bp.render(output_file, &yarn)
         };
     }
 
@@ -214,11 +214,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             bp.to_file(&output_file)?;
         } else {
             info!("Rendering blueprint to {output_file:?}.");
-            bp.render(
-                &output_file,
-                &render_yarn,
-                string_pather.config.progress_bar,
-            )?;
+            bp.render(&output_file, &render_yarn)?;
         }
     }
 

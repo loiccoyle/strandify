@@ -296,6 +296,7 @@ impl Pather {
             self.image.height(),
             Some((255, 255, 255)),
             1.,
+            self.config.progress_bar,
         ))
     }
 
@@ -405,6 +406,7 @@ impl Pather {
             self.image.height(),
             Some((255, 255, 255)),
             1.,
+            self.config.progress_bar,
         ))
     }
 
