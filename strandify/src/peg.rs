@@ -97,7 +97,9 @@ impl Peg {
     pub fn dist_to(&self, other: &Peg) -> u32 {
         let delta_x = utils::abs_diff(self.x, other.x);
         let delta_y = utils::abs_diff(self.y, other.y);
-        ((delta_x * delta_x + delta_y * delta_y) as f64).sqrt() as u32
+        ((delta_x * delta_x + delta_y * delta_y) as f64)
+            .sqrt()
+            .round() as u32
     }
 
     /// Add 2d jitter to the [`Peg`] returns a new one with added jitter.
