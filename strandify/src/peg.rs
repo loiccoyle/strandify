@@ -7,7 +7,7 @@ use crate::line::Line;
 use crate::utils;
 
 #[derive(Debug, Clone, Copy, Deserialize, Serialize)]
-/// The [`Peg`] around which the [`Yarn`] weaved.
+/// The [`Peg`] around which the [`Yarn`] is weaved.
 pub struct Peg {
     /// Horizontal coordinate of the [`Peg`], (0, 0) is the top left corner of the image.
     pub x: u32,
