@@ -255,7 +255,7 @@ impl Pather {
         let mut last_last_peg = last_peg;
 
         // use a ThreadPool to reduce overhead
-        let pool = ThreadPoolBuilder::new().build().unwrap();
+        let pool = ThreadPoolBuilder::new().build()?;
         let mut early_stop_count: u32 = 0;
 
         pool.install(|| {
@@ -321,7 +321,7 @@ impl Pather {
         }];
 
         // use a ThreadPool to reduce overhead
-        let pool = ThreadPoolBuilder::new().build().unwrap();
+        let pool = ThreadPoolBuilder::new().build()?;
         let beam_width_index = self.config.beam_width - 1;
         let mut early_stop_count = 0;
 
@@ -394,7 +394,7 @@ impl Pather {
             }
         });
 
-        let best_state = beam.into_iter().min().unwrap();
+        let best_state = beam.into_iter().min().ok_or("Beam search failed.")?;
 
         Ok(Blueprint::new(
             best_state

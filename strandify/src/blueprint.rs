@@ -118,7 +118,7 @@ impl Blueprint {
     pub fn render_img(&self, yarn: &Yarn) -> Result<image::RgbaImage, Box<dyn Error>> {
         let document = self.render_svg(yarn)?;
         let svg_data = document.to_string();
-        let svg_tree = usvg::Tree::from_str(&svg_data, &usvg::Options::default()).unwrap();
+        let svg_tree = usvg::Tree::from_str(&svg_data, &usvg::Options::default())?;
 
         let render_width = (self.width as f64 * self.render_scale).round() as u32;
         let render_height = (self.height as f64 * self.render_scale).round() as u32;
