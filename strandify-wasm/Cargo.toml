@@ -20,6 +20,9 @@ base64 = "0.22.1"
 # the "js" feature is requried to run wasm-pack
 # https://docs.rs/getrandom/latest/getrandom/#webassembly-support
 getrandom = { version = "0.2", features = ["js"] }
+# to avoid: The specifier “env” was a bare specifier, but it is not a valid package specifier.
+# https://github.com/rustwasm/wasm-bindgen/discussions/3500#discussioncomment-6334669
+instant = { version = "0.1.13", features = ["wasm-bindgen"] }
 
 [lib]
 crate-type = ["cdylib"]
