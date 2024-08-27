@@ -4,6 +4,8 @@ use std::io::Cursor;
 use strandify::{blueprint::Blueprint, pather::Pather};
 use wasm_bindgen::prelude::*;
 
+pub use wrapper::*;
+
 fn compute_bp(
     image_data: &[u8],
     pegs: Vec<wrapper::Peg>,
@@ -23,7 +25,7 @@ fn compute_bp(
 }
 
 /// Compute the [`Blueprint`](crate::blueprint::Blueprint) of the image and return it as an SVG string.
-#[wasm_bindgen]
+#[wasm_bindgen(js_name = computeSvg)]
 pub fn compute_svg(
     image_data: &[u8],
     pegs: Vec<wrapper::Peg>,
@@ -39,7 +41,7 @@ pub fn compute_svg(
 }
 
 /// Compute the [`Blueprint`](crate::blueprint::Blueprint) of the image and return it as a base64-encoded PNG string.
-#[wasm_bindgen]
+#[wasm_bindgen(js_name = computePng)]
 pub fn compute_png(
     image_data: &[u8],
     pegs: Vec<wrapper::Peg>,
