@@ -15,10 +15,10 @@ macro_rules! iter_or_par_iter {
             $iter.iter()
         }
     }};
-    ($iter:expr, bridge) => {{
+    ($iter:expr, into) => {{
         #[cfg(feature = "parallel")]
         {
-            $iter.par_bridge()
+            $iter.into_par_iter()
         }
         #[cfg(not(feature = "parallel"))]
         {

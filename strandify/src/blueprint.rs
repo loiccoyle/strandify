@@ -137,7 +137,7 @@ impl Blueprint {
         pbar.enable_steady_tick(Duration::from_millis(100));
 
         // render each chunk in parallel
-        let chunks: Vec<tiny_skia::Pixmap> = utils::iter_or_par_iter!(0..num_chunks, bridge)
+        let chunks: Vec<tiny_skia::Pixmap> = utils::iter_or_par_iter!(0..num_chunks, into)
             .map(|i| {
                 let start_y = i as u32 * chunk_height;
                 let end_y = ((i + 1) as u32 * chunk_height).min(render_height);
