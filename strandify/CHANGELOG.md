@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.4.1](https://github.com/loiccoyle/strandify/compare/strandify-v0.4.0...strandify-v0.4.1) (2024-09-04)
+
+
+### Bug Fixes
+
+* error handling ([74de8ec](https://github.com/loiccoyle/strandify/commit/74de8ec6272c11064c011d3d014eaf18019701ef))
+* inconsistent ordering ([197062a](https://github.com/loiccoyle/strandify/commit/197062a5a9ba628d12461c00b6117a27bd950b72))
+
 ## [0.4.0](https://github.com/loiccoyle/strandify/compare/strandify-v0.3.0...strandify-v0.4.0) (2024-08-26)
 
 
