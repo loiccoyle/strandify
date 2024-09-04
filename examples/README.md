@@ -23,7 +23,7 @@ strandify lincoln.jpg lincoln_out.jpg -O 0.3 -o 0.1 -j 3
 ## Mona Lisa
 
 ```sh
-strandify mona_lisa.jpg mona_lisa_out.jpg -S square -o 0.04 -O 0.1
+strandify mona_lisa.jpg mona_lisa_out.jpg -S square -o 0.04 -O 0.1 -b 5
 
 ```
 
