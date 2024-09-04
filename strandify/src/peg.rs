@@ -33,7 +33,7 @@ impl Peg {
     ///
     /// * `other`: the other [`Peg`] to draw the line to.
     /// * `width`: the width of the line. The line resulting line width can only be odd, which
-    /// leads to unintuitive behaviours:
+    ///     leads to unintuitive behaviours:
     ///     * `width=0` -> 1 pixel wide
     ///     * `width=1` -> 1 pixel wide
     ///     * `width=2` -> 3 pixels wide
@@ -45,16 +45,20 @@ impl Peg {
         let half_width = width / 2;
 
         // Bresenham's line algorithm
-        let dx: i32 = utils::abs_diff(other.x, self.x) as i32;
-        let dy: i32 = -(utils::abs_diff(other.y, self.y) as i32);
-        let sx: i32 = if self.x <= other.x { 1 } else { -1 };
-        let sy: i32 = if self.y <= other.y { 1 } else { -1 };
-        let mut err = dx + dy;
+        let dx = (other.x as i32 - self.x as i32).abs();
+        let dy = (other.y as i32 - self.y as i32).abs();
+        let sx = if self.x < other.x { 1 } else { -1 };
+        let sy = if self.y < other.y { 1 } else { -1 };
+        let mut err = dx - dy;
 
         let mut x = self.x as i32;
         let mut y = self.y as i32;
 
-        loop {
+        // Determine the number of steps (the maximum of dx or dy)
+        let steps = dx.max(dy);
+
+        // Iterate through the number of steps to draw the line
+        for _ in 0..=steps {
             // Add pixels for the current position and its surrounding area based on width
             for ox in -(half_width)..=(half_width) {
                 for oy in -(half_width)..=(half_width) {
@@ -67,21 +71,26 @@ impl Peg {
             }
 
             let e2 = 2 * err;
-            if e2 >= dy {
-                err += dy;
-                x = (x + sx).max(0);
+
+            // Move in the x-direction
+            if e2 > -dy {
+                err -= dy;
+                x += sx;
             }
-            if e2 <= dx {
+
+            // Move in the y-direction
+            if e2 < dx {
                 err += dx;
-                y = (y + sy).max(0);
+                y += sy;
             }
         }
 
-        let (x, y): (Vec<u32>, Vec<u32>) = pixels
+        // Convert HashSet of pixels to vectors of x and y coordinates
+        let (x_vec, y_vec): (Vec<u32>, Vec<u32>) = pixels
             .into_iter()
             .map(|(x, y)| (x as u32, y as u32))
             .unzip();
-        Line::new(x, y, self.dist_to(other))
+        Line::new(x_vec, y_vec, self.dist_to(other))
     }
 
     /// Get the pixels around a [`Peg`] within radius.
@@ -301,6 +310,15 @@ mod test {
         assert_eq!(*line.y.iter().max().unwrap(), 7);
         assert_eq!(*line.y.iter().min().unwrap(), 3);
         assert_eq!(line.dist, 0);
+
+        let peg_a = Peg::new(5, 5);
+        let peg_b = Peg::new(6, 6);
+        let line = peg_a.line_to(&peg_b, 2);
+        assert_eq!(*line.x.iter().min().unwrap(), 4);
+        assert_eq!(*line.x.iter().max().unwrap(), 7);
+        assert_eq!(*line.y.iter().min().unwrap(), 4);
+        assert_eq!(*line.y.iter().max().unwrap(), 7);
+        assert_eq!(line.dist, 1);
     }
 
     #[test]
