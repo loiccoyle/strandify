@@ -9,7 +9,7 @@ description = "Wasm bindings for Strandify"
 version = "0.1.0"
 
 [dependencies]
-strandify = { path = "../strandify", version = "0.4.0" }
+strandify = { path = "../strandify", version = "0.4.0", default-features = false }
 image = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
