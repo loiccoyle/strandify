@@ -31,6 +31,7 @@ jobs:
     outputs:
       strandify--release_created: ${{ steps.release.outputs.strandify--release_created }}
       strandify-cli--release_created: ${{ steps.release.outputs.strandify-cli--release_created }}
+      strandify-wasm--release_created: ${{ steps.release.outputs.strandify-wasm--release_created }}
     runs-on: ubuntu-latest
     steps:
       - uses: googleapis/release-please-action@v4
@@ -43,7 +44,7 @@ jobs:
     name: Publish to crates.io
     needs:
       - release
-    if: needs.release.outputs.strandify--release_created || needs.release.outputs.strandify-cli--release_created
+    if: needs.release.outputs.strandify--release_created || needs.release.outputs.strandify-cli--release_created || needs.release.outputs.strandify-wasm--release_created
     runs-on: ubuntu-latest
     steps:
       - name: Checkout sources

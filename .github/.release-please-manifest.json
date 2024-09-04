@@ -1,4 +1,5 @@
 {
   "strandify": "0.4.0",
-  "strandify-cli": "0.4.0"
+  "strandify-cli": "0.4.0",
+  "strandify-wasm": "0.1.0"
 }

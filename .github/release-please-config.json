@@ -11,6 +11,12 @@
       "release-type": "rust",
       "bump-minor-pre-major": true,
       "monorepo-tags": true
+    },
+    "strandify-wasm": {
+      "path": "strandify-wasm",
+      "release-type": "rust",
+      "bump-minor-pre-major": true,
+      "monorepo-tags": true
     }
   },
   "plugins": ["cargo-workspace"],
