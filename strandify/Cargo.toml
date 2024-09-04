@@ -16,16 +16,20 @@ serde_json = { workspace = true }
 log = { workspace = true }
 env_logger = { workspace = true }
 
-indicatif = { version = "0.17.0", features = ["rayon"] }
+indicatif = "0.17.0"
 rand = "0.8.5"
 itertools = "0.13.0"
 svg = "0.17.0"
 resvg = "0.43.0"
-rayon = "1.10.0"
+rayon = { version = "1.10.0", optional = true }
 
 [dev-dependencies]
 ctor = "0.2.8"
 criterion = "0.5.1"
+
+[features]
+default = ["parallel"]
+parallel = ["rayon", "indicatif/rayon"]
 
 
 [[bench]]

@@ -1,5 +1,7 @@
 use image::DynamicImage;
 use log::info;
+
+#[cfg(feature = "parallel")]
 use rayon::prelude::*;
 use resvg::render;
 use resvg::tiny_skia;
@@ -124,15 +126,18 @@ impl Blueprint {
         let render_height = (self.height as f64 * self.render_scale).round() as u32;
 
         // divide the height into chunks to be processed in parallel
+        #[cfg(feature = "parallel")]
         let num_chunks = rayon::current_num_threads();
+        #[cfg(not(feature = "parallel"))]
+        let num_chunks = 1;
+
         let chunk_height = (render_height + num_chunks as u32 - 1) / num_chunks as u32;
 
         let pbar = utils::spinner(!self.progress_bar).with_message("Rendering image");
         pbar.enable_steady_tick(Duration::from_millis(100));
 
         // render each chunk in parallel
-        let chunks: Vec<tiny_skia::Pixmap> = (0..num_chunks)
-            .into_par_iter()
+        let chunks: Vec<tiny_skia::Pixmap> = utils::iter_or_par_iter!(0..num_chunks, bridge)
             .map(|i| {
                 let start_y = i as u32 * chunk_height;
                 let end_y = ((i + 1) as u32 * chunk_height).min(render_height);

@@ -4,6 +4,31 @@ use crate::peg::Peg;
 use indicatif::{ProgressBar, ProgressStyle};
 use log::debug;
 
+macro_rules! iter_or_par_iter {
+    ($iter:expr) => {{
+        #[cfg(feature = "parallel")]
+        {
+            $iter.par_iter()
+        }
+        #[cfg(not(feature = "parallel"))]
+        {
+            $iter.iter()
+        }
+    }};
+    ($iter:expr, bridge) => {{
+        #[cfg(feature = "parallel")]
+        {
+            $iter.par_bridge()
+        }
+        #[cfg(not(feature = "parallel"))]
+        {
+            $iter.into_iter()
+        }
+    }};
+}
+
+pub(crate) use iter_or_par_iter;
+
 /// Compute the coords of evenly spaced points around a circle
 ///
 /// # Arguments

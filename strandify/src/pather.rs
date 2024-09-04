@@ -5,9 +5,14 @@ use std::error::Error;
 use std::path::PathBuf;
 
 use image::GrayImage;
+#[cfg(feature = "parallel")]
 use indicatif::ParallelProgressIterator;
+#[cfg(not(feature = "parallel"))]
+use indicatif::ProgressIterator;
 use itertools::Itertools;
+#[cfg(feature = "parallel")]
 use rayon::prelude::*;
+#[cfg(feature = "parallel")]
 use rayon::ThreadPoolBuilder;
 
 use crate::blueprint::Blueprint;
@@ -174,8 +179,7 @@ impl Pather {
         let pbar = utils::pbar(peg_combinations.len() as u64, !self.config.progress_bar)?
             .with_message("Populating line cache");
 
-        let key_line_pixels = peg_combinations
-            .par_iter()
+        let key_line_pixels = utils::iter_or_par_iter!(peg_combinations)
             .progress_with(pbar)
             .map(|(peg_a, peg_b)| {
                 (
@@ -241,28 +245,22 @@ impl Pather {
             return Err("Line cache is empty, run 'populate_line_cache'.".into());
         };
 
-        let start_peg = &self.pegs[self.get_start_peg(self.config.start_peg_radius)];
-        debug!("Starting peg: {start_peg:?}");
-        let mut peg_order = vec![start_peg];
-        let mut work_img = self.image.clone();
-
         let pbar = utils::pbar(self.config.iterations as u64, !self.config.progress_bar)?
             .with_message("Computing blueprint");
 
         let line_color = 255. * self.config.yarn.opacity;
 
-        let mut last_peg = start_peg;
-        let mut last_last_peg = last_peg;
+        let compute = || {
+            let start_peg = &self.pegs[self.get_start_peg(self.config.start_peg_radius)];
+            debug!("Starting peg: {start_peg:?}");
+            let mut peg_order = vec![start_peg];
+            let mut work_img = self.image.clone();
+            let mut last_peg = start_peg;
+            let mut last_last_peg = last_peg;
+            let mut early_stop_count: u32 = 0;
 
-        // use a ThreadPool to reduce overhead
-        let pool = ThreadPoolBuilder::new().build()?;
-        let mut early_stop_count: u32 = 0;
-
-        pool.install(|| {
             'iter: for iter_i in pbar.wrap_iter(0..self.config.iterations) {
-                let (min_loss, min_peg, min_line) = self
-                    .pegs
-                    .par_iter()
+                let (min_loss, min_peg, min_line) = utils::iter_or_par_iter!(self.pegs)
                     .filter(|peg| peg.id != last_peg.id && peg.id != last_last_peg.id)
                     .filter_map(|peg| {
                         let line = self.line_cache.get(&utils::hash_key(last_peg, peg))?;
@@ -275,7 +273,6 @@ impl Pather {
                             .unwrap_or(std::cmp::Ordering::Equal)
                     })
                     .unwrap();
-
                 if self.early_stop(&mut early_stop_count, min_loss) {
                     info!("Early stopping at iteration {iter_i}");
                     break 'iter;
@@ -288,10 +285,23 @@ impl Pather {
 
                 min_line.draw(&mut work_img, self.config.yarn.opacity, line_color);
             }
-        });
+            peg_order
+        };
+
+        let order;
+        #[cfg(feature = "parallel")]
+        {
+            let pool = ThreadPoolBuilder::new().build()?;
+            order = pool.install(compute);
+        }
+
+        #[cfg(not(feature = "parallel"))]
+        {
+            order = compute();
+        }
 
         Ok(Blueprint::from_refs(
-            peg_order,
+            order,
             self.image.width(),
             self.image.height(),
             Some((255, 255, 255)),
@@ -321,14 +331,13 @@ impl Pather {
         }];
 
         // use a ThreadPool to reduce overhead
-        let pool = ThreadPoolBuilder::new().build()?;
         let beam_width_index = self.config.beam_width - 1;
-        let mut early_stop_count = 0;
 
-        pool.install(|| {
+        let compute = |beam: &mut Vec<BeamState>| {
+            let mut early_stop_count = 0;
+
             'iter: for iter_i in pbar.wrap_iter(0..self.config.iterations) {
-                let mut candidates: Vec<_> = beam
-                    .par_iter()
+                let mut candidates: Vec<_> = utils::iter_or_par_iter!(beam)
                     .flat_map(|beam_state| {
                         let last_peg = &self.pegs[*beam_state.peg_order.last().unwrap()];
                         let last_last_peg = &self.pegs[*beam_state
@@ -336,8 +345,7 @@ impl Pather {
                             .get(beam_state.peg_order.len().saturating_sub(2))
                             .unwrap_or(beam_state.peg_order.last().unwrap())];
 
-                        self.pegs
-                            .par_iter()
+                        utils::iter_or_par_iter!(self.pegs)
                             .enumerate()
                             .filter(|(_, peg)| peg.id != last_peg.id && peg.id != last_last_peg.id)
                             .filter_map(|(i, peg)| {
@@ -372,7 +380,7 @@ impl Pather {
                     break 'iter;
                 }
 
-                beam = candidates
+                *beam = candidates
                     .into_iter()
                     .take(self.config.beam_width)
                     .map(|(loss, peg_i, line, beam_state)| {
@@ -392,7 +400,18 @@ impl Pather {
                     })
                     .collect();
             }
-        });
+        };
+
+        #[cfg(feature = "parallel")]
+        {
+            let pool = ThreadPoolBuilder::new().build()?;
+            pool.install(|| compute(&mut beam));
+        }
+
+        #[cfg(not(feature = "parallel"))]
+        {
+            compute(&mut beam);
+        }
 
         let best_state = beam.into_iter().min().ok_or("Beam search failed.")?;
 
