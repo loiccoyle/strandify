@@ -266,7 +266,9 @@ mod test {
     #[ctor::ctor]
     fn setup() {
         let test_dir = PathBuf::from(TEST_DIR);
-        fs::create_dir(test_dir).unwrap();
+        if !test_dir.is_dir() {
+            fs::create_dir(test_dir).unwrap();
+        }
     }
 
     #[cfg(test)]
