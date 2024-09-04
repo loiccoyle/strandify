@@ -6,6 +6,11 @@ use wasm_bindgen::prelude::*;
 
 pub use wrapper::*;
 
+#[wasm_bindgen(start)]
+pub fn init_panic_hook() {
+    console_error_panic_hook::set_once();
+}
+
 fn compute_bp(
     image_data: &[u8],
     pegs: Vec<wrapper::Peg>,

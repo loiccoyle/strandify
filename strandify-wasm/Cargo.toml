@@ -23,6 +23,7 @@ getrandom = { version = "0.2", features = ["js"] }
 # to avoid: The specifier “env” was a bare specifier, but it is not a valid package specifier.
 # https://github.com/rustwasm/wasm-bindgen/discussions/3500#discussioncomment-6334669
 instant = { version = "0.1.13", features = ["wasm-bindgen"] }
+console_error_panic_hook = "0.1.7"
 
 [lib]
 crate-type = ["cdylib"]
