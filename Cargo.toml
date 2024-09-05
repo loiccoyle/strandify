@@ -5,7 +5,7 @@ resolver = "2"
 package.authors = ["Loic Coyle <loic.coyle@hotmail.fr>"]
 package.edition = "2021"
 package.license = "MIT"
-package.repository = "https://github.com/loiccoyle/stringart"
+package.repository = "https://github.com/loiccoyle/strandify"
 
 [workspace.dependencies]
 image = "0.25.2"
