@@ -17,7 +17,7 @@ serde_json = { workspace = true }
 wasm-bindgen = "0.2.93"
 base64 = "0.22.1"
 
-# the "js" feature is requried to run wasm-pack
+# the "js" feature is required to run wasm-pack
 # https://docs.rs/getrandom/latest/getrandom/#webassembly-support
 getrandom = { version = "0.2", features = ["js"] }
 # to avoid: The specifier “env” was a bare specifier, but it is not a valid package specifier.
