@@ -1,1 +1,362 @@
-(()=>{"use strict";var t,e,n,r,o={237:(t,e,n)=>{n.a(t,(async(t,e)=>{try{n(804);var r=n(656),o=t([r]);r=(o.then?(await o)():o)[0];const i={SINGLE:"single",LINE:"line",BOX:"box",CIRCLE:"circle",ERASER:"eraser"};let a={image:null,imageData:null,pegs:[],isDragging:!1,draggedPegIndex:-1,isDrawing:!1,isErasing:!1,startX:0,startY:0};const s=document.getElementById("canvas"),c=s.getContext("2d"),_=document.getElementById("imageUpload"),u=document.getElementById("brushType"),l=document.getElementById("pegCount"),g=document.getElementById("clearBtn");function d(t){const e=/^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(t);return e?[parseInt(e[1],16),parseInt(e[2],16),parseInt(e[3],16)]:null}async function f(){document.addEventListener("mousemove",y),_.addEventListener("change",p),s.addEventListener("mousedown",b),g.addEventListener("click",C),document.addEventListener("mouseup",w)}function p(t){C();const e=t.target.files[0],n=new FileReader;n.onload=t=>{a.image=new Image,a.image.onload=()=>{s.width=a.image.width,s.height=a.image.height,h(),s.toBlob((t=>t.arrayBuffer().then((t=>{a.imageData=new Uint8Array(t)}))))},a.image.src=t.target.result},n.readAsDataURL(e)}function h(){c.clearRect(0,0,s.width,s.height),a.image&&c.drawImage(a.image,0,0),a.pegs.forEach((t=>{c.beginPath(),c.arc(t.x,t.y,5,0,2*Math.PI),c.fillStyle="red",c.fill()}))}function b(t){const e=s.getBoundingClientRect();if(a.startX=Math.max(t.clientX-e.left,0),a.startY=Math.max(t.clientY-e.top,0),u.value!==i.ERASER){const t=(n=a.startX,r=a.startY,a.pegs.findIndex((t=>Math.hypot(n-t.x,r-t.y)<5)));if(-1!==t)return a.isDragging=!0,void(a.draggedPegIndex=t)}var n,r;u.value===i.SINGLE?(a.pegs.push({x:a.startX,y:a.startY}),h()):u.value===i.ERASER?a.isErasing=!0:a.isDrawing=!0}function y(t){const{x:e,y:n}=m(t);var r,o,i,s;v(e,n),a.isDragging&&-1!==a.draggedPegIndex?(a.pegs[a.draggedPegIndex]={x:e,y:n},h()):a.isDrawing?(h(),I(a.startX,a.startY,e,n)):a.isErasing&&(h(),r=a.startX,o=a.startY,i=e,s=n,c.strokeStyle="rgba(255, 0, 0, 0.5)",c.strokeRect(Math.min(r,i),Math.min(o,s),Math.abs(i-r),Math.abs(s-o)))}function w(t){const{x:e,y:n}=m(t);a.isDrawing?M(a.startX,a.startY,e,n):a.isErasing&&S(a.startX,a.startY,e,n),a.isDragging=!1,a.isDrawing=!1,a.isErasing=!1,a.draggedPegIndex=-1,h()}function m(t){const e=s.getBoundingClientRect();return{x:Math.min(Math.max(t.clientX-e.left,0),s.width-1),y:Math.min(Math.max(t.clientY-e.top,0),s.height-1)}}function v(t,e){s.style.cursor=x(t,e)?"pointer":"crosshair"}function x(t,e){return a.pegs.some((n=>Math.hypot(t-n.x,e-n.y)<5))}function I(t,e,n,r){const o=E(t,e,n,r);c.strokeStyle="rgba(255, 0, 0, 0.5)",c.fillStyle="rgba(255, 0, 0, 0.5)",o.forEach((t=>{c.beginPath(),c.arc(t.x,t.y,5,0,2*Math.PI),c.fill()})),c.beginPath(),c.moveTo(o[0].x,o[0].y),o.slice(1).forEach((t=>c.lineTo(t.x,t.y))),c.closePath(),c.stroke()}function E(t,e,n,o){const a=parseInt(l.value);if(isNaN(a)||a<2)return[];let c;switch(u.value){case i.LINE:c=(0,r.br)(t,e,n,o,a);break;case i.BOX:c=(0,r.SU)(Math.min(t,n),Math.min(e,o),Math.abs(t-n),Math.abs(e-o),a);break;case i.CIRCLE:const s=Math.hypot(n-t,o-e);c=(0,r.Z5)(t,e,s,a);break;default:return[]}const _=c.get_x(),g=c.get_y();let d=[];return _.forEach(((t,e)=>d.push({x:Math.min(t,s.width-1),y:Math.min(g[e],s.height-1)}))),d}function M(t,e,n,r){a.pegs=a.pegs.concat(E(t,e,n,r))}function S(t,e,n,r){Math.hypot(t-n,e-r)<5?R(t,e):B(Math.min(t,n),Math.min(e,r),Math.max(t,n),Math.max(e,r))}function R(t,e){const n=a.pegs.findIndex((n=>Math.hypot(t-n.x,e-n.y)<5));-1!==n&&a.pegs.splice(n,1)}function B(t,e,n,r){a.pegs=a.pegs.filter((o=>!(o.x>=t&&o.x<=n&&o.y>=e&&o.y<=r)))}function C(){a.pegs=[],h()}document.getElementById("removeImage").addEventListener("click",(function(){a.image=null,document.getElementById("imageUpload").value="",s.width=500,s.height=500,h()})),document.getElementById("run").addEventListener("click",(function(){const t={iterations:parseInt(document.getElementById("iterations").value),patherYarn:{width:parseFloat(document.getElementById("patherYarnWidth").value),opacity:parseFloat(document.getElementById("patherYarnOpacity").value)},yarn:{width:parseFloat(document.getElementById("yarnWidth").value),opacity:parseFloat(document.getElementById("yarnOpacity").value),color:d(document.getElementById("yarnColor").value)},early_stop:{loss_threshold:document.getElementById("lossThreshold").value?parseFloat(document.getElementById("lossThreshold").value):null,max_count:parseInt(document.getElementById("maxCount").value)},start_peg_radius:parseInt(document.getElementById("startPegRadius").value),skip_peg_within:parseInt(document.getElementById("skipPegWithin").value),beam_width:parseInt(document.getElementById("beamWidth").value)};console.log("config:",t);let e=new r.az(t.early_stop.loss_threshold,t.early_stop.max_count),n=new r.RX(t.yarn.width,t.yarn.opacity,t.yarn.color[0],t.yarn.color[1],t.yarn.color[2]),o=new r.TQ(t.iterations,new r.RX(t.patherYarn.width,t.patherYarn.opacity,0,0,0),e,t.start_peg_radius,t.skip_peg_within,t.beam_width),i=a.pegs.map((t=>new r.b4(t.x,t.y)));console.log(a);const s=(0,r.qq)(a.imageData,i,o,n);document.getElementById("svg-container").innerHTML=s,console.log(s)})),f(),e()}catch(k){e(k)}}))},83:(t,e,n)=>{n.d(e,{A:()=>s});var r=n(601),o=n.n(r),i=n(314),a=n.n(i)()(o());a.push([t.id,'body {\n  font-family: Arial, sans-serif;\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  padding: 20px;\n}\ncanvas {\n  border: 1px solid #000;\n  margin-top: 20px;\n}\n.controls {\n  margin-top: 10px;\n  display: flex;\n  gap: 10px;\n  align-items: center;\n  flex-wrap: wrap;\n  justify-content: center;\n}\nselect,\ninput[type="number"] {\n  margin: 0 5px;\n}\ninput[type="number"] {\n  width: 60px;\n}\nbutton {\n  margin: 0 5px;\n  padding: 5px 10px;\n}\n.config-container {\n  margin-top: 20px;\n  display: flex;\n  gap: 20px;\n}\n.config-section {\n  margin-bottom: 20px;\n  padding: 10px;\n  border: 1px solid #ccc;\n  border-radius: 5px;\n}\n.config-section h2 {\n  margin-top: 0;\n}\n.form-group {\n  margin-bottom: 10px;\n  display: flex;\n  justify-content: space-between;\n}\nlabel {\n  display: inline-block;\n  /*width: 200px;*/\n}\ninput[type="number"],\ninput[type="color"] {\n  width: 100px;\n}\n.image-controls {\n  margin-bottom: 10px;\n}\n',""]);const s=a},314:t=>{t.exports=function(t){var e=[];return e.toString=function(){return this.map((function(e){var n="",r=void 0!==e[5];return e[4]&&(n+="@supports (".concat(e[4],") {")),e[2]&&(n+="@media ".concat(e[2]," {")),r&&(n+="@layer".concat(e[5].length>0?" ".concat(e[5]):""," {")),n+=t(e),r&&(n+="}"),e[2]&&(n+="}"),e[4]&&(n+="}"),n})).join("")},e.i=function(t,n,r,o,i){"string"==typeof t&&(t=[[null,t,void 0]]);var a={};if(r)for(var s=0;s<this.length;s++){var c=this[s][0];null!=c&&(a[c]=!0)}for(var _=0;_<t.length;_++){var u=[].concat(t[_]);r&&a[u[0]]||(void 0!==i&&(void 0===u[5]||(u[1]="@layer".concat(u[5].length>0?" ".concat(u[5]):""," {").concat(u[1],"}")),u[5]=i),n&&(u[2]?(u[1]="@media ".concat(u[2]," {").concat(u[1],"}"),u[2]=n):u[2]=n),o&&(u[4]?(u[1]="@supports (".concat(u[4],") {").concat(u[1],"}"),u[4]=o):u[4]="".concat(o)),e.push(u))}},e}},601:t=>{t.exports=function(t){return t[1]}},804:(t,e,n)=>{var r=n(72),o=n.n(r),i=n(825),a=n.n(i),s=n(659),c=n.n(s),_=n(56),u=n.n(_),l=n(540),g=n.n(l),d=n(113),f=n.n(d),p=n(83),h={};h.styleTagTransform=f(),h.setAttributes=u(),h.insert=c().bind(null,"head"),h.domAPI=a(),h.insertStyleElement=g(),o()(p.A,h),p.A&&p.A.locals&&p.A.locals},72:t=>{var e=[];function n(t){for(var n=-1,r=0;r<e.length;r++)if(e[r].identifier===t){n=r;break}return n}function r(t,r){for(var i={},a=[],s=0;s<t.length;s++){var c=t[s],_=r.base?c[0]+r.base:c[0],u=i[_]||0,l="".concat(_," ").concat(u);i[_]=u+1;var g=n(l),d={css:c[1],media:c[2],sourceMap:c[3],supports:c[4],layer:c[5]};if(-1!==g)e[g].references++,e[g].updater(d);else{var f=o(d,r);r.byIndex=s,e.splice(s,0,{identifier:l,updater:f,references:1})}a.push(l)}return a}function o(t,e){var n=e.domAPI(e);return n.update(t),function(e){if(e){if(e.css===t.css&&e.media===t.media&&e.sourceMap===t.sourceMap&&e.supports===t.supports&&e.layer===t.layer)return;n.update(t=e)}else n.remove()}}t.exports=function(t,o){var i=r(t=t||[],o=o||{});return function(t){t=t||[];for(var a=0;a<i.length;a++){var s=n(i[a]);e[s].references--}for(var c=r(t,o),_=0;_<i.length;_++){var u=n(i[_]);0===e[u].references&&(e[u].updater(),e.splice(u,1))}i=c}}},659:t=>{var e={};t.exports=function(t,n){var r=function(t){if(void 0===e[t]){var n=document.querySelector(t);if(window.HTMLIFrameElement&&n instanceof window.HTMLIFrameElement)try{n=n.contentDocument.head}catch(t){n=null}e[t]=n}return e[t]}(t);if(!r)throw new Error("Couldn't find a style target. This probably means that the value for the 'insert' parameter is invalid.");r.appendChild(n)}},540:t=>{t.exports=function(t){var e=document.createElement("style");return t.setAttributes(e,t.attributes),t.insert(e,t.options),e}},56:(t,e,n)=>{t.exports=function(t){var e=n.nc;e&&t.setAttribute("nonce",e)}},825:t=>{t.exports=function(t){if("undefined"==typeof document)return{update:function(){},remove:function(){}};var e=t.insertStyleElement(t);return{update:function(n){!function(t,e,n){var r="";n.supports&&(r+="@supports (".concat(n.supports,") {")),n.media&&(r+="@media ".concat(n.media," {"));var o=void 0!==n.layer;o&&(r+="@layer".concat(n.layer.length>0?" ".concat(n.layer):""," {")),r+=n.css,o&&(r+="}"),n.media&&(r+="}"),n.supports&&(r+="}");var i=n.sourceMap;i&&"undefined"!=typeof btoa&&(r+="\n/*# sourceMappingURL=data:application/json;base64,".concat(btoa(unescape(encodeURIComponent(JSON.stringify(i))))," */")),e.styleTagTransform(r,t,e.options)}(e,t,n)},remove:function(){!function(t){if(null===t.parentNode)return!1;t.parentNode.removeChild(t)}(e)}}}},113:t=>{t.exports=function(t,e){if(e.styleSheet)e.styleSheet.cssText=t;else{for(;e.firstChild;)e.removeChild(e.firstChild);e.appendChild(document.createTextNode(t))}}},656:(t,e,n)=>{n.a(t,(async(t,r)=>{try{n.d(e,{RX:()=>i.RX,SU:()=>i.SU,TQ:()=>i.TQ,Z5:()=>i.Z5,az:()=>i.az,b4:()=>i.b4,br:()=>i.br,qq:()=>i.qq});var o=n(253),i=n(228),a=t([o]);o=(a.then?(await a)():a)[0],(0,i.lI)(o),o.__wbindgen_start(),r()}catch(t){r(t)}}))},228:(t,e,n)=>{let r;function o(t){r=t}n.d(e,{BZ:()=>W,D1:()=>Q,DI:()=>ft,FJ:()=>mt,GB:()=>rt,Gu:()=>H,J1:()=>gt,KN:()=>it,Mq:()=>wt,NL:()=>Z,O9:()=>at,OL:()=>nt,PR:()=>tt,Py:()=>dt,Qn:()=>vt,RX:()=>q,Rv:()=>ot,SU:()=>M,TQ:()=>F,V5:()=>X,VF:()=>yt,Xu:()=>Y,Z5:()=>I,az:()=>A,b4:()=>P,bk:()=>$,br:()=>E,cA:()=>G,cl:()=>et,en:()=>U,hH:()=>pt,hW:()=>ht,h_:()=>J,jF:()=>ct,lI:()=>o,nq:()=>bt,qq:()=>B,qv:()=>V,rl:()=>xt,s:()=>K,tM:()=>lt,tn:()=>st,u$:()=>z,vU:()=>_t,xN:()=>ut,yc:()=>N});let i=new("undefined"==typeof TextDecoder?(0,module.require)("util").TextDecoder:TextDecoder)("utf-8",{ignoreBOM:!0,fatal:!0});i.decode();let a=null;function s(){return null!==a&&0!==a.byteLength||(a=new Uint8Array(r.memory.buffer)),a}function c(t,e){return t>>>=0,i.decode(s().subarray(t,t+e))}const _=new Array(128).fill(void 0);_.push(void 0,null,!0,!1);let u=_.length;function l(t){u===_.length&&_.push(_.length+1);const e=u;return u=_[e],_[e]=t,e}function g(t){return _[t]}function d(t){const e=g(t);return function(t){t<132||(_[t]=u,u=t)}(t),e}function f(t){const e=typeof t;if("number"==e||"boolean"==e||null==t)return`${t}`;if("string"==e)return`"${t}"`;if("symbol"==e){const e=t.description;return null==e?"Symbol":`Symbol(${e})`}if("function"==e){const e=t.name;return"string"==typeof e&&e.length>0?`Function(${e})`:"Function"}if(Array.isArray(t)){const e=t.length;let n="[";e>0&&(n+=f(t[0]));for(let r=1;r<e;r++)n+=", "+f(t[r]);return n+="]",n}const n=/\[object ([^\]]+)\]/.exec(toString.call(t));let r;if(!(n.length>1))return toString.call(t);if(r=n[1],"Object"==r)try{return"Object("+JSON.stringify(t)+")"}catch(t){return"Object"}return t instanceof Error?`${t.name}: ${t.message}\n${t.stack}`:r}let p=0,h=new("undefined"==typeof TextEncoder?(0,module.require)("util").TextEncoder:TextEncoder)("utf-8");const b="function"==typeof h.encodeInto?function(t,e){return h.encodeInto(t,e)}:function(t,e){const n=h.encode(t);return e.set(n),{read:t.length,written:n.length}};function y(t,e,n){if(void 0===n){const n=h.encode(t),r=e(n.length,1)>>>0;return s().subarray(r,r+n.length).set(n),p=n.length,r}let r=t.length,o=e(r,1)>>>0;const i=s();let a=0;for(;a<r;a++){const e=t.charCodeAt(a);if(e>127)break;i[o+a]=e}if(a!==r){0!==a&&(t=t.slice(a)),o=n(o,r,r=a+3*t.length,1)>>>0;const e=s().subarray(o+a,o+r);a+=b(t,e).written,o=n(o,r,a,1)>>>0}return p=a,o}let w=null;function m(){return(null===w||!0===w.buffer.detached||void 0===w.buffer.detached&&w.buffer!==r.memory.buffer)&&(w=new DataView(r.memory.buffer)),w}let v=null;function x(t,e){return t>>>=0,(null!==v&&0!==v.byteLength||(v=new Uint32Array(r.memory.buffer)),v).subarray(t/4,t/4+e)}function I(t,e,n,o){const i=r.circleCoords(t,e,n,o);return O.__wrap(i)}function E(t,e,n,o,i){const a=r.lineCoords(t,e,n,o,i);return O.__wrap(a)}function M(t,e,n,o,i){const a=r.rectangleCoords(t,e,n,o,i);return O.__wrap(a)}function S(t){return null==t}function R(t,e){if(!(t instanceof e))throw new Error(`expected instance of ${e.name}`);return t.ptr}function B(t,e,n,o){let i,a;try{const v=r.__wbindgen_add_to_stack_pointer(-16),x=function(t,e){const n=e(1*t.length,1)>>>0;return s().set(t,n/1),p=t.length,n}(t,r.__wbindgen_export_0),I=p,E=function(t,e){const n=e(4*t.length,4)>>>0,r=m();for(let e=0;e<t.length;e++)r.setUint32(n+4*e,l(t[e]),!0);return p=t.length,n}(e,r.__wbindgen_export_0),M=p;R(n,F);var _=n.__destroy_into_raw();R(o,q);var u=o.__destroy_into_raw();r.computeSvg(v,x,I,E,M,_,u);var g=m().getInt32(v+0,!0),f=m().getInt32(v+4,!0),h=m().getInt32(v+8,!0),b=m().getInt32(v+12,!0),y=g,w=f;if(b)throw y=0,w=0,d(h);return i=y,a=w,c(y,w)}finally{r.__wbindgen_add_to_stack_pointer(16),r.__wbindgen_export_2(i,a,1)}}function C(t,e){try{return t.apply(this,e)}catch(t){r.__wbindgen_export_3(l(t))}}Object.freeze({Cs420:0,0:"Cs420",Cs422:1,1:"Cs422",Cs444:2,2:"Cs444",Cs400:3,3:"Cs400"});const k="undefined"==typeof FinalizationRegistry?{register:()=>{},unregister:()=>{}}:new FinalizationRegistry((t=>r.__wbg_earlystopconfig_free(t>>>0,1)));class A{__destroy_into_raw(){const t=this.__wbg_ptr;return this.__wbg_ptr=0,k.unregister(this),t}free(){const t=this.__destroy_into_raw();r.__wbg_earlystopconfig_free(t,0)}constructor(t,e){const n=r.earlystopconfig_new(!S(t),S(t)?0:t,e);return this.__wbg_ptr=n>>>0,k.register(this,this.__wbg_ptr,this),this}}const T="undefined"==typeof FinalizationRegistry?{register:()=>{},unregister:()=>{}}:new FinalizationRegistry((t=>r.__wbg_patherconfig_free(t>>>0,1)));class F{__destroy_into_raw(){const t=this.__wbg_ptr;return this.__wbg_ptr=0,T.unregister(this),t}free(){const t=this.__destroy_into_raw();r.__wbg_patherconfig_free(t,0)}constructor(t,e,n,o,i,a){R(e,q);var s=e.__destroy_into_raw();R(n,A);var c=n.__destroy_into_raw();const _=r.patherconfig_new(t,s,c,o,i,a);return this.__wbg_ptr=_>>>0,T.register(this,this.__wbg_ptr,this),this}}const j="undefined"==typeof FinalizationRegistry?{register:()=>{},unregister:()=>{}}:new FinalizationRegistry((t=>r.__wbg_peg_free(t>>>0,1)));class P{static __wrap(t){t>>>=0;const e=Object.create(P.prototype);return e.__wbg_ptr=t,j.register(e,e.__wbg_ptr,e),e}static __unwrap(t){return t instanceof P?t.__destroy_into_raw():0}__destroy_into_raw(){const t=this.__wbg_ptr;return this.__wbg_ptr=0,j.unregister(this),t}free(){const t=this.__destroy_into_raw();r.__wbg_peg_free(t,0)}constructor(t,e){const n=r.peg_new(t,e);return this.__wbg_ptr=n>>>0,j.register(this,this.__wbg_ptr,this),this}withJitter(t){const e=r.peg_withJitter(this.__wbg_ptr,t);return P.__wrap(e)}}const L="undefined"==typeof FinalizationRegistry?{register:()=>{},unregister:()=>{}}:new FinalizationRegistry((t=>r.__wbg_shapecoords_free(t>>>0,1)));class O{static __wrap(t){t>>>=0;const e=Object.create(O.prototype);return e.__wbg_ptr=t,L.register(e,e.__wbg_ptr,e),e}__destroy_into_raw(){const t=this.__wbg_ptr;return this.__wbg_ptr=0,L.unregister(this),t}free(){const t=this.__destroy_into_raw();r.__wbg_shapecoords_free(t,0)}get_x(){try{const o=r.__wbindgen_add_to_stack_pointer(-16);r.shapecoords_get_x(o,this.__wbg_ptr);var t=m().getInt32(o+0,!0),e=m().getInt32(o+4,!0),n=x(t,e).slice();return r.__wbindgen_export_2(t,4*e,4),n}finally{r.__wbindgen_add_to_stack_pointer(16)}}get_y(){try{const o=r.__wbindgen_add_to_stack_pointer(-16);r.shapecoords_get_y(o,this.__wbg_ptr);var t=m().getInt32(o+0,!0),e=m().getInt32(o+4,!0),n=x(t,e).slice();return r.__wbindgen_export_2(t,4*e,4),n}finally{r.__wbindgen_add_to_stack_pointer(16)}}}const D="undefined"==typeof FinalizationRegistry?{register:()=>{},unregister:()=>{}}:new FinalizationRegistry((t=>r.__wbg_yarn_free(t>>>0,1)));class q{__destroy_into_raw(){const t=this.__wbg_ptr;return this.__wbg_ptr=0,D.unregister(this),t}free(){const t=this.__destroy_into_raw();r.__wbg_yarn_free(t,0)}constructor(t,e,n,o,i){const a=r.yarn_new(t,e,n,o,i);return this.__wbg_ptr=a>>>0,D.register(this,this.__wbg_ptr,this),this}}function N(t,e){return l(c(t,e))}function U(t){return P.__unwrap(d(t))}function X(){return l(new Error)}function z(t,e){const n=y(g(e).stack,r.__wbindgen_export_0,r.__wbindgen_export_1),o=p;m().setInt32(t+4,o,!0),m().setInt32(t+0,n,!0)}function Y(t,e){let n,o;try{n=t,o=e,console.error(c(t,e))}finally{r.__wbindgen_export_2(n,o,1)}}function $(t){d(t)}function W(t){return l(g(t))}function J(t){return l(g(t).crypto)}function V(t){const e=g(t);return"object"==typeof e&&null!==e}function G(t){return l(g(t).process)}function Q(t){return l(g(t).versions)}function Z(t){return l(g(t).node)}function H(t){return"string"==typeof g(t)}function K(){return C((function(){return l(module.require)}),arguments)}function tt(t){return"function"==typeof g(t)}function et(t){return l(g(t).msCrypto)}function nt(t){return l(new Uint8Array(t>>>0))}function rt(){return C((function(t,e){return l(Reflect.get(g(t),g(e)))}),arguments)}function ot(t){return g(t).now()}function it(){return C((function(){return l(self.self)}),arguments)}function at(){return C((function(){return l(window.window)}),arguments)}function st(){return C((function(){return l(globalThis.globalThis)}),arguments)}function ct(){return C((function(){return l(global.global)}),arguments)}function _t(t){return void 0===g(t)}function ut(t,e){return l(new Function(c(t,e)))}function lt(){return C((function(t,e){return l(g(t).call(g(e)))}),arguments)}function gt(){return C((function(t,e,n){return l(g(t).call(g(e),g(n)))}),arguments)}function dt(){return l(r.memory)}function ft(t){return l(g(t).buffer)}function pt(t,e,n){return l(new Uint8Array(g(t),e>>>0,n>>>0))}function ht(){return C((function(t,e){g(t).randomFillSync(d(e))}),arguments)}function bt(t,e,n){return l(g(t).subarray(e>>>0,n>>>0))}function yt(){return C((function(t,e){g(t).getRandomValues(g(e))}),arguments)}function wt(t){return l(new Uint8Array(g(t)))}function mt(t,e,n){g(t).set(g(e),n>>>0)}function vt(t,e){throw new Error(c(t,e))}function xt(t,e){const n=y(f(g(e)),r.__wbindgen_export_0,r.__wbindgen_export_1),o=p;m().setInt32(t+4,o,!0),m().setInt32(t+0,n,!0)}},253:(t,e,n)=>{var r=n(228);t.exports=n.v(e,t.id,"bc08430823bfffc920b1",{"./strandify_wasm_tmp_bg.js":{__wbindgen_string_new:r.yc,__wbg_peg_unwrap:r.en,__wbg_new_abda76e883ba8a5f:r.V5,__wbg_stack_658279fe44541cf6:r.u$,__wbg_error_f851667af71bcfc6:r.Xu,__wbindgen_object_drop_ref:r.bk,__wbindgen_object_clone_ref:r.BZ,__wbg_crypto_1d1f22824a6a080c:r.h_,__wbindgen_is_object:r.qv,__wbg_process_4a72847cc503995b:r.cA,__wbg_versions_f686565e586dd935:r.D1,__wbg_node_104a2ff8d6ea03a2:r.NL,__wbindgen_is_string:r.Gu,__wbg_require_cca90b1a94a0255b:r.s,__wbindgen_is_function:r.PR,__wbg_msCrypto_eb05e62b530a1508:r.cl,__wbg_newwithlength_ec548f448387c968:r.OL,__wbg_get_224d16597dbbfd96:r.GB,__wbg_now_a69647afb1f66247:r.Rv,__wbg_self_3093d5d1f7bcb682:r.KN,__wbg_window_3bcfc4d31bc012f8:r.O9,__wbg_globalThis_86b222e13bdf32ed:r.tn,__wbg_global_e5a3fe56f8be9485:r.jF,__wbindgen_is_undefined:r.vU,__wbg_newnoargs_76313bd6ff35d0f2:r.xN,__wbg_call_1084a111329e68ce:r.tM,__wbg_call_89af060b4e1523f2:r.J1,__wbindgen_memory:r.Py,__wbg_buffer_b7b08af79b0b0974:r.DI,__wbg_newwithbyteoffsetandlength_8a2cb9ca96b27ec9:r.hH,__wbg_randomFillSync_5c9c955aa56b6049:r.hW,__wbg_subarray_7c2e3576afe181d1:r.nq,__wbg_getRandomValues_3aa56aa6edec874c:r.VF,__wbg_new_ea1883e1e5e86686:r.Mq,__wbg_set_d1e79e2388520f18:r.FJ,__wbindgen_throw:r.Qn,__wbindgen_debug_string:r.rl}})}},i={};function a(t){var e=i[t];if(void 0!==e)return e.exports;var n=i[t]={id:t,exports:{}};return o[t](n,n.exports,a),n.exports}t="function"==typeof Symbol?Symbol("webpack queues"):"__webpack_queues__",e="function"==typeof Symbol?Symbol("webpack exports"):"__webpack_exports__",n="function"==typeof Symbol?Symbol("webpack error"):"__webpack_error__",r=t=>{t&&t.d<1&&(t.d=1,t.forEach((t=>t.r--)),t.forEach((t=>t.r--?t.r++:t())))},a.a=(o,i,a)=>{var s;a&&((s=[]).d=-1);var c,_,u,l=new Set,g=o.exports,d=new Promise(((t,e)=>{u=e,_=t}));d[e]=g,d[t]=t=>(s&&t(s),l.forEach(t),d.catch((t=>{}))),o.exports=d,i((o=>{var i;c=(o=>o.map((o=>{if(null!==o&&"object"==typeof o){if(o[t])return o;if(o.then){var i=[];i.d=0,o.then((t=>{a[e]=t,r(i)}),(t=>{a[n]=t,r(i)}));var a={};return a[t]=t=>t(i),a}}var s={};return s[t]=t=>{},s[e]=o,s})))(o);var a=()=>c.map((t=>{if(t[n])throw t[n];return t[e]})),_=new Promise((e=>{(i=()=>e(a)).r=0;var n=t=>t!==s&&!l.has(t)&&(l.add(t),t&&!t.d&&(i.r++,t.push(i)));c.map((e=>e[t](n)))}));return i.r?_:a()}),(t=>(t?u(d[n]=t):_(g),r(s)))),s&&s.d<0&&(s.d=0)},a.n=t=>{var e=t&&t.__esModule?()=>t.default:()=>t;return a.d(e,{a:e}),e},a.d=(t,e)=>{for(var n in e)a.o(e,n)&&!a.o(t,n)&&Object.defineProperty(t,n,{enumerable:!0,get:e[n]})},a.g=function(){if("object"==typeof globalThis)return globalThis;try{return this||new Function("return this")()}catch(t){if("object"==typeof window)return window}}(),a.o=(t,e)=>Object.prototype.hasOwnProperty.call(t,e),a.v=(t,e,n,r)=>{var o=fetch(a.p+""+n+".module.wasm"),i=()=>o.then((t=>t.arrayBuffer())).then((t=>WebAssembly.instantiate(t,r))).then((e=>Object.assign(t,e.instance.exports)));return o.then((e=>"function"==typeof WebAssembly.instantiateStreaming?WebAssembly.instantiateStreaming(e,r).then((e=>Object.assign(t,e.instance.exports)),(t=>{if("application/wasm"!==e.headers.get("Content-Type"))return console.warn("`WebAssembly.instantiateStreaming` failed because your server does not serve wasm with `application/wasm` MIME type. Falling back to `WebAssembly.instantiate` which is slower. Original error:\n",t),i();throw t})):i()))},(()=>{var t;a.g.importScripts&&(t=a.g.location+"");var e=a.g.document;if(!t&&e&&(e.currentScript&&"SCRIPT"===e.currentScript.tagName.toUpperCase()&&(t=e.currentScript.src),!t)){var n=e.getElementsByTagName("script");if(n.length)for(var r=n.length-1;r>-1&&(!t||!/^http(s?):/.test(t));)t=n[r--].src}if(!t)throw new Error("Automatic publicPath is not supported in this browser");t=t.replace(/#.*$/,"").replace(/\?.*$/,"").replace(/\/[^\/]+$/,"/"),a.p=t})(),a.nc=void 0,a(237)})();
+import "./style.css";
+import {
+  lineCoords,
+  rectangleCoords,
+  circleCoords,
+  computeSvg,
+  Peg,
+  Yarn,
+  PatherConfig,
+  EarlyStopConfig,
+} from "strandify-wasm-tmp";
+
+// Constants
+const BRUSH_TYPES = {
+  SINGLE: "single",
+  LINE: "line",
+  BOX: "box",
+  CIRCLE: "circle",
+  ERASER: "eraser",
+};
+
+// State
+let state = {
+  image: null,
+  imageData: null,
+  pegs: [],
+  isDragging: false,
+  draggedPegIndex: -1,
+  isDrawing: false,
+  isErasing: false,
+  startX: 0,
+  startY: 0,
+};
+
+// DOM Elements
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+const imageUpload = document.getElementById("imageUpload");
+const brushTypeSelect = document.getElementById("brushType");
+const pegCountInput = document.getElementById("pegCount");
+const clearBtn = document.getElementById("clearBtn");
+
+document.getElementById("removeImage").addEventListener("click", function () {
+  state.image = null;
+  document.getElementById("imageUpload").value = ""; // Clear the file input
+  canvas.width = 500;
+  canvas.height = 500;
+  drawCanvas();
+});
+document.getElementById("run").addEventListener("click", function () {
+  const config = {
+    iterations: parseInt(document.getElementById("iterations").value),
+    patherYarn: {
+      width: parseFloat(document.getElementById("patherYarnWidth").value),
+      opacity: parseFloat(document.getElementById("patherYarnOpacity").value),
+    },
+    yarn: {
+      width: parseFloat(document.getElementById("yarnWidth").value),
+      opacity: parseFloat(document.getElementById("yarnOpacity").value),
+      color: hexToRgb(document.getElementById("yarnColor").value),
+    },
+    early_stop: {
+      loss_threshold: document.getElementById("lossThreshold").value
+        ? parseFloat(document.getElementById("lossThreshold").value)
+        : null,
+      max_count: parseInt(document.getElementById("maxCount").value),
+    },
+    start_peg_radius: parseInt(document.getElementById("startPegRadius").value),
+    skip_peg_within: parseInt(document.getElementById("skipPegWithin").value),
+    beam_width: parseInt(document.getElementById("beamWidth").value),
+  };
+
+  console.log("config:", config);
+  let earlyStopConfig = new EarlyStopConfig(
+    config.early_stop.loss_threshold,
+    config.early_stop.max_count,
+  );
+  let yarn = new Yarn(
+    config.yarn.width,
+    config.yarn.opacity,
+    config.yarn.color[0],
+    config.yarn.color[1],
+    config.yarn.color[2],
+  );
+  let patherConfig = new PatherConfig(
+    config.iterations,
+    new Yarn(config.patherYarn.width, config.patherYarn.opacity, 0, 0, 0),
+    earlyStopConfig,
+    config.start_peg_radius,
+    config.skip_peg_within,
+    config.beam_width,
+  );
+
+  let computePegs = state.pegs.map((peg) => new Peg(peg.x, peg.y));
+  console.log(state);
+  const svg = computeSvg(state.imageData, computePegs, patherConfig, yarn);
+  // add svg to page
+  const svgContainer = document.getElementById("svg-container");
+  svgContainer.innerHTML = svg;
+  console.log(svg);
+});
+
+function hexToRgb(hex) {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return result
+    ? [
+        parseInt(result[1], 16),
+        parseInt(result[2], 16),
+        parseInt(result[3], 16),
+      ]
+    : null;
+}
+
+// Initialize
+async function initialize() {
+  setupEventListeners();
+}
+
+function setupEventListeners() {
+  document.addEventListener("mousemove", onMouseMove);
+  imageUpload.addEventListener("change", handleImageUpload);
+  canvas.addEventListener("mousedown", handleCanvasMouseDown);
+  clearBtn.addEventListener("click", clearCanvas);
+  document.addEventListener("mouseup", onMouseUp);
+}
+
+// Image Handling
+function handleImageUpload(e) {
+  clearCanvas();
+  const file = e.target.files[0];
+  const reader = new FileReader();
+
+  reader.onload = (event) => {
+    state.image = new Image();
+    state.image.onload = () => {
+      canvas.width = state.image.width;
+      canvas.height = state.image.height;
+      drawCanvas();
+      // const imageDataObj = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      canvas.toBlob((blob) =>
+        blob.arrayBuffer().then((array) => {
+          state.imageData = new Uint8Array(array);
+        }),
+      );
+    };
+    state.image.src = event.target.result;
+  };
+
+  reader.readAsDataURL(file);
+}
+
+// Drawing Functions
+function drawCanvas() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  if (state.image) {
+    ctx.drawImage(state.image, 0, 0);
+  }
+  drawPegs();
+}
+
+function drawPegs() {
+  state.pegs.forEach((peg) => {
+    ctx.beginPath();
+    ctx.arc(peg.x, peg.y, 5, 0, Math.PI * 2);
+    ctx.fillStyle = "red";
+    ctx.fill();
+  });
+}
+
+// Mouse Event Handlers
+function handleCanvasMouseDown(e) {
+  const rect = canvas.getBoundingClientRect();
+  state.startX = Math.max(e.clientX - rect.left, 0);
+  state.startY = Math.max(e.clientY - rect.top, 0);
+
+  if (brushTypeSelect.value !== BRUSH_TYPES.ERASER) {
+    const draggedPeg = findDraggedPeg(state.startX, state.startY);
+    if (draggedPeg !== -1) {
+      state.isDragging = true;
+      state.draggedPegIndex = draggedPeg;
+      return;
+    }
+  }
+
+  if (brushTypeSelect.value === BRUSH_TYPES.SINGLE) {
+    state.pegs.push({ x: state.startX, y: state.startY });
+    drawCanvas();
+  } else if (brushTypeSelect.value === BRUSH_TYPES.ERASER) {
+    state.isErasing = true;
+  } else {
+    state.isDrawing = true;
+  }
+}
+
+function onMouseMove(e) {
+  const { x, y } = getCanvasCoordinates(e);
+  updateCursor(x, y);
+
+  if (state.isDragging && state.draggedPegIndex !== -1) {
+    state.pegs[state.draggedPegIndex] = { x, y };
+    drawCanvas();
+  } else if (state.isDrawing) {
+    drawCanvas();
+    previewBrush(state.startX, state.startY, x, y);
+  } else if (state.isErasing) {
+    drawCanvas();
+    previewEraseBox(state.startX, state.startY, x, y);
+  }
+}
+
+function onMouseUp(e) {
+  const { x: endX, y: endY } = getCanvasCoordinates(e);
+
+  if (state.isDrawing) {
+    drawBrush(state.startX, state.startY, endX, endY);
+  } else if (state.isErasing) {
+    eraseArea(state.startX, state.startY, endX, endY);
+  }
+
+  resetState();
+  drawCanvas();
+}
+
+// Utility Functions
+function getCanvasCoordinates(e) {
+  const rect = canvas.getBoundingClientRect();
+  return {
+    x: Math.min(Math.max(e.clientX - rect.left, 0), canvas.width - 1),
+    y: Math.min(Math.max(e.clientY - rect.top, 0), canvas.height - 1),
+  };
+}
+
+function updateCursor(x, y) {
+  canvas.style.cursor = isOverPeg(x, y) ? "pointer" : "crosshair";
+}
+
+function isOverPeg(x, y) {
+  return state.pegs.some((peg) => Math.hypot(x - peg.x, y - peg.y) < 5);
+}
+
+function findDraggedPeg(x, y) {
+  return state.pegs.findIndex((peg) => Math.hypot(x - peg.x, y - peg.y) < 5);
+}
+
+function resetState() {
+  state.isDragging = false;
+  state.isDrawing = false;
+  state.isErasing = false;
+  state.draggedPegIndex = -1;
+}
+
+// Brush Functions
+function previewBrush(startX, startY, endX, endY) {
+  const pegs = brushPegs(startX, startY, endX, endY);
+  ctx.strokeStyle = "rgba(255, 0, 0, 0.5)";
+  ctx.fillStyle = "rgba(255, 0, 0, 0.5)";
+
+  pegs.forEach((peg) => {
+    ctx.beginPath();
+    ctx.arc(peg.x, peg.y, 5, 0, Math.PI * 2);
+    ctx.fill();
+  });
+
+  ctx.beginPath();
+  ctx.moveTo(pegs[0].x, pegs[0].y);
+  pegs.slice(1).forEach((peg) => ctx.lineTo(peg.x, peg.y));
+  ctx.closePath();
+  ctx.stroke();
+}
+
+function brushPegs(startX, startY, endX, endY) {
+  const pegCount = parseInt(pegCountInput.value);
+  if (isNaN(pegCount) || pegCount < 2) return [];
+
+  let shapeCoords;
+  switch (brushTypeSelect.value) {
+    case BRUSH_TYPES.LINE:
+      shapeCoords = lineCoords(startX, startY, endX, endY, pegCount);
+      break;
+    case BRUSH_TYPES.BOX:
+      shapeCoords = rectangleCoords(
+        Math.min(startX, endX),
+        Math.min(startY, endY),
+        Math.abs(startX - endX),
+        Math.abs(startY - endY),
+        pegCount,
+      );
+      break;
+    case BRUSH_TYPES.CIRCLE:
+      const radius = Math.hypot(endX - startX, endY - startY);
+      shapeCoords = circleCoords(startX, startY, radius, pegCount);
+      break;
+    default:
+      return [];
+  }
+
+  const x_coords = shapeCoords.get_x();
+  const y_coords = shapeCoords.get_y();
+
+  // need to create a new array, for some reason the wasm one doesn't like map
+  let out = [];
+  x_coords.forEach((x, i) =>
+    out.push({
+      x: Math.min(x, canvas.width - 1),
+      y: Math.min(y_coords[i], canvas.height - 1),
+    }),
+  );
+  return out;
+}
+
+function drawBrush(startX, startY, endX, endY) {
+  state.pegs = state.pegs.concat(brushPegs(startX, startY, endX, endY));
+}
+
+// Eraser Functions
+function previewEraseBox(startX, startY, endX, endY) {
+  ctx.strokeStyle = "rgba(255, 0, 0, 0.5)";
+  ctx.strokeRect(
+    Math.min(startX, endX),
+    Math.min(startY, endY),
+    Math.abs(endX - startX),
+    Math.abs(endY - startY),
+  );
+}
+
+function eraseArea(startX, startY, endX, endY) {
+  if (Math.hypot(startX - endX, startY - endY) < 5) {
+    erasePeg(startX, startY);
+  } else {
+    erasePegsInBox(
+      Math.min(startX, endX),
+      Math.min(startY, endY),
+      Math.max(startX, endX),
+      Math.max(startY, endY),
+    );
+  }
+}
+
+function erasePeg(x, y) {
+  const index = state.pegs.findIndex(
+    (peg) => Math.hypot(x - peg.x, y - peg.y) < 5,
+  );
+  if (index !== -1) {
+    state.pegs.splice(index, 1);
+  }
+}
+
+function erasePegsInBox(startX, startY, endX, endY) {
+  state.pegs = state.pegs.filter(
+    (peg) =>
+      !(peg.x >= startX && peg.x <= endX && peg.y >= startY && peg.y <= endY),
+  );
+}
+
+// Canvas Clear
+function clearCanvas() {
+  state.pegs = [];
+  drawCanvas();
+}
+
+// Initialize the application
+initialize();
