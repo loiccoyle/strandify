@@ -13,7 +13,7 @@
 
 <p align="center">
   <b>
-  Create your string art here: <a href="https://github.com/loiccoyle/strandify">https://github.com/loiccoyle/strandify</a>
+  Create your string art <a href="https://loiccoyle.com/strandify">here</a>
   </b>
 </p>
 
@@ -127,7 +127,7 @@ To use the `wasm` bindings in your project, add the `strandify-wasm` `npm` packa
 npm add strandify-wasm
 ```
 
-I would recommend taking a look at the [demo page's](https://github.com/loiccoyle/strandify/tree/gh-pages) source code to see how to use it.
+I would recommend taking a look at the [demo page's source code](https://github.com/loiccoyle/strandify/tree/gh-pages) to see how to use it.
 
 ## 👓 Examples
 
