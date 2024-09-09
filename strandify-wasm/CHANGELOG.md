@@ -1,5 +1,9 @@
 # Changelog
 
+* The following workspace dependencies were updated
+  * dependencies
+    * strandify bumped from 0.4.1 to 0.4.2
+
 ## [0.3.0](https://github.com/loiccoyle/strandify/compare/strandify-wasm-v0.2.1...strandify-wasm-v0.3.0) (2024-09-09)
 
 

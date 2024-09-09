@@ -5,7 +5,7 @@ license.workspace = true
 authors.workspace = true
 
 name = "strandify-cli"
-version = "0.4.1"
+version = "0.4.2"
 description = "CLI utility to generate stringart."
 keywords = ["cli", "string-art", "generative-art", "art"]
 readme = "../README.md"
@@ -17,7 +17,7 @@ name = "strandify"
 path = "src/main.rs"
 
 [dependencies]
-strandify = { path = "../strandify", version = "0.4.1" }
+strandify = { path = "../strandify", version = "0.4.2" }
 
 image = { workspace = true }
 log = { workspace = true }
