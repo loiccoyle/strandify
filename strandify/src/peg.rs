@@ -72,19 +72,15 @@ impl Peg {
                     pixels.insert(((x + ox).clamp(x_min, x_max), (y + oy).clamp(y_min, y_max)));
                 }
             }
-
             if x == other.x as i32 && y == other.y as i32 {
                 break;
             }
-
             let e2 = 2 * err;
-
             // Move in the x-direction
             if e2 > -dy {
                 err -= dy;
                 x += sx;
             }
-
             // Move in the y-direction
             if e2 < dx {
                 err += dx;
