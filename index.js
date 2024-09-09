@@ -75,7 +75,7 @@ runBtn.addEventListener("click", function () {
         : null,
       max_count: parseInt(document.getElementById("maxCount").value),
     },
-    start_peg_radius: parseInt(document.getElementById("startPegRadius").value),
+    start_peg_radius: 10,
     skip_peg_within: parseInt(document.getElementById("skipPegWithin").value),
     beam_width: parseInt(document.getElementById("beamWidth").value),
   };
