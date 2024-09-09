@@ -8,7 +8,7 @@ import {
   Yarn,
   PatherConfig,
   EarlyStopConfig,
-} from "strandify-wasm-tmp";
+} from "strandify-wasm";
 
 // Constants
 const BRUSH_TYPES = {
