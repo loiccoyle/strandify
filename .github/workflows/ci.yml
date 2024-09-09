@@ -41,7 +41,7 @@ jobs:
           manifest-file: .github/.release-please-manifest.json
 
   publish:
-    name: Publish to crates.io
+    name: Publish
     needs:
       - release
     if: needs.release.outputs.strandify--release_created || needs.release.outputs.strandify-cli--release_created || needs.release.outputs.strandify-wasm--release_created
