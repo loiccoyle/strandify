@@ -40,13 +40,20 @@ impl Peg {
     ///     * `width=3` -> 3 pixels wide
     ///     * `width=4` -> 5 pixels wide
     ///     * and so on
-    pub fn line_to(&self, other: &Peg, width: i32) -> Line {
+    /// * `min_max`: min and max values of the line (x_min, x_max, y_min, y_max), used to crop the line to the image bounds.
+    pub fn line_to(&self, other: &Peg, width: u32, min_max: Option<(u32, u32, u32, u32)>) -> Line {
         let mut pixels = HashSet::new();
-        let half_width = width / 2;
+        let half_width = width as i32 / 2;
+        let (x_min, x_max, y_min, y_max): (i32, i32, i32, i32) = match min_max {
+            Some((x_min, x_max, y_min, y_max)) => {
+                (x_min as i32, x_max as i32, y_min as i32, y_max as i32)
+            }
+            None => (0, i32::MAX, 0, i32::MAX),
+        };
 
         // Bresenham's line algorithm
-        let dx = (other.x as i32 - self.x as i32).abs();
-        let dy = (other.y as i32 - self.y as i32).abs();
+        let dx = self.x.abs_diff(other.x) as i32;
+        let dy = self.y.abs_diff(other.y) as i32;
         let sx = if self.x < other.x { 1 } else { -1 };
         let sy = if self.y < other.y { 1 } else { -1 };
         let mut err = dx - dy;
@@ -62,7 +69,7 @@ impl Peg {
             // Add pixels for the current position and its surrounding area based on width
             for ox in -(half_width)..=(half_width) {
                 for oy in -(half_width)..=(half_width) {
-                    pixels.insert(((x + ox).max(0), (y + oy).max(0)));
+                    pixels.insert(((x + ox).clamp(x_min, x_max), (y + oy).clamp(y_min, y_max)));
                 }
             }
 
@@ -239,7 +246,7 @@ mod test {
     fn peg_line_to() {
         let peg_a = Peg::new(0, 0);
         let peg_b = Peg::new(1, 1);
-        let mut line = peg_a.line_to(&peg_b, 1);
+        let mut line = peg_a.line_to(&peg_b, 1, None);
         line.x.sort();
         line.y.sort();
 
@@ -249,7 +256,7 @@ mod test {
 
         let peg_a = Peg::new(1, 1);
         let peg_b = Peg::new(0, 0);
-        let mut line = peg_a.line_to(&peg_b, 1);
+        let mut line = peg_a.line_to(&peg_b, 1, None);
         line.x.sort();
         line.y.sort();
         assert_eq!(line.x, vec![0, 1]);
@@ -259,7 +266,7 @@ mod test {
         // horizontal line
         let peg_a = Peg::new(0, 1);
         let peg_b = Peg::new(3, 1);
-        let mut line = peg_a.line_to(&peg_b, 1);
+        let mut line = peg_a.line_to(&peg_b, 1, None);
         line.x.sort();
         line.y.sort();
         assert_eq!(line.x, vec![0, 1, 2, 3]);
@@ -269,7 +276,7 @@ mod test {
         // vertical line
         let peg_a = Peg::new(0, 0);
         let peg_b = Peg::new(0, 1);
-        let mut line = peg_a.line_to(&peg_b, 1);
+        let mut line = peg_a.line_to(&peg_b, 1, None);
         line.x.sort();
         line.y.sort();
         assert_eq!(line.x, vec![0, 0]);
@@ -282,28 +289,28 @@ mod test {
     fn peg_line_to_width() {
         let peg_a = Peg::new(5, 5);
         let peg_b = Peg::new(5, 5);
-        let line = peg_a.line_to(&peg_b, 0);
+        let line = peg_a.line_to(&peg_b, 0, None);
         assert_eq!(line.x, vec![5]);
         assert_eq!(line.y, vec![5]);
-        let line = peg_a.line_to(&peg_b, 1);
+        let line = peg_a.line_to(&peg_b, 1, None);
         assert_eq!(line.x, vec![5]);
         assert_eq!(line.y, vec![5]);
         assert_eq!(line.dist, 0);
-        let line = peg_a.line_to(&peg_b, 2);
+        let line = peg_a.line_to(&peg_b, 2, None);
         // we go +1 in all directions
         assert_eq!(*line.x.iter().max().unwrap(), 6);
         assert_eq!(*line.x.iter().min().unwrap(), 4);
         assert_eq!(*line.y.iter().max().unwrap(), 6);
         assert_eq!(*line.y.iter().min().unwrap(), 4);
         assert_eq!(line.dist, 0);
-        let line = peg_a.line_to(&peg_b, 3);
+        let line = peg_a.line_to(&peg_b, 3, None);
         // we go +1 in all directions
         assert_eq!(*line.x.iter().max().unwrap(), 6);
         assert_eq!(*line.x.iter().min().unwrap(), 4);
         assert_eq!(*line.y.iter().max().unwrap(), 6);
         assert_eq!(*line.y.iter().min().unwrap(), 4);
         assert_eq!(line.dist, 0);
-        let line = peg_a.line_to(&peg_b, 4);
+        let line = peg_a.line_to(&peg_b, 4, None);
         // we go +2 in all directions
         assert_eq!(*line.x.iter().max().unwrap(), 7);
         assert_eq!(*line.x.iter().min().unwrap(), 3);
@@ -313,12 +320,24 @@ mod test {
 
         let peg_a = Peg::new(5, 5);
         let peg_b = Peg::new(6, 6);
-        let line = peg_a.line_to(&peg_b, 2);
+        let line = peg_a.line_to(&peg_b, 2, None);
         assert_eq!(*line.x.iter().min().unwrap(), 4);
         assert_eq!(*line.x.iter().max().unwrap(), 7);
         assert_eq!(*line.y.iter().min().unwrap(), 4);
         assert_eq!(*line.y.iter().max().unwrap(), 7);
         assert_eq!(line.dist, 1);
+    }
+
+    #[test]
+    fn peg_line_to_width_min_max() {
+        let peg_a = Peg::new(0, 5);
+        let peg_b = Peg::new(10, 5);
+        let line = peg_a.line_to(&peg_b, 2, Some((0, 10, 3, 7)));
+        assert_eq!(*line.x.iter().max().unwrap(), 10);
+        assert_eq!(*line.x.iter().min().unwrap(), 0);
+
+        assert_eq!(*line.y.iter().max().unwrap(), 6);
+        assert_eq!(*line.y.iter().min().unwrap(), 4);
     }
 
     #[test]

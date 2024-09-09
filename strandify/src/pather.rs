@@ -184,7 +184,11 @@ impl Pather {
             .map(|(peg_a, peg_b)| {
                 (
                     utils::hash_key(peg_a, peg_b),
-                    peg_a.line_to(peg_b, self.config.yarn.width as i32),
+                    peg_a.line_to(
+                        peg_b,
+                        self.config.yarn.width.round() as u32,
+                        Some((0, self.image.width(), 0, self.image.height())),
+                    ),
                 )
             })
             .collect::<Vec<((usize, usize), Line)>>();
