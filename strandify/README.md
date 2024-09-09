@@ -1,6 +1,5 @@
-<p align="center"><img src="https://i.imgur.com/4jvon2p.png" width="1000"></p>
+<p align="center"><img src="https://i.imgur.com/4jvon2p.png" width="1000" /></p>
 <p align="center"><b>A string art generation library.</b></p>
-
 # Main Structs
 
 ## [`Pather`](crate::pather::Pather)
@@ -50,7 +49,7 @@ use strandify::peg;
 use strandify::pather;
 use strandify::utils;
 
-let input_file="tests/input.jpg";
+let input_file = "tests/input.jpg";
 let output_file = "tests/output.png";
 
 // Open the input image and convert it to grayscale
