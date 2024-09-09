@@ -70,6 +70,7 @@ jobs:
       - name: Publish wasm npm pkg
         if: needs.release.outputs.strandify-wasm--release_created
         run: |
+          cargo install wasm-pack
           cd strandify-wasm
           wasm-pack build && wasm-pack publish --token ${{ secrets.NPM_TOKEN }}
   readme:
