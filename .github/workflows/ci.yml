@@ -67,6 +67,11 @@ jobs:
           cd strandify-cli
           cargo publish --token ${{ secrets.CARGO_TOKEN }}
 
+      - name: Publish wasm npm pkg
+        if: needs.release.outputs.strandify-wasm--release_created
+        run: |
+          cd strandify-wasm
+          wasm-pack build && wasm-pack publish --token ${{ secrets.NPM_TOKEN }}
   readme:
     runs-on: ubuntu-latest
     needs: test
