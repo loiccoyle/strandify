@@ -7,6 +7,7 @@ authors.workspace = true
 name = "strandify-wasm"
 description = "Wasm bindings for Strandify"
 version = "0.3.0"
+keywords = ["wasm", "strandify", "string-art", "generative-art", "art"]
 
 [dependencies]
 strandify = { path = "../strandify", version = "0.4.1", default-features = false }
