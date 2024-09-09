@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.2](https://github.com/loiccoyle/strandify/compare/strandify-v0.4.1...strandify-v0.4.2) (2024-09-09)
+
+
+### Bug Fixes
+
+* lines with width outside image bounds, add `min_max` bounds to `line_to` ([7a94769](https://github.com/loiccoyle/strandify/commit/7a947695371a3ef30df7915865acbbf78e884ee2))
+
 ## [0.4.1](https://github.com/loiccoyle/strandify/compare/strandify-v0.4.0...strandify-v0.4.1) (2024-09-04)
 
 
