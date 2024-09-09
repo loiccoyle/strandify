@@ -6,7 +6,7 @@ authors.workspace = true
 
 name = "strandify-cli"
 version = "0.4.2"
-description = "CLI utility to generate stringart."
+description = "CLI utility to generate string art."
 keywords = ["cli", "string-art", "generative-art", "art"]
 readme = "../README.md"
 

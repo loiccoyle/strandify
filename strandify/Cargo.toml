@@ -6,7 +6,7 @@ authors.workspace = true
 
 name = "strandify"
 version = "0.4.2"
-description = "A stringart generation library."
+description = "A string art generation library."
 keywords = ["string-art", "generative-art", "art"]
 
 [dependencies]
