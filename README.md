@@ -4,25 +4,29 @@
 <p align="center">
   <a href="https://crates.io/crates/strandify"><img src="https://img.shields.io/crates/v/strandify"></a>
   <a href="https://crates.io/crates/strandify-cli"><img src="https://img.shields.io/crates/v/strandify-cli"></a>
+  <a href="https://npmjs.com/package/strandify-wasm"><img src="https://img.shields.io/npm/v/strandify-wasm"></a>
   <a href="https://docs.rs/strandify/latest/strandify/"><img src="https://img.shields.io/docsrs/strandify"></a>
   <a href="https://github.com/loiccoyle/strandify/actions"><img src="https://github.com/loiccoyle/strandify/actions/workflows/ci.yml/badge.svg"></a>
   <a href="./LICENSE.md"><img src="https://img.shields.io/badge/license-MIT-blue.svg"></a>
   <img src="https://img.shields.io/badge/platform-linux%20%7C%20macOS%20%7C%20windows-informational">
 </p>
 
+<p align="center">
+  <b>
+  Create your string art here: <a href="https://github.com/loiccoyle/strandify">https://github.com/loiccoyle/strandify</a>
+  </b>
+</p>
+
+This repo contains two crates:
+
+- `strandify` crate contains the string art library.
+- `strandify-cli` crate provides the command line interface.
+
+And one `npm` package:
+
+- `strandify-wasm` provides the wasm bindings and allows `strandify` to be used in the browser.
+
 ## 📦 Installation
-
-There are two crates, the `strandify` crate contains the library and the `strandify-cli` crate contains the CLI.
-
-## Library
-
-To use the library as a dependency in your project, add the `strandify` crate:
-
-```sh
-cargo add strandify
-```
-
-See the [docs](https://docs.rs/strandify) for usage.
 
 ## Command line
 
@@ -32,7 +36,7 @@ To use the `strandify` binary to generate string art, install the `strandify-cli
 cargo install strandify-cli
 ```
 
-## 📋 Usage
+### 📋 Usage
 
 Once installed, you can use the `strandify` binary.
 
@@ -104,6 +108,26 @@ Options:
 ```
 
 <!-- help end -->
+
+## Library
+
+To use the library as a dependency in your project, add the `strandify` crate:
+
+```sh
+cargo add strandify
+```
+
+See the [docs](https://docs.rs/strandify) for usage.
+
+## Wasm
+
+To use the `wasm` bindings in your project, add the `strandify-wasm` `npm` package:
+
+```sh
+npm add strandify-wasm
+```
+
+I would recommend taking a look at the [demo page's](https://github.com/loiccoyle/strandify/tree/gh-pages) source code to see how to use it.
 
 ## 👓 Examples
 
