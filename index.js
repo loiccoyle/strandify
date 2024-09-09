@@ -10,6 +10,9 @@ import {
   EarlyStopConfig,
 } from "strandify-wasm";
 
+const MAX_WIDTH = 1080;
+const MAX_HEIGHT = 1080;
+
 // Constants
 const BRUSH_TYPES = {
   SINGLE: "single",
@@ -39,15 +42,22 @@ const imageUpload = document.getElementById("imageUpload");
 const brushTypeSelect = document.getElementById("brushType");
 const pegCountInput = document.getElementById("pegCount");
 const clearBtn = document.getElementById("clearBtn");
+const runBtn = document.getElementById("run");
 
 document.getElementById("removeImage").addEventListener("click", function () {
   state.image = null;
   document.getElementById("imageUpload").value = ""; // Clear the file input
-  canvas.width = 500;
-  canvas.height = 500;
+  canvas.width = 600;
+  canvas.height = 600;
   drawCanvas();
+  runBtn.disabled = true;
 });
-document.getElementById("run").addEventListener("click", function () {
+
+runBtn.addEventListener("click", function () {
+  if (state.pegs.length == 0) {
+    alert("Please add some pegs first");
+    return;
+  }
   const config = {
     iterations: parseInt(document.getElementById("iterations").value),
     patherYarn: {
@@ -97,8 +107,28 @@ document.getElementById("run").addEventListener("click", function () {
   // add svg to page
   const svgContainer = document.getElementById("svg-container");
   svgContainer.innerHTML = svg;
-  console.log(svg);
+  // add download button bellow svg
+  const downloadBtn = document.createElement("button");
+  downloadBtn.id = "downloadBtn";
+  downloadBtn.innerHTML = "Download SVG";
+  downloadBtn.addEventListener("click", function () {
+    downloadSvg(svg);
+  });
+  svgContainer.appendChild(downloadBtn);
+
+  svgContainer.style.display = "flex";
 });
+
+function downloadSvg(svg) {
+  const blob = new Blob([svg], { type: "image/svg+xml;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "strandify.svg";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
 
 function hexToRgb(hex) {
   const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
@@ -133,8 +163,26 @@ function handleImageUpload(e) {
   reader.onload = (event) => {
     state.image = new Image();
     state.image.onload = () => {
-      canvas.width = state.image.width;
-      canvas.height = state.image.height;
+      let { width, height } = state.image;
+
+      // Calculate aspect ratio and scale the image
+      const aspectRatio = width / height;
+
+      if (width > MAX_WIDTH || height > MAX_HEIGHT) {
+        if (aspectRatio > 1) {
+          // Landscape
+          width = MAX_WIDTH;
+          height = width / aspectRatio;
+        } else {
+          // Portrait
+          height = MAX_HEIGHT;
+          width = height * aspectRatio;
+        }
+      }
+
+      canvas.width = width;
+      canvas.height = height;
+
       drawCanvas();
       // const imageDataObj = ctx.getImageData(0, 0, canvas.width, canvas.height);
       canvas.toBlob((blob) =>
@@ -147,13 +195,14 @@ function handleImageUpload(e) {
   };
 
   reader.readAsDataURL(file);
+  runBtn.disabled = false;
 }
 
 // Drawing Functions
 function drawCanvas() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   if (state.image) {
-    ctx.drawImage(state.image, 0, 0);
+    ctx.drawImage(state.image, 0, 0, canvas.width, canvas.height);
   }
   drawPegs();
 }
