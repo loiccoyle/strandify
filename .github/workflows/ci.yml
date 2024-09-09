@@ -72,7 +72,9 @@ jobs:
         run: |
           cargo install wasm-pack
           cd strandify-wasm
-          wasm-pack build && wasm-pack publish --token ${{ secrets.NPM_TOKEN }}
+          wasm-pack build && wasm-pack publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
   readme:
     runs-on: ubuntu-latest
     needs: test
