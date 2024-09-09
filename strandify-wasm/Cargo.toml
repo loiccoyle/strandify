@@ -6,7 +6,7 @@ authors.workspace = true
 
 name = "strandify-wasm"
 description = "Wasm bindings for Strandify"
-version = "0.2.1"
+version = "0.3.0"
 
 [dependencies]
 strandify = { path = "../strandify", version = "0.4.1", default-features = false }
