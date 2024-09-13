@@ -49,6 +49,7 @@ button:disabled {
   flex-direction: row;
   gap: 20px;
   flex-wrap: wrap;
+  align-items: flex-start;
 }
 canvas {
   border: 1px solid lightgray;
