@@ -53,7 +53,7 @@ document.getElementById("removeImage").addEventListener("click", function () {
   runBtn.disabled = true;
 });
 
-runBtn.addEventListener("click", function () {
+runBtn.addEventListener("click", async function () {
   if (state.pegs.length == 0) {
     alert("Please add some pegs first");
     return;
@@ -102,21 +102,42 @@ runBtn.addEventListener("click", function () {
   );
 
   let computePegs = state.pegs.map((peg) => new Peg(peg.x, peg.y));
-  console.log(state);
-  const svg = computeSvg(state.imageData, computePegs, patherConfig, yarn);
-  // add svg to page
+  // Show loading indicator
   const svgContainer = document.getElementById("svg-container");
-  svgContainer.innerHTML = svg;
-  // add download button bellow svg
-  const downloadBtn = document.createElement("button");
-  downloadBtn.id = "downloadBtn";
-  downloadBtn.innerHTML = "Download SVG";
-  downloadBtn.addEventListener("click", function () {
-    downloadSvg(svg);
-  });
-  svgContainer.appendChild(downloadBtn);
+  const loadingIndicator = document.getElementById("loading-indicator");
 
-  svgContainer.style.display = "flex";
+  loadingIndicator.style.display = "inline-flex";
+  runBtn.disabled = true;
+
+  // run in background
+  try {
+    // Run computeSvg in the background
+    const svg = await new Promise((resolve) => {
+      setTimeout(() => {
+        resolve(computeSvg(state.imageData, computePegs, patherConfig, yarn));
+      }, 0); // Non-blocking computation
+    });
+
+    // Once complete, hide the loading indicator
+    document.getElementById("loading-indicator").style.display = "none";
+
+    // Add SVG to the page
+    svgContainer.innerHTML = svg;
+
+    // Add download button below the SVG
+    const downloadBtn = document.createElement("button");
+    downloadBtn.id = "downloadBtn";
+    downloadBtn.innerHTML = "Download SVG";
+    downloadBtn.addEventListener("click", function () {
+      downloadSvg(svg);
+    });
+    svgContainer.appendChild(downloadBtn);
+    svgContainer.style.display = "flex";
+  } catch (error) {
+    console.error("Error computing SVG:", error);
+  }
+  loadingIndicator.style.display = "none";
+  runBtn.disabled = false;
 });
 
 function downloadSvg(svg) {
