@@ -10,7 +10,8 @@ import {
   EarlyStopConfig,
 } from "strandify-wasm";
 
-const max_width = () => window.innerWidth * 0.7;
+const smallScreen = () => window.innerWidth < 1000;
+const max_width = () => window.innerWidth * (smallScreen() ? 0.9 : 0.7);
 const max_height = () => window.innerHeight * 0.7;
 
 // Constants
