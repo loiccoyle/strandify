@@ -10,8 +10,8 @@ import {
   EarlyStopConfig,
 } from "strandify-wasm";
 
-const MAX_WIDTH = 1080;
-const MAX_HEIGHT = 1080;
+const max_width = () => window.innerWidth * 0.7;
+const max_height = () => window.innerHeight * 0.7;
 
 // Constants
 const BRUSH_TYPES = {
@@ -41,19 +41,44 @@ const ctx = canvas.getContext("2d");
 const imageUpload = document.getElementById("imageUpload");
 const brushTypeSelect = document.getElementById("brushType");
 const pegCountInput = document.getElementById("pegCount");
-const clearBtn = document.getElementById("clearBtn");
+const pegClearBtn = document.getElementById("pegClearBtn");
+const pegAutoBtn = document.getElementById("pegAutoBtn");
 const runBtn = document.getElementById("run");
+
+function resizeCanvas() {
+  const widthPrev = canvas.width;
+  const heightPrev = canvas.height;
+
+  // If an image was chosen, take it's aspect ratio into account
+  const aspectRatio = state.image ? state.image.width / state.image.height : 1;
+  // Set canvas width to a percentage of the window width
+  if (state.image) {
+    canvas.width = Math.min(max_width(), state.image.width);
+    canvas.height = canvas.width / aspectRatio;
+  } else {
+    canvas.width = max_width();
+    canvas.height = max_height();
+  }
+
+  // Also update the peg positions
+  state.pegs.forEach((peg) => {
+    peg.x = (peg.x / widthPrev) * canvas.width;
+    peg.y = (peg.y / heightPrev) * canvas.height;
+  });
+  drawCanvas();
+  setImageData();
+}
 
 document.getElementById("removeImage").addEventListener("click", function () {
   state.image = null;
   document.getElementById("imageUpload").value = ""; // Clear the file input
-  canvas.width = 600;
-  canvas.height = 600;
+  // canvas.width = 600;
+  // canvas.height = 600;
   drawCanvas();
   runBtn.disabled = true;
 });
 
-runBtn.addEventListener("click", async function () {
+async function run() {
   if (state.pegs.length == 0) {
     alert("Please add some pegs first");
     return;
@@ -138,7 +163,7 @@ runBtn.addEventListener("click", async function () {
   }
   loadingIndicator.style.display = "none";
   runBtn.disabled = false;
-});
+}
 
 function downloadSvg(svg) {
   const blob = new Blob([svg], { type: "image/svg+xml;charset=utf-8" });
@@ -164,6 +189,7 @@ function hexToRgb(hex) {
 
 // Initialize
 async function initialize() {
+  resizeCanvas();
   setupEventListeners();
 }
 
@@ -171,13 +197,24 @@ function setupEventListeners() {
   document.addEventListener("mousemove", onMouseMove);
   imageUpload.addEventListener("change", handleImageUpload);
   canvas.addEventListener("mousedown", handleCanvasMouseDown);
-  clearBtn.addEventListener("click", clearCanvas);
+  pegClearBtn.addEventListener("click", clearPegs);
+  pegAutoBtn.addEventListener("click", autoPegs);
   document.addEventListener("mouseup", onMouseUp);
+  runBtn.addEventListener("click", run);
+  window.addEventListener("resize", resizeCanvas);
+}
+
+function setImageData() {
+  canvas.toBlob((blob) =>
+    blob.arrayBuffer().then((array) => {
+      state.imageData = new Uint8Array(array);
+    }),
+  );
 }
 
 // Image Handling
 function handleImageUpload(e) {
-  clearCanvas();
+  clearPegs();
   const file = e.target.files[0];
   const reader = new FileReader();
 
@@ -189,14 +226,14 @@ function handleImageUpload(e) {
       // Calculate aspect ratio and scale the image
       const aspectRatio = width / height;
 
-      if (width > MAX_WIDTH || height > MAX_HEIGHT) {
+      if (width > max_width() || height > max_height()) {
         if (aspectRatio > 1) {
           // Landscape
-          width = MAX_WIDTH;
+          width = max_width();
           height = width / aspectRatio;
         } else {
           // Portrait
-          height = MAX_HEIGHT;
+          height = max_height();
           width = height * aspectRatio;
         }
       }
@@ -205,12 +242,7 @@ function handleImageUpload(e) {
       canvas.height = height;
 
       drawCanvas();
-      // const imageDataObj = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      canvas.toBlob((blob) =>
-        blob.arrayBuffer().then((array) => {
-          state.imageData = new Uint8Array(array);
-        }),
-      );
+      setImageData();
     };
     state.image.src = event.target.result;
   };
@@ -422,10 +454,42 @@ function erasePegsInBox(startX, startY, endX, endY) {
   );
 }
 
-// Canvas Clear
-function clearCanvas() {
+function clearPegs() {
   state.pegs = [];
   drawCanvas();
+}
+
+function autoPegs() {
+  let peg_coords;
+  const pegCount = parseInt(pegCountInput.value);
+  if (brushTypeSelect.value == BRUSH_TYPES.BOX) {
+    // add pegs around the edge of the image
+    peg_coords = rectangleCoords(
+      0,
+      0,
+      canvas.width - 1,
+      canvas.height - 1,
+      pegCount,
+    );
+  } else {
+    // add pegs in a circle and centered on the image
+    const radius = Math.min(canvas.width, canvas.height) / 2;
+    const center_x = canvas.width / 2;
+    const center_y = canvas.height / 2;
+    peg_coords = circleCoords(center_x, center_y, radius, pegCount);
+  }
+  const x_coords = peg_coords.get_x();
+  const y_coords = peg_coords.get_y();
+  // need to create a new array, for some reason the wasm one doesn't like map
+  let out = [];
+  x_coords.forEach((x, i) =>
+    out.push({
+      x: Math.min(x, canvas.width - 1),
+      y: Math.min(y_coords[i], canvas.height - 1),
+    }),
+  );
+  state.pegs = state.pegs.concat(out);
+  drawPegs();
 }
 
 // Initialize the application

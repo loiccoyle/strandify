@@ -8,14 +8,17 @@ body {
   color: lightgray;
   background-color: #121212;
 }
+
 h1 {
   margin: 0;
 }
+
 a {
   color: white;
   text-decoration: none;
   font-weight: bold;
 }
+
 button {
   background-color: #333333;
   color: white;
@@ -25,14 +28,30 @@ button {
   margin: 0 5px;
   padding: 5px 10px;
 }
+
 button:disabled {
   color: gray;
   cursor: not-allowed;
 }
 
+button:hover {
+  background-color: #555555;
+}
+
+#run {
+  margin: 10px;
+  font-size: 24px;
+  font-weight: bold;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  width: 100%;
+  padding: 10px;
+}
+
 .header {
   padding: 10px;
-  margin-bottom: 20px;
+  margin-bottom: 10px;
   width: 100%;
   background-color: #222222;
   display: flex;
@@ -40,10 +59,12 @@ button:disabled {
   justify-content: space-between;
   box-sizing: border-box;
 }
+
 .links {
   display: flex;
   gap: 20px;
 }
+
 .columns {
   display: flex;
   flex-direction: row;
@@ -51,13 +72,24 @@ button:disabled {
   flex-wrap: wrap;
   align-items: flex-start;
 }
+
 canvas {
   border: 1px solid lightgray;
   background-color: black;
-  margin-top: 20px;
+  display: block;
+  margin: 0 auto;
 }
-.controls {
-  margin-top: 10px;
+
+.canvas-controls {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  margin-bottom: 10px;
+}
+
+.peg-controls {
   display: flex;
   gap: 10px;
   align-items: center;
@@ -76,35 +108,43 @@ input[type="file"] {
   border-radius: 5px;
   padding: 5px;
 }
+
 input[type="number"],
 input[type="color"] {
   width: 100px;
 }
+
 .config-container {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: center;
   margin-top: 20px;
   gap: 10px;
 }
+
 .config-section {
   padding: 10px;
   border: 1px solid #ccc;
   border-radius: 5px;
   background-color: #222222;
 }
+
 .config-section h2 {
   margin-top: 0;
 }
+
 .form-group {
   margin-bottom: 10px;
   display: flex;
   justify-content: space-between;
 }
+
 label {
   display: inline-block;
 }
+
 .image-upload {
-  margin-bottom: 10px;
   display: flex;
   justify-content: center;
 }
@@ -138,6 +178,7 @@ label {
   0% {
     transform: rotate(0deg);
   }
+
   100% {
     transform: rotate(360deg);
   }
