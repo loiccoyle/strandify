@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.3](https://github.com/loiccoyle/strandify/compare/strandify-v0.4.2...strandify-v0.4.3) (2024-09-19)
+
+
+### Bug Fixes
+
+* line with width out of bounds ([7f80d9a](https://github.com/loiccoyle/strandify/commit/7f80d9a70a4a1c221a85cd10e74f5a549fee14ca))
+
 ## [0.4.2](https://github.com/loiccoyle/strandify/compare/strandify-v0.4.1...strandify-v0.4.2) (2024-09-09)
 
 
