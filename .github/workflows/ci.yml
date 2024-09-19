@@ -67,12 +67,19 @@ jobs:
           cd strandify-cli
           cargo publish --token ${{ secrets.CARGO_TOKEN }}
 
+      - uses: actions/setup-node@v4
+        if: needs.release.outputs.strandify-wasm--release_created
+        with:
+          node-version: "22.x"
+          registry-url: "https://registry.npmjs.org"
+
       - name: Publish wasm npm pkg
         if: needs.release.outputs.strandify-wasm--release_created
         run: |
           cargo install wasm-pack
           cd strandify-wasm
-          wasm-pack build && wasm-pack publish
+          wasm-pack build
+          npm publish pkg/
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
   readme:
