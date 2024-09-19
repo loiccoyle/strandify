@@ -187,7 +187,7 @@ impl Pather {
                     peg_a.line_to(
                         peg_b,
                         self.config.yarn.width.round() as u32,
-                        Some((0, self.image.width(), 0, self.image.height())),
+                        Some((0, self.image.width() - 1, 0, self.image.height() - 1)),
                     ),
                 )
             })
