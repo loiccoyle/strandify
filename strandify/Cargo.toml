@@ -5,7 +5,7 @@ license.workspace = true
 authors.workspace = true
 
 name = "strandify"
-version = "0.4.3"
+version = "0.4.4"
 description = "A string art generation library."
 keywords = ["string-art", "generative-art", "art"]
 
