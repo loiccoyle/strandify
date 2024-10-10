@@ -1596,7 +1596,7 @@ dependencies = [
 
 [[package]]
 name = "strandify"
-version = "0.4.3"
+version = "0.4.4"
 dependencies = [
  "criterion",
  "ctor",
@@ -1614,7 +1614,7 @@ dependencies = [
 
 [[package]]
 name = "strandify-cli"
-version = "0.4.3"
+version = "0.4.4"
 dependencies = [
  "assert_cmd",
  "assert_fs",
@@ -1631,7 +1631,7 @@ dependencies = [
 
 [[package]]
 name = "strandify-wasm"
-version = "0.3.2"
+version = "0.3.3"
 dependencies = [
  "base64",
  "console_error_panic_hook",
