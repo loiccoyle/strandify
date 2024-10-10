@@ -1600,7 +1600,6 @@ version = "0.4.3"
 dependencies = [
  "criterion",
  "ctor",
- "env_logger",
  "image",
  "indicatif",
  "itertools 0.13.0",
