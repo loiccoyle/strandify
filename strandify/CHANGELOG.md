@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.4](https://github.com/loiccoyle/strandify/compare/strandify-v0.4.3...strandify-v0.4.4) (2024-10-12)
+
+
+### Bug Fixes
+
+* remove `env_logger` dep from `strandify` library ([6999382](https://github.com/loiccoyle/strandify/commit/69993829250e483a5d527190bfa1762d8167fd26))
+
 ## [0.4.3](https://github.com/loiccoyle/strandify/compare/strandify-v0.4.2...strandify-v0.4.3) (2024-09-19)
 
 

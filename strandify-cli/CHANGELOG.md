@@ -12,6 +12,10 @@
   * dependencies
     * strandify bumped from 0.4.2 to 0.4.3
 
+* The following workspace dependencies were updated
+  * dependencies
+    * strandify bumped from 0.4.3 to 0.4.4
+
 ## [0.4.0](https://github.com/loiccoyle/strandify/compare/strandify-cli-v0.3.0...strandify-cli-v0.4.0) (2024-08-26)
 
 
