@@ -158,14 +158,14 @@ export default function App() {
 
   return (
     <ThemeProvider>
-      <div className="min-h-screen bg-gray-100 dark:bg-gray-900 p-8">
-        <div className="max-w-7xl mx-auto space-y-8">
+      <div className="min-h-screen bg-gray-100 dark:bg-gray-900 sm:p-8 p-2">
+        <div className="w-full sm:max-w-7xl sm:mx-auto space-y-8">
           <Header />
 
           <div className="grid grid-cols-1 gap-8">
             <div className="space-y-4">
               <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-lg">
-                <div className="flex gap-4 mb-4">
+                <div className="flex gap-4 mb-4 sm:text-lg text-sm justify-center">
                   <label className="flex-1 flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg cursor-pointer hover:bg-blue-600 transition-colors">
                     <ImageIcon className="w-5 h-5" />
                     <span>Select Image</span>

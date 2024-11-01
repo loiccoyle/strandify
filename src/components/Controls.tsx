@@ -31,7 +31,7 @@ export function Controls({
           <div
             key={type}
             onClick={() => setBrushType(type)}
-            className={`p-4 rounded-lg transition-colors cursor-pointer ${
+            className={`sm:p-4 p-2 rounded-lg transition-colors cursor-pointer ${
               brushType === type
                 ? "bg-blue-100 dark:bg-blue-900 border-2 border-blue-500"
                 : "bg-gray-100 dark:bg-gray-700 border-2 border-gray-300 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-600"
@@ -72,14 +72,14 @@ export function Controls({
 
         <button
           onClick={onClearPegs}
-          className="px-4 py-2 bg-red-100 dark:bg-red-900 border-2 border-red-500 text-red-700 dark:text-red-300 rounded-lg hover:bg-red-200 dark:hover:bg-red-800 transition-colors"
+          className="px-2 sm:px-4 py-2 bg-red-100 dark:bg-red-900 border-2 border-red-500 text-red-700 dark:text-red-300 rounded-lg hover:bg-red-200 dark:hover:bg-red-800 transition-colors"
         >
           Clear Pegs
         </button>
 
         <button
           onClick={onAutoPegs}
-          className="px-4 py-2 bg-blue-100 dark:bg-blue-900 border-2 border-blue-500 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors"
+          className="px-2 sm:px-4 py-2 bg-blue-100 dark:bg-blue-900 border-2 border-blue-500 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors"
         >
           Auto Pegs
         </button>
