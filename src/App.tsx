@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback } from "react";
 import { Download, Trash2, Wand2, Image as ImageIcon } from "lucide-react";
 import { Canvas } from "./components/Canvas";
+import { ThemeProvider } from "./contexts/ThemeContext";
 import { Controls } from "./components/Controls";
 import { Options } from "./components/Options";
 import { useStrandify } from "./hooks/useStrandify";
@@ -129,94 +130,96 @@ export default function App() {
   }, [stringArtSvg]);
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 p-8">
-      <div className="max-w-7xl mx-auto space-y-8">
-        <Header />
+    <ThemeProvider>
+      <div className="min-h-screen bg-gray-100 dark:bg-gray-900 p-8">
+        <div className="max-w-7xl mx-auto space-y-8">
+          <Header />
 
-        <div className="grid grid-cols-1 gap-8">
-          <div className="space-y-4">
-            <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-lg">
-              <div className="flex gap-4 mb-4">
-                <label className="flex-1 flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg cursor-pointer hover:bg-blue-600 transition-colors">
-                  <ImageIcon className="w-5 h-5" />
-                  <span>Select Image</span>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={handleImageUpload}
-                  />
-                </label>
-                <button
-                  onClick={handleRemoveImage}
-                  className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors flex items-center gap-2"
-                >
-                  <Trash2 className="w-5 h-5" />
-                  <span>Remove</span>
-                </button>
-              </div>
+          <div className="grid grid-cols-1 gap-8">
+            <div className="space-y-4">
+              <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-lg">
+                <div className="flex gap-4 mb-4">
+                  <label className="flex-1 flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg cursor-pointer hover:bg-blue-600 transition-colors">
+                    <ImageIcon className="w-5 h-5" />
+                    <span>Select Image</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleImageUpload}
+                    />
+                  </label>
+                  <button
+                    onClick={handleRemoveImage}
+                    className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors flex items-center gap-2"
+                  >
+                    <Trash2 className="w-5 h-5" />
+                    <span>Remove</span>
+                  </button>
+                </div>
 
-              <Canvas
-                ref={canvasRef}
-                image={image}
-                pegs={pegs}
-                setPegs={setPegs}
-                brushType={brushType}
-                pegCount={pegCount}
-              />
-            </div>
-
-            <Controls
-              brushType={brushType}
-              setBrushType={setBrushType}
-              pegCount={pegCount}
-              setPegCount={setPegCount}
-              onClearPegs={handleClearPegs}
-              onAutoPegs={handleAutoPegs}
-            />
-
-            <Options options={options} onChange={setOptions} />
-          </div>
-
-          <div className="space-y-4">
-            <div className="flex gap-4">
-              <button
-                onClick={handleCompute}
-                disabled={isComputing || pegs.length === 0}
-                className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <Wand2 className="w-5 h-5" />
-                <span>
-                  {isComputing ? "Computing..." : "Generate String Art"}
-                </span>
-              </button>
-
-              {stringArtSvg && (
-                <button
-                  onClick={handleDownloadSvg}
-                  className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors flex items-center gap-2"
-                >
-                  <Download className="w-5 h-5" />
-                  <span>Download SVG</span>
-                </button>
-              )}
-            </div>
-
-            {stringArtSvg && (
-              <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-lg flex align-center justify-center">
-                <StringArt
-                  svgString={stringArtSvg}
-                  pathColor={options.render.color}
-                  pathOpacity={options.render.opacity}
-                  pathWidth={options.render.width}
-                  bgColor={options.render.bgColor}
+                <Canvas
+                  ref={canvasRef}
+                  image={image}
+                  pegs={pegs}
+                  setPegs={setPegs}
+                  brushType={brushType}
+                  pegCount={pegCount}
                 />
               </div>
-            )}
+
+              <Controls
+                brushType={brushType}
+                setBrushType={setBrushType}
+                pegCount={pegCount}
+                setPegCount={setPegCount}
+                onClearPegs={handleClearPegs}
+                onAutoPegs={handleAutoPegs}
+              />
+
+              <Options options={options} onChange={setOptions} />
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex gap-4">
+                <button
+                  onClick={handleCompute}
+                  disabled={isComputing || pegs.length === 0}
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <Wand2 className="w-5 h-5" />
+                  <span>
+                    {isComputing ? "Computing..." : "Generate String Art"}
+                  </span>
+                </button>
+
+                {stringArtSvg && (
+                  <button
+                    onClick={handleDownloadSvg}
+                    className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors flex items-center gap-2"
+                  >
+                    <Download className="w-5 h-5" />
+                    <span>Download SVG</span>
+                  </button>
+                )}
+              </div>
+
+              {stringArtSvg && (
+                <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-lg flex align-center justify-center">
+                  <StringArt
+                    svgString={stringArtSvg}
+                    pathColor={options.render.color}
+                    pathOpacity={options.render.opacity}
+                    pathWidth={options.render.width}
+                    bgColor={options.render.bgColor}
+                  />
+                </div>
+              )}
+            </div>
           </div>
+          <Footer />
         </div>
-        <Footer />
       </div>
-    </div>
+    </ThemeProvider>
   );
 }
