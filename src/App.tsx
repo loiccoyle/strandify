@@ -203,6 +203,7 @@ export default function App() {
                 setPegCount={setPegCount}
                 onClearPegs={handleClearPegs}
                 onAutoPegs={handleAutoPegs}
+                totalPegs={pegs.length}
               />
 
               <Options options={options} onChange={setOptions} />

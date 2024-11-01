@@ -8,6 +8,7 @@ interface ControlsProps {
   setPegCount: (count: number) => void;
   onClearPegs: () => void;
   onAutoPegs: () => void;
+  totalPegs: number;
 }
 
 export function Controls({
@@ -17,6 +18,7 @@ export function Controls({
   setPegCount,
   onClearPegs,
   onAutoPegs,
+  totalPegs,
 }: ControlsProps) {
   return (
     <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-lg space-y-4">
@@ -58,7 +60,7 @@ export function Controls({
       <div className="flex items-end gap-4 ">
         <div className="flex-1">
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Peg Count
+            Tool Pegs
           </label>
           <input
             type="number"
@@ -70,19 +72,25 @@ export function Controls({
           />
         </div>
 
-        <button
-          onClick={onClearPegs}
-          className="px-2 sm:px-4 py-2 bg-red-100 dark:bg-red-900 border-2 border-red-500 text-red-700 dark:text-red-300 rounded-lg hover:bg-red-200 dark:hover:bg-red-800 transition-colors"
-        >
-          Clear Pegs
-        </button>
-
-        <button
-          onClick={onAutoPegs}
-          className="px-2 sm:px-4 py-2 bg-blue-100 dark:bg-blue-900 border-2 border-blue-500 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors"
-        >
-          Auto Pegs
-        </button>
+        <div className="flex flex-col">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            Total Pegs: {totalPegs}
+          </label>
+          <div className="flex gap-2">
+            <button
+              onClick={onClearPegs}
+              className="px-2 sm:px-4 py-2 bg-red-100 dark:bg-red-900 border-2 border-red-500 text-red-700 dark:text-red-300 rounded-lg hover:bg-red-200 dark:hover:bg-red-800 transition-colors"
+            >
+              Clear Pegs
+            </button>
+            <button
+              onClick={onAutoPegs}
+              className="px-2 sm:px-4 py-2 bg-blue-100 dark:bg-blue-900 border-2 border-blue-500 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors"
+            >
+              Auto Pegs
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );
