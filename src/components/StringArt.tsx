@@ -1,4 +1,12 @@
-import React, { useState, ChangeEvent } from "react";
+import { Pause, Play } from "lucide-react";
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  ChangeEvent,
+  memo,
+} from "react";
 
 interface StringArtDisplayProps {
   svgString: string;
@@ -12,46 +20,103 @@ const StringArt: React.FC<StringArtDisplayProps> = ({ svgString }) => {
   const height = svgElement.getAttribute("height") || "500";
 
   const rect = svgDoc.querySelector("rect");
-
   const paths = Array.from(svgDoc.querySelectorAll("path"));
-  const [pathCount, setPathCount] = useState<number>(paths.length);
+  const totalPaths = paths.length;
 
-  const handleSliderChange = (e: ChangeEvent<HTMLInputElement>) => {
-    setPathCount(Number(e.target.value));
-  };
+  const [pathCount, setPathCount] = useState<number>(0);
+  const [isPlaying, setIsPlaying] = useState(false);
 
-  const SvgStringart: React.FC = () => {
-    return (
-      <svg
-        width={width}
-        height={height}
-        dangerouslySetInnerHTML={{
-          __html: `
-            ${rect ? rect.outerHTML : ""}
-            ${paths
-              .slice(0, pathCount)
-              .map((path) => path.outerHTML)
-              .join("")}
-          `,
-        }}
-      />
-    );
-  };
+  const animationFrameRef = useRef<number | null>(null);
+  const startTimeRef = useRef<number | null>(null);
+
+  const handleSliderChange = useCallback(
+    (e: ChangeEvent<HTMLInputElement>) => {
+      const value = Number(e.target.value);
+      if (value !== pathCount) {
+        setPathCount(value);
+        setIsPlaying(false); // Stop animation when user interacts with slider
+      }
+    },
+    [pathCount],
+  );
+
+  const animatePaths = useCallback(
+    (timestamp: number) => {
+      if (!startTimeRef.current) startTimeRef.current = timestamp;
+      const elapsed = timestamp - startTimeRef.current;
+
+      const remainingPaths = totalPaths - pathCount;
+      const duration = 2000 * (remainingPaths / totalPaths); // adjust duration based on remaining paths
+      const batchSize = 10; // number of paths to render per frame
+      const progress = Math.min(
+        (elapsed / duration) * remainingPaths,
+        remainingPaths,
+      );
+
+      // Increment path count in batches for smoother updates and fewer renders
+      const newPathCount =
+        pathCount + Math.floor(progress / batchSize) * batchSize;
+
+      if (newPathCount > pathCount) {
+        setPathCount(newPathCount);
+      }
+
+      if (progress < remainingPaths) {
+        animationFrameRef.current = requestAnimationFrame(animatePaths);
+      } else {
+        setIsPlaying(false);
+      }
+    },
+    [pathCount, totalPaths],
+  );
+
+  useEffect(() => {
+    if (isPlaying) {
+      startTimeRef.current = null; // Reset start time on play
+      animationFrameRef.current = requestAnimationFrame(animatePaths);
+    } else if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = null;
+      startTimeRef.current = null;
+    }
+
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+    };
+  }, [isPlaying, animatePaths]);
+
+  // Memoize the SVG rendering to prevent unnecessary re-renders
+  const SvgStringart = memo(() => (
+    <svg width={width} height={height}>
+      {rect && <g dangerouslySetInnerHTML={{ __html: rect.outerHTML }} />}
+      {paths.slice(0, pathCount).map((path, index) => (
+        <g key={index} dangerouslySetInnerHTML={{ __html: path.outerHTML }} />
+      ))}
+    </svg>
+  ));
 
   return (
     <div style={{ textAlign: "center" }}>
       <SvgStringart />
-      <div className="flex flex-row w-full items-center mt-4">
+      <div className="flex flex-row w-full items-center mt-4 gap-2">
+        <button
+          onClick={() => setIsPlaying((prev) => !prev)}
+          className="p-2 bg-blue-500 text-white rounded-full"
+        >
+          {isPlaying ? <Pause /> : <Play />}
+        </button>
         <input
           type="range"
           min="0"
-          max={paths.length}
+          max={totalPaths}
           value={pathCount}
           onChange={handleSliderChange}
           className="flex-grow mr-2"
         />
         <div className="text-gray-800 dark:text-white">
-          {pathCount} / {paths.length}
+          {pathCount} / {totalPaths}
         </div>
       </div>
     </div>
