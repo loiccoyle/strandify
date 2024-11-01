@@ -1,4 +1,4 @@
-import { Pause, Play } from "lucide-react";
+import { Download, Pause, Play } from "lucide-react";
 import React, {
   useState,
   useEffect,
@@ -87,6 +87,61 @@ const StringArt: React.FC<StringArtDisplayProps> = ({ svgString }) => {
     };
   }, [isPlaying, animatePaths]);
 
+  const handleDownloadSvg = useCallback(() => {
+    if (!svgString) return;
+    const blob = new Blob([svgString], { type: "image/svg+xml" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "strandify.svg";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }, [svgString]);
+
+  const handleDownloadPng = useCallback(() => {
+    if (!svgString) return;
+
+    // Create an image element
+    const img = new Image();
+    const blob = new Blob([svgString], { type: "image/svg+xml" });
+    const url = URL.createObjectURL(blob);
+
+    img.onload = () => {
+      // Create a canvas element
+      const canvas = document.createElement("canvas");
+      const context = canvas.getContext("2d");
+      if (!context) return;
+
+      // Set canvas dimensions
+      canvas.width = img.width;
+      canvas.height = img.height;
+
+      // Draw the image onto the canvas
+      context.drawImage(img, 0, 0);
+
+      // Convert the canvas to a PNG data URL
+      canvas.toBlob((pngBlob) => {
+        if (pngBlob) {
+          const pngUrl = URL.createObjectURL(pngBlob);
+          const a = document.createElement("a");
+          a.href = pngUrl;
+          a.download = "strandify.png";
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(pngUrl);
+        }
+      }, "image/png");
+
+      // Clean up the object URL
+      URL.revokeObjectURL(url);
+    };
+
+    img.src = url; // Start loading the SVG
+  }, [svgString]);
+
   // Memoize the SVG rendering to prevent unnecessary re-renders
   const SvgStringart = memo(() => (
     <svg width={width} height={height}>
@@ -118,6 +173,22 @@ const StringArt: React.FC<StringArtDisplayProps> = ({ svgString }) => {
         <div className="text-gray-800 dark:text-white">
           {pathCount} / {totalPaths}
         </div>
+      </div>
+      <div className="flex gap-2 items-center justify-center">
+        <button
+          onClick={handleDownloadSvg}
+          className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors flex items-center gap-2"
+        >
+          <Download className="w-5 h-5" />
+          <span>Download SVG</span>
+        </button>
+        <button
+          onClick={handleDownloadPng}
+          className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors flex items-center gap-2"
+        >
+          <Download className="w-5 h-5" />
+          <span>Download PNG</span>
+        </button>
       </div>
     </div>
   );
