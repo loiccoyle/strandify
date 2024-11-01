@@ -1,5 +1,11 @@
-import { useState, useRef, useCallback } from "react";
-import { Download, Trash2, Wand2, Image as ImageIcon } from "lucide-react";
+import { useState, useRef, useCallback, useEffect } from "react";
+import {
+  Download,
+  Trash2,
+  Wand2,
+  Image as ImageIcon,
+  Loader,
+} from "lucide-react";
 import { Canvas } from "./components/Canvas";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { Controls } from "./components/Controls";
@@ -14,7 +20,7 @@ import Footer from "./components/Footer";
 export default function App() {
   const [image, setImage] = useState<HTMLImageElement | null>(null);
   const [pegs, setPegs] = useState<Array<{ x: number; y: number }>>([]);
-  const [brushType, setBrushType] = useState<BrushType>(BrushType.Single);
+  const [brushType, setBrushType] = useState<BrushType>(BrushType.Circle);
   const [pegCount, setPegCount] = useState(500);
   const [options, setOptions] = useState<OptionsType>({
     pather: {
@@ -129,6 +135,27 @@ export default function App() {
     URL.revokeObjectURL(url);
   }, [stringArtSvg]);
 
+  useEffect(() => {
+    if (stringArtSvg === null) return;
+
+    const parser = new DOMParser();
+    const svgDoc = parser.parseFromString(stringArtSvg, "image/svg+xml");
+    const svgElement = svgDoc.documentElement as unknown as SVGSVGElement;
+
+    const rect = svgDoc.querySelector("rect");
+
+    const paths = Array.from(svgDoc.querySelectorAll("path"));
+    for (let i = 0; i < paths.length; i++) {
+      const path = paths[i];
+      path.setAttribute("stroke", options.render.color);
+      path.setAttribute("stroke-width", options.render.width.toString());
+      path.setAttribute("opacity", options.render.opacity.toString());
+    }
+    rect?.setAttribute("fill", options.render.bgColor);
+
+    setStringArtSvg(svgElement.outerHTML);
+  }, [options.render, stringArtSvg, setStringArtSvg]);
+
   return (
     <ThemeProvider>
       <div className="min-h-screen bg-gray-100 dark:bg-gray-900 p-8">
@@ -188,9 +215,7 @@ export default function App() {
                   className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Wand2 className="w-5 h-5" />
-                  <span>
-                    {isComputing ? "Computing..." : "Generate String Art"}
-                  </span>
+                  <span>Generate String Art</span>
                 </button>
 
                 {stringArtSvg && (
@@ -204,16 +229,19 @@ export default function App() {
                 )}
               </div>
 
-              {stringArtSvg && (
+              {isComputing ? (
                 <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-lg flex align-center justify-center">
-                  <StringArt
-                    svgString={stringArtSvg}
-                    pathColor={options.render.color}
-                    pathOpacity={options.render.opacity}
-                    pathWidth={options.render.width}
-                    bgColor={options.render.bgColor}
-                  />
+                  <Loader className="w-8 h-8 text-blue-500 animate-spin mr-2" />
+                  <span className="text-lg font-semibold dark:text-white">
+                    Building string art...
+                  </span>
                 </div>
+              ) : (
+                stringArtSvg && (
+                  <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-lg flex align-center justify-center">
+                    <StringArt svgString={stringArtSvg} />
+                  </div>
+                )
               )}
             </div>
           </div>

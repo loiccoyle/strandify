@@ -2,19 +2,9 @@ import React, { useState, ChangeEvent } from "react";
 
 interface StringArtDisplayProps {
   svgString: string;
-  pathColor: string;
-  pathWidth: number;
-  pathOpacity: number;
-  bgColor: string;
 }
 
-const StringArt: React.FC<StringArtDisplayProps> = ({
-  svgString,
-  pathColor,
-  pathWidth,
-  pathOpacity,
-  bgColor,
-}) => {
+const StringArt: React.FC<StringArtDisplayProps> = ({ svgString }) => {
   const parser = new DOMParser();
   const svgDoc = parser.parseFromString(svgString, "image/svg+xml");
   const svgElement = svgDoc.documentElement as unknown as SVGSVGElement;
@@ -29,16 +19,9 @@ const StringArt: React.FC<StringArtDisplayProps> = ({
   const handleSliderChange = (e: ChangeEvent<HTMLInputElement>) => {
     setPathCount(Number(e.target.value));
   };
-  for (let i = 0; i < paths.length; i++) {
-    const path = paths[i];
-    path.setAttribute("stroke", pathColor);
-    path.setAttribute("stroke-width", pathWidth.toString());
-    path.setAttribute("opacity", pathOpacity.toString());
-  }
-  rect?.setAttribute("fill", bgColor);
 
-  return (
-    <div style={{ textAlign: "center" }}>
+  const SvgStringart: React.FC = () => {
+    return (
       <svg
         width={width}
         height={height}
@@ -52,6 +35,12 @@ const StringArt: React.FC<StringArtDisplayProps> = ({
           `,
         }}
       />
+    );
+  };
+
+  return (
+    <div style={{ textAlign: "center" }}>
+      <SvgStringart />
       <div className="flex flex-row w-full items-center mt-4">
         <input
           type="range"
