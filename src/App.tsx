@@ -16,6 +16,7 @@ import { Options as OptionsType } from "./types/options";
 import StringArt from "./components/StringArt";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
+import Position from "./types/position";
 
 export default function App() {
   const [image, setImage] = useState<HTMLImageElement | null>(null);
@@ -75,7 +76,7 @@ export default function App() {
   const handleAutoPegs = useCallback(() => {
     if (!canvasRef.current) return;
     const canvas = canvasRef.current;
-    const newPegs = [];
+    const newPegs: Position[] = [];
     const count = pegCount;
 
     if (brushType === BrushType.Box) {
@@ -114,7 +115,7 @@ export default function App() {
       }
     }
 
-    setPegs(newPegs);
+    setPegs((prev) => [...prev, ...newPegs]);
   }, [brushType, pegCount]);
 
   const handleCompute = useCallback(async () => {

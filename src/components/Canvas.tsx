@@ -9,6 +9,7 @@ import React, {
 } from "react";
 import { BrushType } from "../types/brushType";
 import { lineCoords, rectangleCoords, circleCoords } from "strandify-wasm";
+import Position from "../types/position";
 
 interface CanvasProps {
   image: HTMLImageElement | null;
@@ -16,11 +17,6 @@ interface CanvasProps {
   setPegs: Dispatch<SetStateAction<Array<{ x: number; y: number }>>>;
   brushType: BrushType;
   pegCount: number;
-}
-
-interface Position {
-  x: number;
-  y: number;
 }
 
 interface SelectionBox {
@@ -32,7 +28,6 @@ interface SelectionBox {
 
 export const Canvas = forwardRef<HTMLCanvasElement, CanvasProps>(
   ({ image, pegs, setPegs, brushType, pegCount }, ref) => {
-    // State management with more explicit types
     const [mouseState, setMouseState] = useState<{
       isDragging: boolean;
       draggedPegIndex: number;
@@ -52,7 +47,33 @@ export const Canvas = forwardRef<HTMLCanvasElement, CanvasProps>(
     const contextRef = useRef<CanvasRenderingContext2D | null>(null);
     const containerRef = useRef<HTMLDivElement>(null);
 
-    // Memoized brush pegs generation
+    // Helper function to get coordinates from either mouse or touch event
+    const getCoordinates = useCallback(
+      (event: React.MouseEvent | React.TouchEvent | TouchEvent): Position => {
+        if (!ref || !("current" in ref) || !ref.current) return { x: 0, y: 0 };
+
+        const canvas = ref.current;
+        const rect = canvas.getBoundingClientRect();
+
+        // Handle touch event
+        if ("touches" in event) {
+          const touch = event.touches[0];
+          return {
+            x: touch.clientX - rect.left,
+            y: touch.clientY - rect.top,
+          };
+        }
+
+        // Handle mouse event
+        return {
+          x: event.clientX - rect.left,
+          y: event.clientY - rect.top,
+        };
+      },
+      [ref],
+    );
+
+    // Rest of the existing functions remain the same
     const generateBrushPegs = useCallback(
       (
         startX: number,
@@ -104,7 +125,6 @@ export const Canvas = forwardRef<HTMLCanvasElement, CanvasProps>(
       [brushType, pegCount, ref],
     );
 
-    // Memoized preview brush function
     const previewBrush = useCallback(
       (startX: number, startY: number, endX: number, endY: number) => {
         setPreviewPegs(generateBrushPegs(startX, startY, endX, endY));
@@ -112,7 +132,6 @@ export const Canvas = forwardRef<HTMLCanvasElement, CanvasProps>(
       [generateBrushPegs],
     );
 
-    // Resize canvas and move pegs to new positions
     const resizeCanvas = useCallback(() => {
       if (!ref || !("current" in ref) || !ref.current || !containerRef.current)
         return;
@@ -120,7 +139,7 @@ export const Canvas = forwardRef<HTMLCanvasElement, CanvasProps>(
       const canvas = ref.current;
       const container = containerRef.current;
       const maxWidth = container.clientWidth;
-      const maxHeight = window.innerHeight * 0.6;
+      const maxHeight = window.innerHeight * (maxWidth < 700 ? 0.8 : 0.6);
 
       let width, height;
 
@@ -140,7 +159,6 @@ export const Canvas = forwardRef<HTMLCanvasElement, CanvasProps>(
         height = maxWidth * (9 / 16);
       }
 
-      // Only update if dimensions have actually changed
       if (canvas.width !== width || canvas.height !== height) {
         const scaleX = width / canvas.width;
         const scaleY = height / canvas.height;
@@ -148,7 +166,6 @@ export const Canvas = forwardRef<HTMLCanvasElement, CanvasProps>(
         canvas.width = width;
         canvas.height = height;
 
-        // Use functional update to avoid stale closure
         setPegs((currentPegs) =>
           currentPegs.map((peg) => ({
             x: peg.x * scaleX,
@@ -158,16 +175,17 @@ export const Canvas = forwardRef<HTMLCanvasElement, CanvasProps>(
       }
     }, [ref, image, setPegs]);
 
-    // Event Handlers with improved type safety
-    const handleMouseDown = useCallback(
-      (e: React.MouseEvent<HTMLCanvasElement>) => {
+    // Combined handler for mouse down and touch start
+    const handleStart = useCallback(
+      (
+        e:
+          | React.MouseEvent<HTMLCanvasElement>
+          | React.TouchEvent<HTMLCanvasElement>,
+      ) => {
+        e.preventDefault(); // Prevent default touch behaviors
         if (!ref || !("current" in ref) || !ref.current) return;
 
-        const canvas = ref.current;
-        const rect = canvas.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-
+        const { x, y } = getCoordinates(e);
         setStartPos({ x, y });
 
         if (brushType === BrushType.Eraser) {
@@ -195,18 +213,20 @@ export const Canvas = forwardRef<HTMLCanvasElement, CanvasProps>(
           setMouseState((prev) => ({ ...prev, isDrawing: true }));
         }
       },
-      [brushType, pegs, ref, setPegs],
+      [brushType, pegs, ref, setPegs, getCoordinates],
     );
 
-    const handleMouseMove = useCallback(
-      (e: React.MouseEvent<HTMLCanvasElement>) => {
+    // Combined handler for mouse move and touch move
+    const handleMove = useCallback(
+      (
+        e:
+          | React.MouseEvent<HTMLCanvasElement>
+          | React.TouchEvent<HTMLCanvasElement>,
+      ) => {
+        e.preventDefault(); // Prevent default touch behaviors
         if (!ref || !("current" in ref) || !ref.current) return;
 
-        const canvas = ref.current;
-        const rect = canvas.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-
+        const { x, y } = getCoordinates(e);
         const { isDragging, draggedPegIndex, isErasing, isDrawing } =
           mouseState;
 
@@ -225,16 +245,27 @@ export const Canvas = forwardRef<HTMLCanvasElement, CanvasProps>(
           previewBrush(startPos.x, startPos.y, x, y);
         }
       },
-      [mouseState, pegs, startPos, selectionBox, ref, setPegs, previewBrush],
+      [
+        mouseState,
+        pegs,
+        startPos,
+        selectionBox,
+        ref,
+        setPegs,
+        previewBrush,
+        getCoordinates,
+      ],
     );
 
-    const handleMouseUp = useCallback(
-      (e: React.MouseEvent<HTMLCanvasElement>) => {
+    // Combined handler for mouse up, mouse leave, and touch end
+    const handleEnd = useCallback(
+      (
+        e:
+          | React.MouseEvent<HTMLCanvasElement>
+          | React.TouchEvent<HTMLCanvasElement>,
+      ) => {
+        e.preventDefault(); // Prevent default touch behaviors
         if (!ref || !("current" in ref) || !ref.current) return;
-        const canvas = ref.current;
-        const rect = canvas.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
 
         const { isErasing, isDrawing } = mouseState;
 
@@ -249,13 +280,9 @@ export const Canvas = forwardRef<HTMLCanvasElement, CanvasProps>(
           });
           setPegs(newPegs);
         } else if (isDrawing) {
-          setPegs([
-            ...pegs,
-            ...generateBrushPegs(startPos.x, startPos.y, x, y),
-          ]);
+          setPegs([...pegs, ...previewPegs]);
         }
 
-        // Reset mouse state
         setSelectionBox(null);
         setMouseState({
           isDragging: false,
@@ -265,20 +292,10 @@ export const Canvas = forwardRef<HTMLCanvasElement, CanvasProps>(
         });
         setPreviewPegs([]);
       },
-      [
-        mouseState,
-        brushType,
-        pegs,
-        startPos,
-        selectionBox,
-        ref,
-        setPegs,
-        generateBrushPegs,
-      ],
+      [mouseState, brushType, pegs, previewPegs, selectionBox, ref, setPegs],
     );
 
-    // Lifecycle and side effects
-    // draw the pegs on the canvas when anything changes
+    // Drawing effect remains the same
     useEffect(() => {
       if (ref === null || !("current" in ref) || ref.current === null) return;
 
@@ -336,6 +353,7 @@ export const Canvas = forwardRef<HTMLCanvasElement, CanvasProps>(
       }
     }, [ref, image, pegs, selectionBox, previewPegs]);
 
+    // Initialization effects remain the same
     useEffect(() => {
       resizeCanvas();
     }, [resizeCanvas]);
@@ -356,11 +374,15 @@ export const Canvas = forwardRef<HTMLCanvasElement, CanvasProps>(
       <div ref={containerRef} className="w-full" role="region">
         <canvas
           ref={ref}
-          className="mx-auto border border-gray-200 dark:border-gray-600 cursor-crosshair"
-          onMouseDown={handleMouseDown}
-          onMouseMove={handleMouseMove}
-          onMouseUp={handleMouseUp}
-          onMouseLeave={handleMouseUp}
+          className="mx-auto border border-gray-200 dark:border-gray-600 cursor-crosshair touch-none"
+          onMouseDown={handleStart}
+          onMouseMove={handleMove}
+          onMouseUp={handleEnd}
+          onMouseLeave={handleEnd}
+          onTouchStart={handleStart}
+          onTouchMove={handleMove}
+          onTouchEnd={handleEnd}
+          onTouchCancel={handleEnd}
         />
       </div>
     );
