@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useState, useContext, useEffect } from "react";
 
 type Theme = "light" | "dark";
 
@@ -9,27 +9,47 @@ interface ThemeContextType {
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
-export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setTheme] = useState<Theme>(() => {
-    if (typeof window !== "undefined") {
-      const savedTheme = localStorage.getItem("theme") as Theme;
-      if (savedTheme) return savedTheme;
-      return window.matchMedia("(prefers-color-scheme: dark)").matches
-        ? "dark"
-        : "light";
-    }
-    return "light";
-  });
+export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
+  const [theme, setTheme] = useState<Theme>("light");
 
   useEffect(() => {
-    const root = window.document.documentElement;
-    root.classList.remove("light", "dark");
-    root.classList.add(theme);
+    const savedTheme = localStorage.getItem("theme") as Theme | null;
+    if (savedTheme) {
+      setTheme(savedTheme);
+    }
+  }, []);
+
+  useEffect(() => {
     localStorage.setItem("theme", theme);
+
+    if (theme === "dark") {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+
+    const metaTag = document.querySelector('meta[name="theme-color"]');
+    const lightColor = getComputedStyle(document.documentElement)
+      .getPropertyValue("--light-bg-color")
+      .trim();
+    const darkColor = getComputedStyle(document.documentElement)
+      .getPropertyValue("--dark-bg-color")
+      .trim();
+    console.log(darkColor);
+    console.log(lightColor);
+
+    if (metaTag) {
+      metaTag.setAttribute(
+        "content",
+        theme === "dark" ? darkColor : lightColor,
+      );
+    }
   }, [theme]);
 
   const toggleTheme = () => {
-    setTheme((prev) => (prev === "light" ? "dark" : "light"));
+    setTheme((prevTheme) => (prevTheme === "light" ? "dark" : "light"));
   };
 
   return (
@@ -37,12 +57,12 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       {children}
     </ThemeContext.Provider>
   );
-}
+};
 
-export function useTheme() {
+export const useTheme = () => {
   const context = useContext(ThemeContext);
   if (context === undefined) {
     throw new Error("useTheme must be used within a ThemeProvider");
   }
   return context;
-}
+};
