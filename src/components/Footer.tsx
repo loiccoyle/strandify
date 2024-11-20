@@ -10,7 +10,7 @@ const Footer: React.FC = () => {
           className="underline font-bold"
           target="_blank"
         >
-          Loic Coyle
+          Loïc Coyle
         </a>
       </p>
       It broke? Open an{" "}
