@@ -148,11 +148,11 @@ export const Canvas = forwardRef<HTMLCanvasElement, CanvasProps>(
         const containerAspectRatio = maxWidth / maxHeight;
 
         if (imageAspectRatio > containerAspectRatio) {
-          width = maxWidth;
-          height = maxWidth / imageAspectRatio;
+          width = Math.min(maxWidth, image.width);
+          height = width / imageAspectRatio;
         } else {
-          height = maxHeight;
-          width = maxHeight * imageAspectRatio;
+          height = Math.min(maxHeight, image.height);
+          width = height * imageAspectRatio;
         }
       } else {
         width = maxWidth;

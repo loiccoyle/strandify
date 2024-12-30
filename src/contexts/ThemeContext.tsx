@@ -37,8 +37,6 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
     const darkColor = getComputedStyle(document.documentElement)
       .getPropertyValue("--dark-bg-color")
       .trim();
-    console.log(darkColor);
-    console.log(lightColor);
 
     if (metaTag) {
       metaTag.setAttribute(
