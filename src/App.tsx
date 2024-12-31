@@ -146,10 +146,9 @@ export default function App() {
 
   return (
     <ThemeProvider>
-      <div className="min-h-screen bg-gray-100 dark:bg-gray-900 sm:p-8 p-2">
-        <div className="w-full sm:max-w-7xl sm:mx-auto space-y-8">
+      <div className="min-h-screen bg-gray-100 dark:bg-gray-900 px-4 sm:px-8 pb-8 pt-4 transition-colors duration-200">
+        <div className="container mx-auto">
           <Header />
-
           <div className="grid grid-cols-1 gap-8">
             <div className="space-y-4">
               <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-lg">
